@@ -1,0 +1,37 @@
+﻿@{
+    ViewBag.Title = "Site Content";
+}
+
+@section scripts
+{
+    <script type="text/javascript">
+
+        require(["app"], function (app) {
+            //$(function() {
+            //var listView = app.get_ListView({
+            //    controllerName: "list-controller",
+            //    listTitle: "Projects"
+            //})
+            //app.render(listView);
+
+            var lists = app.get_Lists({
+                controllerName: "list-controller"
+            })
+            app.render(lists);
+
+            //});
+        });
+
+    </script>
+}
+
+<div class="jumbotron">
+    <h2>Welcome @ViewBag.UserName!</h2>
+</div>
+<div ng-controller="list-controller">
+    <table>
+        <tr ng-repeat="list in lists">
+            <td>{{list.Title}}</td>
+        </tr>
+    </table>
+</div>
