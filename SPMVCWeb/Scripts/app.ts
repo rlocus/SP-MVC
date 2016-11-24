@@ -223,6 +223,11 @@ module App.Module {
         }
     }
 
+    interface IListsViewFactory {
+        lists: any;
+        getLists();
+    }
+
     export class ListsView implements App.IModule {
         private _options: App.IModuleOptions;
         private _app: App;
@@ -261,18 +266,31 @@ module App.Module {
         public render() {
             var self = this;
             var deferred = self._app.$.Deferred();
-            self._app.spApp.controller(self._options.controllerName, function ($scope: ng.IScope) {
-                self.getLists().then((lists) => {
-                    (<any>$scope).lists = lists;
+            self._app.spApp.factory("ListsViewFactory", ($q, $http) => {
+                var factory = {} as IListsViewFactory;
+                factory.lists = [];
+                factory.getLists = () => {
+                    var deferred = $q.defer();
+                    self.getLists().then((data: Array<any>) => {
+                        factory.lists.splice(0, factory.lists.length);
+                        $.each(data, (function (i, list) {
+                            factory.lists.push(list);
+                        }));
+                        deferred.resolve(data);
+                    }, deferred.reject);
+                    return deferred.promise;
+                }
+                return factory;
+            });
 
-                    $scope.$watch('table.orderBy', (newOrderBy: string, oldOrderBy: string, tableHeaderScope: any): void => {
-
-                    });
-
-                    $scope.$apply();
+            self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope: ng.IScope, factory: IListsViewFactory) {
+                (<any>$scope).lists = factory.lists;
+                factory.getLists();
+                factory.getLists().then((lists) => {
                     deferred.resolve();
                 }, deferred.reject);
-            });
+            }]);
+
             return deferred.promise();
         }
     }

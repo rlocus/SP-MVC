@@ -1,7 +1,7 @@
 /// <reference path="typings/angularjs/angular.d.ts" />
 /// <reference path="typings/sharepoint/SharePoint.d.ts" />
 /// <reference path="typings/sharepoint/pnp.d.ts" />
-define(["require", "exports", "pnp"], function (require, exports, $pnp) {
+define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp, $) {
     "use strict";
     //import * as $angular from "angular";
     var App = (function () {
@@ -214,15 +214,29 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 ListsView.prototype.render = function () {
                     var self = this;
                     var deferred = self._app.$.Deferred();
-                    self._app.spApp.controller(self._options.controllerName, function ($scope) {
-                        self.getLists().then(function (lists) {
-                            $scope.lists = lists;
-                            $scope.$watch('table.orderBy', function (newOrderBy, oldOrderBy, tableHeaderScope) {
-                            });
-                            $scope.$apply();
-                            deferred.resolve();
-                        }, deferred.reject);
+                    self._app.spApp.factory("ListsViewFactory", function ($q, $http) {
+                        var factory = {};
+                        factory.lists = [];
+                        factory.getLists = function () {
+                            var deferred = $q.defer();
+                            self.getLists().then(function (data) {
+                                factory.lists.splice(0, factory.lists.length);
+                                $.each(data, (function (i, list) {
+                                    factory.lists.push(list);
+                                }));
+                                deferred.resolve(data);
+                            }, deferred.reject);
+                            return deferred.promise;
+                        };
+                        return factory;
                     });
+                    self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope, factory) {
+                            $scope.lists = factory.lists;
+                            factory.getLists();
+                            factory.getLists().then(function (lists) {
+                                deferred.resolve();
+                            }, deferred.reject);
+                        }]);
                     return deferred.promise();
                 };
                 return ListsView;
