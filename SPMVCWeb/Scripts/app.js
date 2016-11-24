@@ -213,7 +213,6 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 };
                 ListsView.prototype.render = function () {
                     var self = this;
-                    var deferred = self._app.$.Deferred();
                     self._app.spApp.factory("ListsViewFactory", function ($q, $http) {
                         var factory = {};
                         factory.lists = [];
@@ -222,7 +221,18 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             self.getLists().then(function (data) {
                                 factory.lists.splice(0, factory.lists.length);
                                 $.each(data, (function (i, list) {
-                                    factory.lists.push(list);
+                                    if (!list.Hidden) {
+                                        switch (list.BaseType) {
+                                            case 1:
+                                                list.Type = "Document Library";
+                                                break;
+                                            default:
+                                                list.Type = "List";
+                                                break;
+                                        }
+                                        var $events = { menuOpened: false };
+                                        factory.lists.push({ $data: list, $events: $events });
+                                    }
                                 }));
                                 deferred.resolve(data);
                             }, deferred.reject);
@@ -230,12 +240,20 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                         };
                         return factory;
                     });
+                    var deferred = self._app.$.Deferred();
                     self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope, factory) {
                             $scope.lists = factory.lists;
-                            factory.getLists();
-                            factory.getLists().then(function (lists) {
-                                deferred.resolve();
-                            }, deferred.reject);
+                            $scope.openMenu = function (list) {
+                                if (!list.$events.menuOpened) {
+                                    $.each($scope.lists, (function (i, list) {
+                                        list.$events.menuOpened = false;
+                                    }));
+                                }
+                                list.$events.menuOpened = !list.$events.menuOpened;
+                            };
+                            $scope.viewList = function (list) {
+                            };
+                            factory.getLists().then(deferred.resolve, deferred.reject);
                         }]);
                     return deferred.promise();
                 };

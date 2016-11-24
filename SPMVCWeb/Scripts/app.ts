@@ -265,7 +265,6 @@ module App.Module {
 
         public render() {
             var self = this;
-            var deferred = self._app.$.Deferred();
             self._app.spApp.factory("ListsViewFactory", ($q, $http) => {
                 var factory = {} as IListsViewFactory;
                 factory.lists = [];
@@ -274,7 +273,18 @@ module App.Module {
                     self.getLists().then((data: Array<any>) => {
                         factory.lists.splice(0, factory.lists.length);
                         $.each(data, (function (i, list) {
-                            factory.lists.push(list);
+                            if (!list.Hidden) {
+                                switch (list.BaseType) {
+                                case 1:
+                                    list.Type = "Document Library";
+                                    break;
+                                default:
+                                    list.Type = "List";
+                                    break;
+                                }
+                                var $events = { menuOpened: false };
+                                factory.lists.push({ $data: list, $events: $events});
+                            }
                         }));
                         deferred.resolve(data);
                     }, deferred.reject);
@@ -283,14 +293,22 @@ module App.Module {
                 return factory;
             });
 
+            var deferred = self._app.$.Deferred();
             self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope: ng.IScope, factory: IListsViewFactory) {
                 (<any>$scope).lists = factory.lists;
-                factory.getLists();
-                factory.getLists().then((lists) => {
-                    deferred.resolve();
-                }, deferred.reject);
+                (<any>$scope).openMenu = function (list) {
+                      if(!list.$events.menuOpened){
+                        $.each((<any>$scope).lists, (function (i, list) {
+                          list.$events.menuOpened = false;
+                        }));
+                      }
+                    list.$events.menuOpened = !list.$events.menuOpened;
+                };
+                (<any>$scope).viewList = function (list) {
+                    
+                };
+                factory.getLists().then(deferred.resolve, deferred.reject);
             }]);
-
             return deferred.promise();
         }
     }
