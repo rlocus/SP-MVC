@@ -5,7 +5,8 @@ require.config({
         //"fetch": 'fetch',
         //"es6-promise": 'es6-promise.min',
         "pnp": 'pnp.min',
-        "angular": 'angular.min'
+        "angular": 'angular.min',
+        "ngOfficeUiFabric": 'ngOfficeUiFabric.min'
     },
     shim: {
         jquery: {
@@ -14,7 +15,8 @@ require.config({
         angular: {
             exports: 'angular'
         },
-        app: ['jquery', 'pnp', 'angular'],
+        ngOfficeUiFabric: ['angular'],
+        app: ['jquery', 'pnp', 'angular', 'ngOfficeUiFabric'],
     }
 });
 
@@ -29,7 +31,7 @@ if (typeof window.jQuery == "undefined") {
 
 // you can add additional requirements in here but you would need to manually add them to the preloaded modules object
 // we are also showing how to include poly-fills for fetch and es6 promises if needed.
-require(["jquery", "app", "angular"], function ($, app, angular) {
+require(["jquery", "angular", "app"], function ($, angular, app) {
     //$(function () {
         app.init({
             "jquery": $,

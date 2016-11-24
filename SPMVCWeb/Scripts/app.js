@@ -40,7 +40,10 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 throw "SPAppWebUrl url parameter must be specified!";
             }
             this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, "_layouts/15");
-            this.spApp = this.$angular.module(App.SharePointAppName, []);
+            this.spApp = this.$angular.module(App.SharePointAppName, [
+                'officeuifabric.core',
+                'officeuifabric.components'
+            ]);
             this._initialized = true;
         };
         App.prototype.ensureScript = function (url) {
@@ -214,6 +217,8 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     self._app.spApp.controller(self._options.controllerName, function ($scope) {
                         self.getLists().then(function (lists) {
                             $scope.lists = lists;
+                            $scope.$watch('table.orderBy', function (newOrderBy, oldOrderBy, tableHeaderScope) {
+                            });
                             $scope.$apply();
                             deferred.resolve();
                         }, deferred.reject);

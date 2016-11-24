@@ -29,9 +29,22 @@
     <h2>Welcome @ViewBag.UserName!</h2>
 </div>
 <div ng-controller="list-controller">
-    <table>
-        <tr ng-repeat="list in lists">
-            <td>{{list.Title}}</td>
-        </tr>
-    </table>
+
+    <uif-table uif-row-select-mode="multiple">
+        <uif-table-head>
+            <uif-table-row>
+                <uif-table-row-select></uif-table-row-select>
+                <uif-table-header uif-order-by="Title">Title</uif-table-header>
+                <uif-table-header>Description</uif-table-header>
+            </uif-table-row>
+        </uif-table-head>
+        <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
+            <uif-table-row uif-item="list">
+                <uif-table-row-select></uif-table-row-select>
+                <uif-table-cell>{{list.Title}}</uif-table-cell>
+                <uif-table-cell>{{list.Description}}</uif-table-cell>
+            </uif-table-row>
+        </uif-table-body>
+    </uif-table>
+
 </div>

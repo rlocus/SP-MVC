@@ -55,7 +55,10 @@ class App {
             throw "SPAppWebUrl url parameter must be specified!";
         }
         this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, "_layouts/15");
-        this.spApp = this.$angular.module(App.SharePointAppName, []);
+        this.spApp = this.$angular.module(App.SharePointAppName, [
+            'officeuifabric.core',
+            'officeuifabric.components'
+        ]);
         this._initialized = true;
     }
 
@@ -261,6 +264,11 @@ module App.Module {
             self._app.spApp.controller(self._options.controllerName, function ($scope: ng.IScope) {
                 self.getLists().then((lists) => {
                     (<any>$scope).lists = lists;
+
+                    $scope.$watch('table.orderBy', (newOrderBy: string, oldOrderBy: string, tableHeaderScope: any): void => {
+
+                    });
+
                     $scope.$apply();
                     deferred.resolve();
                 }, deferred.reject);
