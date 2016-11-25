@@ -39,7 +39,7 @@
         <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
             <uif-table-row uif-item="list">
                 <uif-table-row-select></uif-table-row-select>
-                <uif-table-cell>{{list.$data.Title}}</uif-table-cell>
+                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Title}}</span></uif-table-cell>
                 <uif-pivot-ellipsis ng-click="openMenu(list)">
                     <uif-contextual-menu uif-is-open="list.$events.menuOpened" uif-close-on-click="true">
                         <uif-contextual-menu-item uif-text="'View'" ng-click="viewList(list)"></uif-contextual-menu-item>
@@ -47,9 +47,9 @@
                         <uif-contextual-menu-item uif-text="'Settings'" ng-click="openSettings(list)"></uif-contextual-menu-item>
                     </uif-contextual-menu>
                 </uif-pivot-ellipsis>
-                <uif-table-cell>{{list.$data.Type}}</uif-table-cell>
+                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Type}}</span></uif-table-cell>
                 <uif-table-cell>{{list.$data.Description}}</uif-table-cell>
-                <uif-table-cell>{{list.$data.ItemCount}}</uif-table-cell>
+                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.ItemCount}}</span></uif-table-cell>
             </uif-table-row>
         </uif-table-body>
     </uif-table>

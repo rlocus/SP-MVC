@@ -196,7 +196,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 ListsView.prototype.getLists = function () {
                     var self = this;
                     var deferred = self._app.$.Deferred();
-                    var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.select("Id", "Title", "BaseType", "ItemCount", "Description", "EffectiveBasePermissions").toUrlAndQuery();
+                    var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.select("Id", "Title", "BaseType", "ItemCount", "Description", "Hidden", "EffectiveBasePermissions").toUrlAndQuery();
                     var executor = new SP.RequestExecutor(self._app.appWebUrl);
                     executor.executeAsync({
                         url: url,

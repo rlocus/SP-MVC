@@ -246,7 +246,7 @@ module App.Module {
         public getLists() {
             var self = this;
             var deferred = self._app.$.Deferred();
-            var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.select("Id", "Title", "BaseType", "ItemCount", "Description", "EffectiveBasePermissions").toUrlAndQuery();
+            var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.select("Id", "Title", "BaseType", "ItemCount", "Description", "Hidden", "EffectiveBasePermissions").toUrlAndQuery();
             var executor = new SP.RequestExecutor(self._app.appWebUrl);
             executor.executeAsync(<SP.RequestInfo>{
                 url: url,
@@ -318,11 +318,11 @@ module App.Module {
                     list.$events.menuOpened = !list.$events.menuOpened;
                 };
                 (<any>$scope).openSettings = function (list) {
-                    if(!(<any>$scope).settingsOpened){
-                      (<any>$scope).selected.settings = list.$data;
+                    if (!(<any>$scope).settingsOpened) {
+                        (<any>$scope).selected.settings = list.$data;
                     }
-                    else{
-                     (<any>$scope).selected.settings = null;
+                    else {
+                        (<any>$scope).selected.settings = null;
                     }
                     (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
                 };
