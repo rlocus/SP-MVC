@@ -5,23 +5,12 @@
 @section scripts
 {
     <script type="text/javascript">
-
         require(["app"], function (app) {
-            //$(function() {
-            //var listView = app.get_ListView({
-            //    controllerName: "list-controller",
-            //    listTitle: "Projects"
-            //})
-            //app.render(listView);
-
             var lists = app.get_Lists({
                 controllerName: "list-controller"
             })
             app.render(lists);
-
-            //});
         });
-
     </script>
 }
 
@@ -29,16 +18,22 @@
     <h2>Welcome @ViewBag.UserName!</h2>
 </div>
 <div ng-controller="list-controller">
-
+    <uif-panel uif-type="small" uif-is-open="settingsOpened" uif-show-overlay="true" uif-show-close="true">
+        <uif-panel-header>List Settings</uif-panel-header>
+        <uif-content>
+            <uif-label><h4>{{selected.settings.Title}}</h4></uif-label>
+            <uif-label>{{selected.settings.Description}}</uif-label>
+        </uif-content>
+    </uif-panel>
     <uif-table uif-row-select-mode="multiple">
         <uif-table-head>
             <uif-table-row>
                 <uif-table-row-select></uif-table-row-select>
-                <uif-table-header uif-order-by="Title">Title</uif-table-header>
+                <uif-table-header uif-order-by="$data.Title">Title</uif-table-header>
                 <uif-table-header></uif-table-header>
-                <uif-table-header uif-order-by="Type">Type</uif-table-header>
+                <uif-table-header uif-order-by="$data.Type">Type</uif-table-header>
                 <uif-table-header>Description</uif-table-header>
-                <uif-table-header uif-order-by="ItemCount">Items</uif-table-header>
+                <uif-table-header uif-order-by="$data.ItemCount">Items</uif-table-header>
             </uif-table-row>
         </uif-table-head>
         <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
@@ -48,8 +43,8 @@
                 <uif-pivot-ellipsis ng-click="openMenu(list)">
                     <uif-contextual-menu uif-is-open="list.$events.menuOpened" uif-close-on-click="true">
                         <uif-contextual-menu-item uif-text="'View'" ng-click="viewList(list)"></uif-contextual-menu-item>
-                        <uif-contextual-menu-item uif-text="'Delete'"></uif-contextual-menu-item>
-                        <uif-contextual-menu-item uif-text="'Settings'"></uif-contextual-menu-item>
+                        <uif-contextual-menu-item uif-text="'Delete'" disabled="{{list.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
+                        <uif-contextual-menu-item uif-text="'Settings'" ng-click="openSettings(list)"></uif-contextual-menu-item>
                     </uif-contextual-menu>
                 </uif-pivot-ellipsis>
                 <uif-table-cell>{{list.$data.Type}}</uif-table-cell>

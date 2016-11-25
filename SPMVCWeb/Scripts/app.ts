@@ -73,16 +73,19 @@ class App {
         }
 
         self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function (data) {
-            self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
+            self.ensureScript(self.scriptBase + "/sp.runtime.js").then(function (data) {
+                self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
+                    self.ensureScript(self.scriptBase + "/SP.js").then(function (data) {
+                        if ($pnp.util.isArray(modules)) {
+                            self.$.each(modules, (i: number, module: App.IModule) => {
+                                module.render();
+                            });
+                        }
 
-                if ($pnp.util.isArray(modules)) {
-                    self.$.each(modules, (i: number, module: App.IModule) => {
-                        module.render();
+                        self.$angular.element(function () {
+                            self.$angular.bootstrap(document, [App.SharePointAppName]);
+                        });
                     });
-                }
-
-                self.$angular.element(function () {
-                    self.$angular.bootstrap(document, [App.SharePointAppName]);
                 });
             });
         });
@@ -243,7 +246,7 @@ module App.Module {
         public getLists() {
             var self = this;
             var deferred = self._app.$.Deferred();
-            var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.toUrlAndQuery();
+            var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.select("Id", "Title", "BaseType", "ItemCount", "Description", "EffectiveBasePermissions").toUrlAndQuery();
             var executor = new SP.RequestExecutor(self._app.appWebUrl);
             executor.executeAsync(<SP.RequestInfo>{
                 url: url,
@@ -275,15 +278,21 @@ module App.Module {
                         $.each(data, (function (i, list) {
                             if (!list.Hidden) {
                                 switch (list.BaseType) {
-                                case 1:
-                                    list.Type = "Document Library";
-                                    break;
-                                default:
-                                    list.Type = "List";
-                                    break;
+                                    case 1:
+                                        list.Type = "Document Library";
+                                        break;
+                                    default:
+                                        list.Type = "List";
+                                        break;
                                 }
-                                var $events = { menuOpened: false };
-                                factory.lists.push({ $data: list, $events: $events});
+
+                                var permissions = new SP.BasePermissions();
+                                permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
+                                var $permissions = {
+                                    manage: permissions.has(SP.PermissionKind.manageLists)
+                                }
+                                var $events = { menuOpened: false, delete: $permissions.manage ? '' : 'disabled' };
+                                factory.lists.push({ $data: list, $events: $events, $permissions: $permissions });
                             }
                         }));
                         deferred.resolve(data);
@@ -296,16 +305,29 @@ module App.Module {
             var deferred = self._app.$.Deferred();
             self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope: ng.IScope, factory: IListsViewFactory) {
                 (<any>$scope).lists = factory.lists;
+                (<any>$scope).settingsOpened = false;
+                (<any>$scope).selected = {
+                    settings: null
+                };
                 (<any>$scope).openMenu = function (list) {
-                      if(!list.$events.menuOpened){
+                    if (!list.$events.menuOpened) {
                         $.each((<any>$scope).lists, (function (i, list) {
-                          list.$events.menuOpened = false;
+                            list.$events.menuOpened = false;
                         }));
-                      }
+                    }
                     list.$events.menuOpened = !list.$events.menuOpened;
                 };
+                (<any>$scope).openSettings = function (list) {
+                    if(!(<any>$scope).settingsOpened){
+                      (<any>$scope).selected.settings = list.$data;
+                    }
+                    else{
+                     (<any>$scope).selected.settings = null;
+                    }
+                    (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
+                };
                 (<any>$scope).viewList = function (list) {
-                    
+
                 };
                 factory.getLists().then(deferred.resolve, deferred.reject);
             }]);

@@ -2602,6 +2602,7 @@ declare module SP {
         hasPermissions(high: number, low: number): boolean;
         get_typeId(): string;
         writeToXml(writer: SP.XmlWriter, serializationContext: SP.SerializationContext): void;
+        initPropertiesFromJson(json:any);
         constructor();
     }
     /** Specifies the base type for a list. */

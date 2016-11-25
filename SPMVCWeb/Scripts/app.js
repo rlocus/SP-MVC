@@ -59,14 +59,18 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 throw "App is not initialized!";
             }
             self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function (data) {
-                self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
-                    if ($pnp.util.isArray(modules)) {
-                        self.$.each(modules, function (i, module) {
-                            module.render();
+                self.ensureScript(self.scriptBase + "/sp.runtime.js").then(function (data) {
+                    self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
+                        self.ensureScript(self.scriptBase + "/SP.js").then(function (data) {
+                            if ($pnp.util.isArray(modules)) {
+                                self.$.each(modules, function (i, module) {
+                                    module.render();
+                                });
+                            }
+                            self.$angular.element(function () {
+                                self.$angular.bootstrap(document, [App.SharePointAppName]);
+                            });
                         });
-                    }
-                    self.$angular.element(function () {
-                        self.$angular.bootstrap(document, [App.SharePointAppName]);
                     });
                 });
             });
@@ -192,7 +196,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 ListsView.prototype.getLists = function () {
                     var self = this;
                     var deferred = self._app.$.Deferred();
-                    var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.toUrlAndQuery();
+                    var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.select("Id", "Title", "BaseType", "ItemCount", "Description", "EffectiveBasePermissions").toUrlAndQuery();
                     var executor = new SP.RequestExecutor(self._app.appWebUrl);
                     executor.executeAsync({
                         url: url,
@@ -230,8 +234,13 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                                 list.Type = "List";
                                                 break;
                                         }
-                                        var $events = { menuOpened: false };
-                                        factory.lists.push({ $data: list, $events: $events });
+                                        var permissions = new SP.BasePermissions();
+                                        permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
+                                        var $permissions = {
+                                            manage: permissions.has(SP.PermissionKind.manageLists)
+                                        };
+                                        var $events = { menuOpened: false, delete: $permissions.manage ? '' : 'disabled' };
+                                        factory.lists.push({ $data: list, $events: $events, $permissions: $permissions });
                                     }
                                 }));
                                 deferred.resolve(data);
@@ -243,6 +252,10 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     var deferred = self._app.$.Deferred();
                     self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope, factory) {
                             $scope.lists = factory.lists;
+                            $scope.settingsOpened = false;
+                            $scope.selected = {
+                                settings: null
+                            };
                             $scope.openMenu = function (list) {
                                 if (!list.$events.menuOpened) {
                                     $.each($scope.lists, (function (i, list) {
@@ -250,6 +263,15 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     }));
                                 }
                                 list.$events.menuOpened = !list.$events.menuOpened;
+                            };
+                            $scope.openSettings = function (list) {
+                                if (!$scope.settingsOpened) {
+                                    $scope.selected.settings = list.$data;
+                                }
+                                else {
+                                    $scope.selected.settings = null;
+                                }
+                                $scope.settingsOpened = !$scope.settingsOpened;
                             };
                             $scope.viewList = function (list) {
                             };
