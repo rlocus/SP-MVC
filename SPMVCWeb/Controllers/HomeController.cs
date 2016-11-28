@@ -22,6 +22,7 @@ namespace SPMVCWeb.Controllers
                     clientContext.Load(spUser, user => user.Title);
                     clientContext.ExecuteQuery();
                     ViewBag.UserName = spUser.Title;
+                    ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
                 }
             }
             return View();

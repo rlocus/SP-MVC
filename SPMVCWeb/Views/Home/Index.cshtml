@@ -34,7 +34,11 @@
                 <div class="animate-switch" ng-switch-default>
                     <uif-label><h4>{{selection.settings.data.Title}}</h4></uif-label>
                     <uif-label>{{selection.settings.data.Description}}</uif-label>
-                    <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                    <div class="animate-switch-container" ng-switch on="selection.settings.canEdit">
+                        <div class="animate-switch" ng-switch-when="true">
+                            <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </uif-content>

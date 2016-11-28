@@ -9,6 +9,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             this._initialized = false;
         }
         App.prototype.init = function (preloadedScripts) {
+            var self = this;
             if (preloadedScripts) {
                 var $_1 = preloadedScripts["jquery"];
                 this.$ = $_1;
@@ -43,7 +44,29 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             this.spApp = this.$angular.module(App.SharePointAppName, [
                 'officeuifabric.core',
                 'officeuifabric.components'
-            ]);
+            ]).service(App.SPServiceName, function ($http, $q) {
+                this.getFormDigest = function () {
+                    var deferred = self.$.Deferred();
+                    var url = $pnp.util.combinePaths(self.appWebUrl, "_api/contextinfo");
+                    var executor = new SP.RequestExecutor(self.appWebUrl);
+                    executor.executeAsync({
+                        url: url,
+                        method: "POST",
+                        headers: {
+                            "accept": "application/json;odata=verbose",
+                            "content-Type": "application/json;odata=verbose"
+                        },
+                        success: function (data) {
+                            var formDigestValue = JSON.parse(data.body).d.GetContextWebInformation.FormDigestValue;
+                            deferred.resolve(formDigestValue);
+                        },
+                        error: function (error) {
+                            deferred.reject(error);
+                        }
+                    });
+                    return deferred.promise();
+                };
+            });
             this._initialized = true;
         };
         App.prototype.ensureScript = function (url) {
@@ -84,6 +107,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             return new App.Module.ListsView(self, options);
         };
         App.SharePointAppName = "SharePointApp";
+        App.SPServiceName = "SPService";
         return App;
     }());
     var App;
@@ -215,6 +239,73 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     });
                     return deferred.promise();
                 };
+                ListsView.prototype.getList = function (listId) {
+                    var self = this;
+                    var deferred = self._app.$.Deferred();
+                    var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(listId).select("Id", "Title", "BaseType", "ItemCount", "Description", "Hidden", "EffectiveBasePermissions").toUrlAndQuery();
+                    var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                    executor.executeAsync({
+                        url: url,
+                        method: "GET",
+                        headers: {
+                            "accept": "application/json;odata=verbose",
+                            "content-Type": "application/json;odata=verbose"
+                        },
+                        success: function (data) {
+                            var list = JSON.parse(data.body).d;
+                            deferred.resolve(list);
+                        },
+                        error: function (error) {
+                            deferred.reject(error);
+                        }
+                    });
+                    return deferred.promise();
+                };
+                ListsView.prototype.updateList = function (listId, properties, digestValue) {
+                    var self = this;
+                    var deferred = self._app.$.Deferred();
+                    var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(listId).toUrlAndQuery();
+                    var body = JSON.stringify($pnp.util.extend({
+                        "__metadata": { "type": "SP.List" },
+                    }, properties));
+                    var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                    executor.executeAsync({
+                        body: body,
+                        url: url,
+                        method: "POST",
+                        headers: {
+                            "accept": "application/json;odata=verbose",
+                            "content-Type": "application/json;odata=verbose",
+                            "IF-Match": "*",
+                            "X-HTTP-Method": "MERGE",
+                            "X-RequestDigest": digestValue
+                        },
+                        success: function (data) {
+                            deferred.resolve();
+                        },
+                        error: function (error) {
+                            deferred.reject(error);
+                        }
+                    });
+                    return deferred.promise();
+                };
+                ListsView.prototype.getEntity = function (list) {
+                    switch (list.BaseType) {
+                        case 1:
+                            list.Type = "Document Library";
+                            break;
+                        default:
+                            list.Type = "List";
+                            break;
+                    }
+                    var permissions = new SP.BasePermissions();
+                    permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
+                    var $permissions = {
+                        manage: permissions.has(SP.PermissionKind.manageLists)
+                    };
+                    var $events = { menuOpened: false, delete: $permissions.manage ? '' : 'disabled' };
+                    return { $data: list, $events: $events, $permissions: $permissions };
+                };
                 ListsView.prototype.render = function () {
                     var self = this;
                     self._app.spApp.factory("ListsViewFactory", function ($q, $http) {
@@ -226,31 +317,33 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 factory.lists.splice(0, factory.lists.length);
                                 $.each(data, (function (i, list) {
                                     if (!list.Hidden) {
-                                        switch (list.BaseType) {
-                                            case 1:
-                                                list.Type = "Document Library";
-                                                break;
-                                            default:
-                                                list.Type = "List";
-                                                break;
-                                        }
-                                        var permissions = new SP.BasePermissions();
-                                        permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
-                                        var $permissions = {
-                                            manage: permissions.has(SP.PermissionKind.manageLists)
-                                        };
-                                        var $events = { menuOpened: false, delete: $permissions.manage ? '' : 'disabled' };
-                                        factory.lists.push({ $data: list, $events: $events, $permissions: $permissions });
+                                        var entity = self.getEntity(list);
+                                        factory.lists.push(entity);
                                     }
                                 }));
                                 deferred.resolve(data);
                             }, deferred.reject);
                             return deferred.promise;
                         };
+                        factory.updateList = function (list, service) {
+                            var deferred = $q.defer();
+                            service.getFormDigest().done(function (digestValue) {
+                                var properties = {
+                                    'Title': list.Title,
+                                    'Description': list.Description
+                                };
+                                self.updateList(list.Id, properties, digestValue).done(function () {
+                                    self.getList(list.Id).done(function (data) {
+                                        deferred.resolve(data);
+                                    });
+                                }).fail(deferred.reject);
+                            }).fail(deferred.reject);
+                            return deferred.promise;
+                        };
                         return factory;
                     });
                     var deferred = self._app.$.Deferred();
-                    self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope, factory) {
+                    self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', App.SPServiceName, function ($scope, factory, service) {
                             $scope.lists = factory.lists;
                             $scope.settingsOpened = false;
                             $scope.selection = {
@@ -261,7 +354,17 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         $scope.selection.settings.editMode = true;
                                     },
                                     onSave: function () {
-                                        $scope.selection.settings.editMode = false;
+                                        return factory.updateList($scope.selection.settings.data, service).then(function (data) {
+                                            $scope.selection.settings.data = self._app.$.extend(true, {}, data);
+                                            $scope.selection.settings.editMode = false;
+                                            var entity = self.getEntity(data);
+                                            $.each($scope.lists, (function (i, list) {
+                                                if (list.$data.Id === entity.$data.Id) {
+                                                    list.$data = entity.$data;
+                                                    list.$permissions = entity.$permissions;
+                                                }
+                                            }));
+                                        });
                                     }
                                 }
                             };
@@ -275,6 +378,8 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             };
                             $scope.openSettings = function (list) {
                                 if (!$scope.settingsOpened) {
+                                    $scope.selection.settings.editMode = false;
+                                    $scope.selection.settings.canEdit = list.$permissions.manage;
                                     $scope.selection.settings.data.Id = list.$data.Id;
                                     $scope.selection.settings.data.Title = list.$data.Title;
                                     $scope.selection.settings.data.Description = list.$data.Description;
