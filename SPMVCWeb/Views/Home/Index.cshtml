@@ -21,8 +21,22 @@
     <uif-panel uif-type="small" uif-is-open="settingsOpened" uif-show-overlay="true" uif-show-close="true">
         <uif-panel-header>List Settings</uif-panel-header>
         <uif-content>
-            <uif-label><h4>{{selected.settings.Title}}</h4></uif-label>
-            <uif-label>{{selected.settings.Description}}</uif-label>
+            <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
+                <div class="animate-switch" ng-switch-when="true">
+                    <div>
+                        <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required />
+                    </div>
+                    <div>
+                        <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description"/>
+                    </div>
+                    <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
+                </div>
+                <div class="animate-switch" ng-switch-default>
+                    <uif-label><h4>{{selection.settings.data.Title}}</h4></uif-label>
+                    <uif-label>{{selection.settings.data.Description}}</uif-label>
+                    <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                </div>
+            </div>
         </uif-content>
     </uif-panel>
     <uif-table uif-row-select-mode="multiple">

@@ -306,8 +306,17 @@ module App.Module {
             self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope: ng.IScope, factory: IListsViewFactory) {
                 (<any>$scope).lists = factory.lists;
                 (<any>$scope).settingsOpened = false;
-                (<any>$scope).selected = {
-                    settings: null
+                (<any>$scope).selection = {
+                    settings: {
+                        data: [],
+                        editMode: false,
+                        onEdit: () => {
+                            (<any>$scope).selection.settings.editMode = true;
+                        },
+                        onSave: () => {
+                            (<any>$scope).selection.settings.editMode = false;
+                        }
+                    }
                 };
                 (<any>$scope).openMenu = function (list) {
                     if (!list.$events.menuOpened) {
@@ -319,10 +328,12 @@ module App.Module {
                 };
                 (<any>$scope).openSettings = function (list) {
                     if (!(<any>$scope).settingsOpened) {
-                        (<any>$scope).selected.settings = list.$data;
+                        (<any>$scope).selection.settings.data.Id = list.$data.Id;
+                        (<any>$scope).selection.settings.data.Title = list.$data.Title;
+                        (<any>$scope).selection.settings.data.Description = list.$data.Description;
                     }
                     else {
-                        (<any>$scope).selected.settings = null;
+                        (<any>$scope).selection.settings.data = [];
                     }
                     (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
                 };

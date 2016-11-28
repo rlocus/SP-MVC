@@ -253,8 +253,17 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', function ($scope, factory) {
                             $scope.lists = factory.lists;
                             $scope.settingsOpened = false;
-                            $scope.selected = {
-                                settings: null
+                            $scope.selection = {
+                                settings: {
+                                    data: [],
+                                    editMode: false,
+                                    onEdit: function () {
+                                        $scope.selection.settings.editMode = true;
+                                    },
+                                    onSave: function () {
+                                        $scope.selection.settings.editMode = false;
+                                    }
+                                }
                             };
                             $scope.openMenu = function (list) {
                                 if (!list.$events.menuOpened) {
@@ -266,10 +275,12 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             };
                             $scope.openSettings = function (list) {
                                 if (!$scope.settingsOpened) {
-                                    $scope.selected.settings = list.$data;
+                                    $scope.selection.settings.data.Id = list.$data.Id;
+                                    $scope.selection.settings.data.Title = list.$data.Title;
+                                    $scope.selection.settings.data.Description = list.$data.Description;
                                 }
                                 else {
-                                    $scope.selected.settings = null;
+                                    $scope.selection.settings.data = [];
                                 }
                                 $scope.settingsOpened = !$scope.settingsOpened;
                             };
