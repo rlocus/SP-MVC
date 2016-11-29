@@ -22,3 +22,15 @@ select,
 textarea {
     max-width: 280px;
 }
+
+.sp-panel .ms-Panel {
+    z-index: 2000;
+}
+
+.sp-navbar {
+    position: fixed;
+    top: 50px;
+    z-index: 200;
+    right: 0;
+    left: 0;
+}

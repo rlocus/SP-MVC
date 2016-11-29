@@ -349,7 +349,7 @@ module App.Module {
             return deferred.promise();
         }
 
-        public getEntity(list) {
+        private getEntity(list) {
             switch (list.BaseType) {
                 case 1:
                     list.Type = "Document Library";
@@ -363,7 +363,7 @@ module App.Module {
             var $permissions = {
                 manage: permissions.has(SP.PermissionKind.manageLists)
             }
-            var $events = { menuOpened: false, delete: $permissions.manage ? '' : 'disabled' };
+            var $events = { menuOpened: false, isSelected: false };
             return { $data: list, $events: $events, $permissions: $permissions };
         }
 
@@ -376,7 +376,7 @@ module App.Module {
                     var deferred = $q.defer();
                     self.getLists().then((data: Array<any>) => {
                         factory.lists.splice(0, factory.lists.length);
-                        $.each(data, (function (i, list) {
+                        self._app.$.each(data, (function (i, list) {
                             if (!list.Hidden) {
                                 var entity = self.getEntity(list);
                                 factory.lists.push(entity);
@@ -428,31 +428,52 @@ module App.Module {
                                 }));
                             });
                         }
+                    },
+                    commandBar: {
+                        createEnabled: false,
+                        viewEnabled: false,
+                        deleteEnabled: false,
+                        settingsEnabled: false,
+                        openSettings: function (list) {
+                            if (!list) {
+                                var selectedItems = (<any>$scope).table.selectedItems;
+                                list = self._app.$(selectedItems).get(0);
+                            }
+                            if (list) {
+                                if (!(<any>$scope).settingsOpened) {
+                                    (<any>$scope).selection.settings.editMode = false;
+                                    (<any>$scope).selection.settings.canEdit = list.$permissions.manage;
+                                    (<any>$scope).selection.settings.data.Id = list.$data.Id;
+                                    (<any>$scope).selection.settings.data.Title = list.$data.Title;
+                                    (<any>$scope).selection.settings.data.Description = list.$data.Description;
+                                } else {
+                                    (<any>$scope).selection.settings.data = [];
+                                }
+                                (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
+                            }                           
+                        },
+                        view: function (list) {
+                            if (!list) {
+                                var selectedItems = (<any>$scope).table.selectedItems;
+                                list = self._app.$(selectedItems).get(0);
+                            }
+                        }
                     }
                 };
-                (<any>$scope).openMenu = function (list) {
-                    if (!list.$events.menuOpened) {
-                        $.each((<any>$scope).lists, (function (i, list) {
-                            list.$events.menuOpened = false;
-                        }));
-                    }
-                    list.$events.menuOpened = !list.$events.menuOpened;
-                };
-                (<any>$scope).openSettings = function (list) {
-                    if (!(<any>$scope).settingsOpened) {
-                        (<any>$scope).selection.settings.editMode = false;
-                        (<any>$scope).selection.settings.canEdit = list.$permissions.manage;
-                        (<any>$scope).selection.settings.data.Id = list.$data.Id;
-                        (<any>$scope).selection.settings.data.Title = list.$data.Title;
-                        (<any>$scope).selection.settings.data.Description = list.$data.Description;
-                    }
-                    else {
-                        (<any>$scope).selection.settings.data = [];
-                    }
-                    (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
-                };
-                (<any>$scope).viewList = function (list) {
+                $scope.$watch('table.selectedItems', function (newValue: Array<any>, oldValue: Array<any>) {
+                    (<any>$scope).selection.commandBar.viewEnabled = newValue.length === 1;
+                    (<any>$scope).selection.commandBar.settingsEnabled = newValue.length === 1;
 
+                }, true);
+                (<any>$scope).openMenu = function (list) {
+                    if (list) {
+                        if (!list.$events.menuOpened) {
+                            self._app.$.each((<any>$scope).lists, (function (i, list) {
+                                list.$events.menuOpened = false;
+                            }));
+                        }
+                        list.$events.menuOpened = !list.$events.menuOpened;
+                    }
                 };
                 factory.getLists().then(deferred.resolve, deferred.reject);
             }]);

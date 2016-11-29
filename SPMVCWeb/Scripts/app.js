@@ -303,7 +303,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     var $permissions = {
                         manage: permissions.has(SP.PermissionKind.manageLists)
                     };
-                    var $events = { menuOpened: false, delete: $permissions.manage ? '' : 'disabled' };
+                    var $events = { menuOpened: false, isSelected: false };
                     return { $data: list, $events: $events, $permissions: $permissions };
                 };
                 ListsView.prototype.render = function () {
@@ -315,7 +315,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             var deferred = $q.defer();
                             self.getLists().then(function (data) {
                                 factory.lists.splice(0, factory.lists.length);
-                                $.each(data, (function (i, list) {
+                                self._app.$.each(data, (function (i, list) {
                                     if (!list.Hidden) {
                                         var entity = self.getEntity(list);
                                         factory.lists.push(entity);
@@ -366,30 +366,52 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                             }));
                                         });
                                     }
+                                },
+                                commandBar: {
+                                    createEnabled: false,
+                                    viewEnabled: false,
+                                    deleteEnabled: false,
+                                    settingsEnabled: false,
+                                    openSettings: function (list) {
+                                        if (!list) {
+                                            var selectedItems = $scope.table.selectedItems;
+                                            list = self._app.$(selectedItems).get(0);
+                                        }
+                                        if (list) {
+                                            if (!$scope.settingsOpened) {
+                                                $scope.selection.settings.editMode = false;
+                                                $scope.selection.settings.canEdit = list.$permissions.manage;
+                                                $scope.selection.settings.data.Id = list.$data.Id;
+                                                $scope.selection.settings.data.Title = list.$data.Title;
+                                                $scope.selection.settings.data.Description = list.$data.Description;
+                                            }
+                                            else {
+                                                $scope.selection.settings.data = [];
+                                            }
+                                            $scope.settingsOpened = !$scope.settingsOpened;
+                                        }
+                                    },
+                                    view: function (list) {
+                                        if (!list) {
+                                            var selectedItems = $scope.table.selectedItems;
+                                            list = self._app.$(selectedItems).get(0);
+                                        }
+                                    }
                                 }
                             };
+                            $scope.$watch('table.selectedItems', function (newValue, oldValue) {
+                                $scope.selection.commandBar.viewEnabled = newValue.length === 1;
+                                $scope.selection.commandBar.settingsEnabled = newValue.length === 1;
+                            }, true);
                             $scope.openMenu = function (list) {
-                                if (!list.$events.menuOpened) {
-                                    $.each($scope.lists, (function (i, list) {
-                                        list.$events.menuOpened = false;
-                                    }));
+                                if (list) {
+                                    if (!list.$events.menuOpened) {
+                                        self._app.$.each($scope.lists, (function (i, list) {
+                                            list.$events.menuOpened = false;
+                                        }));
+                                    }
+                                    list.$events.menuOpened = !list.$events.menuOpened;
                                 }
-                                list.$events.menuOpened = !list.$events.menuOpened;
-                            };
-                            $scope.openSettings = function (list) {
-                                if (!$scope.settingsOpened) {
-                                    $scope.selection.settings.editMode = false;
-                                    $scope.selection.settings.canEdit = list.$permissions.manage;
-                                    $scope.selection.settings.data.Id = list.$data.Id;
-                                    $scope.selection.settings.data.Title = list.$data.Title;
-                                    $scope.selection.settings.data.Description = list.$data.Description;
-                                }
-                                else {
-                                    $scope.selection.settings.data = [];
-                                }
-                                $scope.settingsOpened = !$scope.settingsOpened;
-                            };
-                            $scope.viewList = function (list) {
                             };
                             factory.getLists().then(deferred.resolve, deferred.reject);
                         }]);

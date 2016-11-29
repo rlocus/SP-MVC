@@ -18,58 +18,79 @@
     <h2>Welcome @ViewBag.UserName!</h2>
 </div>
 <div ng-controller="list-controller">
-    <uif-panel uif-type="small" uif-is-open="settingsOpened" uif-show-overlay="true" uif-show-close="true">
-        <uif-panel-header>List Settings</uif-panel-header>
-        <uif-content>
-            <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
-                <div class="animate-switch" ng-switch-when="true">
-                    <div>
-                        <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required />
+    <div class="sp-navbar">
+        <uif-command-bar uif-search-term="searchValue" placeholder="Search here...">
+            <uif-command-bar-search></uif-command-bar-search>
+            <uif-command-bar-side>
+                <uif-command-bar-item ng-show="selection.commandBar.settingsEnabled" ng-click="selection.commandBar.openSettings()">
+                    <span>List Settings</span>
+                </uif-command-bar-item>
+            </uif-command-bar-side>
+            <uif-command-bar-main uif-show-overflow='true' ng-show="selection.commandBar.viewEnabled">
+                <uif-command-bar-item ng-click="selection.commandBar.view()">
+                    <span>View</span>
+                </uif-command-bar-item>
+            </uif-command-bar-main>
+            <uif-command-bar-main uif-show-overflow='true' ng-show="selection.commandBar.deleteEnabled">
+                <uif-command-bar-item ng-click="selection.commandBar.delete()">
+                    <span>Delete</span>
+                </uif-command-bar-item>
+            </uif-command-bar-main>
+        </uif-command-bar>
+    </div>
+    <div class="sp-panel">
+        <uif-panel uif-type="small" uif-is-open="settingsOpened" uif-show-overlay="true" uif-show-close="true">
+            <uif-panel-header>List Settings</uif-panel-header>
+            <uif-content>
+                <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
+                    <div class="animate-switch" ng-switch-when="true">
+                        <div>
+                            <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required />
+                        </div>
+                        <div>
+                            <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description" />
+                        </div>
+                        <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
                     </div>
-                    <div>
-                        <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description"/>
-                    </div>
-                    <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
-                </div>
-                <div class="animate-switch" ng-switch-default>
-                    <uif-label><h4>{{selection.settings.data.Title}}</h4></uif-label>
-                    <uif-label>{{selection.settings.data.Description}}</uif-label>
-                    <div class="animate-switch-container" ng-switch on="selection.settings.canEdit">
-                        <div class="animate-switch" ng-switch-when="true">
-                            <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                    <div class="animate-switch" ng-switch-default>
+                        <uif-label><h4>{{selection.settings.data.Title}}</h4></uif-label>
+                        <uif-label>{{selection.settings.data.Description}}</uif-label>
+                        <div class="animate-switch-container" ng-switch on="selection.settings.canEdit">
+                            <div class="animate-switch" ng-switch-when="true">
+                                <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </uif-content>
-    </uif-panel>
-    <uif-table uif-row-select-mode="multiple">
-        <uif-table-head>
-            <uif-table-row>
-                <uif-table-row-select></uif-table-row-select>
-                <uif-table-header uif-order-by="$data.Title">Title</uif-table-header>
-                <uif-table-header></uif-table-header>
-                <uif-table-header uif-order-by="$data.Type">Type</uif-table-header>
-                <uif-table-header>Description</uif-table-header>
-                <uif-table-header uif-order-by="$data.ItemCount">Items</uif-table-header>
-            </uif-table-row>
-        </uif-table-head>
-        <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
-            <uif-table-row uif-item="list">
-                <uif-table-row-select></uif-table-row-select>
-                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Title}}</span></uif-table-cell>
-                <uif-pivot-ellipsis ng-click="openMenu(list)">
-                    <uif-contextual-menu uif-is-open="list.$events.menuOpened" uif-close-on-click="true">
-                        <uif-contextual-menu-item uif-text="'View'" ng-click="viewList(list)"></uif-contextual-menu-item>
-                        <uif-contextual-menu-item uif-text="'Delete'" disabled="{{list.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
-                        <uif-contextual-menu-item uif-text="'Settings'" ng-click="openSettings(list)"></uif-contextual-menu-item>
-                    </uif-contextual-menu>
-                </uif-pivot-ellipsis>
-                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Type}}</span></uif-table-cell>
-                <uif-table-cell>{{list.$data.Description}}</uif-table-cell>
-                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.ItemCount}}</span></uif-table-cell>
-            </uif-table-row>
-        </uif-table-body>
-    </uif-table>
+            </uif-content>
+        </uif-panel>
+        <uif-table uif-row-select-mode="multiple">
+            <uif-table-head>
+                <uif-table-row>
+                    <uif-table-row-select></uif-table-row-select>
+                    <uif-table-header uif-order-by="$data.Title">Title</uif-table-header>
+                    <uif-table-header></uif-table-header>
+                    <uif-table-header uif-order-by="$data.Type">Type</uif-table-header>
+                    <uif-table-header>Description</uif-table-header>
+                    <uif-table-header uif-order-by="$data.ItemCount">Items</uif-table-header>
+                </uif-table-row>
+            </uif-table-head>
+            <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
+                <uif-table-row uif-item="list" uif-selected="{{list.$events.isSelected}}">
+                    <uif-table-row-select></uif-table-row-select>
+                    <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Title}}</span></uif-table-cell>
+                    <uif-pivot-ellipsis ng-click="openMenu(list)">
+                        <uif-contextual-menu uif-is-open="list.$events.menuOpened" uif-close-on-click="true">
+                            <uif-contextual-menu-item uif-text="'View'" ng-click="selection.commandBar.view(list)"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'Delete'" disabled="{{list.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'Settings'" ng-click="selection.commandBar.openSettings(list)"></uif-contextual-menu-item>
+                        </uif-contextual-menu>
+                    </uif-pivot-ellipsis>
+                    <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Type}}</span></uif-table-cell>
+                    <uif-table-cell>{{list.$data.Description}}</uif-table-cell>
+                    <uif-table-cell><span class="ms-u-noWrap">{{list.$data.ItemCount}}</span></uif-table-cell>
+                </uif-table-row>
+            </uif-table-body>
+        </uif-table>
 
-</div>
+    </div>
