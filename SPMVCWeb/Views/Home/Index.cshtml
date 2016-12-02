@@ -22,17 +22,19 @@
         <uif-command-bar uif-search-term="searchValue" placeholder="Search here...">
             <uif-command-bar-search></uif-command-bar-search>
             <uif-command-bar-side>
+                <uif-command-bar-item ng-show="selection.commandBar.selectionText" ng-click="selection.commandBar.clearSelection()">
+                    <uif-icon uif-type="trash"></uif-icon>
+                    {{selection.commandBar.selectionText}}
+                </uif-command-bar-item>
                 <uif-command-bar-item ng-show="selection.commandBar.settingsEnabled" ng-click="selection.commandBar.openSettings()">
                     <span>List Settings</span>
                 </uif-command-bar-item>
             </uif-command-bar-side>
-            <uif-command-bar-main uif-show-overflow='true' ng-show="selection.commandBar.viewEnabled">
-                <uif-command-bar-item ng-click="selection.commandBar.view()">
+            <uif-command-bar-main uif-show-overflow='true'>
+                <uif-command-bar-item ng-click="selection.commandBar.view()" ng-show="selection.commandBar.viewEnabled">
                     <span>View</span>
                 </uif-command-bar-item>
-            </uif-command-bar-main>
-            <uif-command-bar-main uif-show-overflow='true' ng-show="selection.commandBar.deleteEnabled">
-                <uif-command-bar-item ng-click="selection.commandBar.delete()">
+                <uif-command-bar-item ng-click="selection.commandBar.delete()" ng-show="selection.commandBar.deleteEnabled">
                     <span>Delete</span>
                 </uif-command-bar-item>
             </uif-command-bar-main>

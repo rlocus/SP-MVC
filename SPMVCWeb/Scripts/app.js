@@ -396,12 +396,29 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                             var selectedItems = $scope.table.selectedItems;
                                             list = self._app.$(selectedItems).get(0);
                                         }
+                                    },
+                                    delete: function (list) {
+                                        if (!list) {
+                                            var selectedItems = $scope.table.selectedItems;
+                                        }
+                                    },
+                                    clearSelection: function () {
+                                        var selectedItems = $scope.table.selectedItems;
+                                        if (selectedItems.length > 0) {
+                                            self._app.$.each($scope.table.rows, (function (i, item) {
+                                                if (item.selected) {
+                                                    item.selected = false;
+                                                }
+                                            }));
+                                        }
                                     }
                                 }
                             };
                             $scope.$watch('table.selectedItems', function (newValue, oldValue) {
                                 $scope.selection.commandBar.viewEnabled = newValue.length === 1;
+                                $scope.selection.commandBar.deleteEnabled = newValue.length > 0;
                                 $scope.selection.commandBar.settingsEnabled = newValue.length === 1;
+                                $scope.selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
                             }, true);
                             $scope.openMenu = function (list) {
                                 if (list) {

@@ -450,19 +450,37 @@ module App.Module {
                                     (<any>$scope).selection.settings.data = [];
                                 }
                                 (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
-                            }                           
+                            }
                         },
                         view: function (list) {
                             if (!list) {
                                 var selectedItems = (<any>$scope).table.selectedItems;
                                 list = self._app.$(selectedItems).get(0);
                             }
+                        },
+                        delete: function (list) {
+                            if (!list) {
+                                var selectedItems = (<any>$scope).table.selectedItems;
+
+                            }
+                        },
+                        clearSelection: function () {
+                            var selectedItems = (<any>$scope).table.selectedItems;
+                            if (selectedItems.length > 0) {
+                                self._app.$.each((<any>$scope).table.rows, (function (i, item) {
+                                    if (item.selected) {
+                                        item.selected = false;
+                                    }
+                                }));
+                            }
                         }
                     }
                 };
                 $scope.$watch('table.selectedItems', function (newValue: Array<any>, oldValue: Array<any>) {
                     (<any>$scope).selection.commandBar.viewEnabled = newValue.length === 1;
+                    (<any>$scope).selection.commandBar.deleteEnabled = newValue.length > 0;
                     (<any>$scope).selection.commandBar.settingsEnabled = newValue.length === 1;
+                    (<any>$scope).selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
 
                 }, true);
                 (<any>$scope).openMenu = function (list) {

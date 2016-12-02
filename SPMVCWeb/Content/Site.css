@@ -33,4 +33,9 @@ textarea {
     z-index: 200;
     right: 0;
     left: 0;
+    opacity: 0.7;
 }
+
+    .sp-navbar:hover {
+        opacity: 1;
+    }
