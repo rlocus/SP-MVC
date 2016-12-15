@@ -1,5 +1,5 @@
 require.config({
-    "baseUrl": "scripts",
+    "baseUrl": "/Scripts",
     "paths": {
         "app": 'app',
         //"fetch": 'fetch',

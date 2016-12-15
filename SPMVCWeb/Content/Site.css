@@ -39,3 +39,7 @@ textarea {
     .sp-navbar:hover {
         opacity: 1;
     }
+
+.ms-Persona-primaryText {
+    color: #999999;
+}

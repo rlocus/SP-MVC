@@ -16,14 +16,19 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                @Html.ActionLink("SP MVC", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+                @Html.ActionLink("SP MVC", "Index", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("About", "About", "Home")</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
-                </ul>
+                    <li>@Html.ActionLink("Home", "Index", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("About", "About", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
+                </ul><div class="navbar-right">
+                    <uif-persona uif-style="square" uif-size="medium" uif-image-url="">
+                        <uif-persona-initials uif-color="blue">@ViewBag.User.Initials</uif-persona-initials>
+                        <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
+                    </uif-persona>
+                </div>
             </div>
         </div>
     </div>
@@ -34,7 +39,7 @@
             <p>&copy; @DateTime.Now.Year</p>
         </footer>
     </div>
-    
+
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/require")

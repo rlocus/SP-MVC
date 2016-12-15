@@ -414,8 +414,11 @@ module App.Module {
             var deferred = self._app.$.Deferred();
             self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', App.SPServiceName, function ($scope: ng.IScope, factory: IListsViewFactory, service: App.ISPService) {
                 (<any>$scope).loading = true;
-                (<any>$scope).lists = factory.lists;
+                (<any>$scope).lists = [];
                 factory.getLists().then(() => {
+                    self._app.$.each(factory.lists, (i, list) => {
+                        (<any>$scope).lists.push(list);
+                    });
                     (<any>$scope).loading = false;
                     deferred.resolve();
                 }, () => {
@@ -435,12 +438,12 @@ module App.Module {
                                 (<any>$scope).selection.settings.data = self._app.$.extend(true, {}, data);
                                 (<any>$scope).selection.settings.editMode = false;
                                 var entity = self.getEntity(data);
-                                $.each((<any>$scope).lists, (function (i, list) {
+                                $.each((<any>$scope).lists, (i, list) => {
                                     if (list.$data.Id === entity.$data.Id) {
                                         list.$data = entity.$data;
                                         list.$permissions = entity.$permissions;
                                     }
-                                }));
+                                });
                             });
                         }
                     },
@@ -483,11 +486,16 @@ module App.Module {
                         clearSelection: function () {
                             var selectedItems = (<any>$scope).table.selectedItems;
                             if (selectedItems.length > 0) {
-                                self._app.$.each((<any>$scope).table.rows, (function (i, item) {
+                                //self._app.$.each((<any>$scope).rows, (i, item) => {
+                                //    if (item.selected) {
+                                //        item.selected = false;
+                                //    }
+                                //});
+                                self._app.$.each((<any>$scope).table.rows, (i, item) => {
                                     if (item.selected) {
                                         item.selected = false;
                                     }
-                                }));
+                                });
                             }
                         }
                     }
@@ -500,19 +508,27 @@ module App.Module {
 
                 }, true);
                 $scope.$watch('selection.commandBar.searchTerm', function (newValue: string, oldValue: string) {
+                    //(<any>$scope).selection.commandBar.clearSelection();
+                    //(<any>$scope).lists = [];
+                    (<any>$scope).lists.splice(0, (<any>$scope).lists.length);
+                    (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
+                    //(<any>$scope).rows = (<any>$scope).table.rows = [];
                     if (newValue && newValue !== oldValue) {
                         delay(() => {
                             $scope.$apply(function() {
-                                (<any>$scope).lists = self._app.$.grep(factory.lists, (list) => {
-                                    return (<any>list).$data && new RegExp(newValue, 'i').test((<any>list).$data.Title) /*(<any>list).$data.Title.toUpperCase().startsWith(newValue.toUpperCase())*/;
+                                self._app.$.each(factory.lists, (i, list) => {
+                                    if ((<any>list).$data && new RegExp(newValue, 'i').test((<any>list).$data.Title)) {
+                                        (<any>$scope).lists.push(list);
+                                    }
                                 });
                             });
                         }, 1000);
                     } else {
-                        (<any>$scope).lists = factory.lists;
+                        self._app.$.each(factory.lists, (i, list) => {
+                            (<any>$scope).lists.push(list);
+                        });
                     }
-
-                }, true);
+                }, false);
                 (<any>$scope).openMenu = function (list) {
                     if (list) {
                         if (!list.$events.menuOpened) {

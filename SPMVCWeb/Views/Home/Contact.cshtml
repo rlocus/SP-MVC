@@ -4,6 +4,15 @@
 <h2>@ViewBag.Title.</h2>
 <h3>@ViewBag.Message</h3>
 
+@section scripts
+{
+    <script type="text/javascript">
+        require(["app"], function (app) {
+            app.render();
+        });
+    </script>
+}
+
 <address>
     One Microsoft Way<br />
     Redmond, WA 98052-6399<br />
