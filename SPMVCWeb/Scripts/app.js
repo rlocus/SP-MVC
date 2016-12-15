@@ -114,6 +114,13 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
     (function (App) {
         var Module;
         (function (Module) {
+            var delay = (function () {
+                var timer = 0;
+                return function (callback, ms) {
+                    clearTimeout(timer);
+                    timer = setTimeout(callback, ms);
+                };
+            })();
             var ListView = (function () {
                 function ListView(app, options) {
                     if (!app) {
@@ -321,7 +328,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         factory.lists.push(entity);
                                     }
                                 }));
-                                deferred.resolve(data);
+                                deferred.resolve(factory.lists);
                             }, deferred.reject);
                             return deferred.promise;
                         };
@@ -344,7 +351,15 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     });
                     var deferred = self._app.$.Deferred();
                     self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', App.SPServiceName, function ($scope, factory, service) {
+                            $scope.loading = true;
                             $scope.lists = factory.lists;
+                            factory.getLists().then(function () {
+                                $scope.loading = false;
+                                deferred.resolve();
+                            }, function () {
+                                $scope.loading = false;
+                                deferred.reject();
+                            });
                             $scope.settingsOpened = false;
                             $scope.selection = {
                                 settings: {
@@ -368,6 +383,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     }
                                 },
                                 commandBar: {
+                                    searchTerm: null,
                                     createEnabled: false,
                                     viewEnabled: false,
                                     deleteEnabled: false,
@@ -420,6 +436,20 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 $scope.selection.commandBar.settingsEnabled = newValue.length === 1;
                                 $scope.selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
                             }, true);
+                            $scope.$watch('selection.commandBar.searchTerm', function (newValue, oldValue) {
+                                if (newValue && newValue !== oldValue) {
+                                    delay(function () {
+                                        $scope.$apply(function () {
+                                            $scope.lists = self._app.$.grep(factory.lists, function (list) {
+                                                return list.$data && new RegExp(newValue, 'i').test(list.$data.Title) /*(<any>list).$data.Title.toUpperCase().startsWith(newValue.toUpperCase())*/;
+                                            });
+                                        });
+                                    }, 1000);
+                                }
+                                else {
+                                    $scope.lists = factory.lists;
+                                }
+                            }, true);
                             $scope.openMenu = function (list) {
                                 if (list) {
                                     if (!list.$events.menuOpened) {
@@ -430,7 +460,6 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     list.$events.menuOpened = !list.$events.menuOpened;
                                 }
                             };
-                            factory.getLists().then(deferred.resolve, deferred.reject);
                         }]);
                     return deferred.promise();
                 };

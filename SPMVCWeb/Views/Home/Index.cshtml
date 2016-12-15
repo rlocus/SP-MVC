@@ -19,7 +19,7 @@
 </div>
 <div ng-controller="list-controller">
     <div class="sp-navbar">
-        <uif-command-bar uif-search-term="searchValue" placeholder="Search here...">
+        <uif-command-bar uif-search-term="selection.commandBar.searchTerm" placeholder="Search here...">
             <uif-command-bar-search></uif-command-bar-search>
             <uif-command-bar-side>
                 <uif-command-bar-item ng-show="selection.commandBar.selectionText" ng-click="selection.commandBar.clearSelection()">

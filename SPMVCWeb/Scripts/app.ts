@@ -146,6 +146,13 @@ declare module App {
 }
 
 module App.Module {
+    var delay = (function () {
+        var timer = 0;
+        return (callback: () => void, ms: number) => {
+            clearTimeout(timer);
+            timer = setTimeout(callback, ms);
+        };
+    })();
 
     export interface IListViewOptions extends App.IModuleOptions {
         listTitle: string;
@@ -382,7 +389,7 @@ module App.Module {
                                 factory.lists.push(entity);
                             }
                         }));
-                        deferred.resolve(data);
+                        deferred.resolve(factory.lists);
                     }, deferred.reject);
                     return deferred.promise;
                 }
@@ -406,7 +413,15 @@ module App.Module {
 
             var deferred = self._app.$.Deferred();
             self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', App.SPServiceName, function ($scope: ng.IScope, factory: IListsViewFactory, service: App.ISPService) {
+                (<any>$scope).loading = true;
                 (<any>$scope).lists = factory.lists;
+                factory.getLists().then(() => {
+                    (<any>$scope).loading = false;
+                    deferred.resolve();
+                }, () => {
+                    (<any>$scope).loading = false;
+                    deferred.reject();
+                });
                 (<any>$scope).settingsOpened = false;
                 (<any>$scope).selection = {
                     settings: {
@@ -430,6 +445,7 @@ module App.Module {
                         }
                     },
                     commandBar: {
+                        searchTerm: null,
                         createEnabled: false,
                         viewEnabled: false,
                         deleteEnabled: false,
@@ -483,6 +499,20 @@ module App.Module {
                     (<any>$scope).selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
 
                 }, true);
+                $scope.$watch('selection.commandBar.searchTerm', function (newValue: string, oldValue: string) {
+                    if (newValue && newValue !== oldValue) {
+                        delay(() => {
+                            $scope.$apply(function() {
+                                (<any>$scope).lists = self._app.$.grep(factory.lists, (list) => {
+                                    return (<any>list).$data && new RegExp(newValue, 'i').test((<any>list).$data.Title) /*(<any>list).$data.Title.toUpperCase().startsWith(newValue.toUpperCase())*/;
+                                });
+                            });
+                        }, 1000);
+                    } else {
+                        (<any>$scope).lists = factory.lists;
+                    }
+
+                }, true);
                 (<any>$scope).openMenu = function (list) {
                     if (list) {
                         if (!list.$events.menuOpened) {
@@ -493,7 +523,6 @@ module App.Module {
                         list.$events.menuOpened = !list.$events.menuOpened;
                     }
                 };
-                factory.getLists().then(deferred.resolve, deferred.reject);
             }]);
             return deferred.promise();
         }
