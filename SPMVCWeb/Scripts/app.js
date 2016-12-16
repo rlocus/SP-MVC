@@ -6,29 +6,36 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
     //import * as $angular from "angular";
     var App = (function () {
         function App() {
+            this.delay = (function () {
+                var timer = 0;
+                return function (callback, ms) {
+                    clearTimeout(timer);
+                    timer = setTimeout(callback, ms);
+                };
+            })();
             this._initialized = false;
         }
         App.prototype.init = function (preloadedScripts) {
             var self = this;
             if (preloadedScripts) {
                 var $_1 = preloadedScripts["jquery"];
-                this.$ = $_1;
-                if (this.$) {
-                    this.$.cachedScript = function (url, options) {
-                        options = $_1.extend(options || {}, {
+                self.$ = $_1;
+                if (self.$) {
+                    self.$.cachedScript = function (url, options) {
+                        options = self.$.extend(options || {}, {
                             dataType: "script",
                             cache: true,
                             url: url
                         });
-                        return jQuery.ajax(options);
+                        return self.$.ajax(options);
                     };
                 }
                 else {
                     throw "jQuery is not loaded!";
                 }
                 var $angular = preloadedScripts["angular"];
-                this.$angular = $angular;
-                if (!this.$angular) {
+                self.$angular = $angular;
+                if (!self.$angular) {
                     throw "Angular is not loaded!";
                 }
             }
@@ -114,13 +121,6 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
     (function (App) {
         var Module;
         (function (Module) {
-            var delay = (function () {
-                var timer = 0;
-                return function (callback, ms) {
-                    clearTimeout(timer);
-                    timer = setTimeout(callback, ms);
-                };
-            })();
             var ListView = (function () {
                 function ListView(app, options) {
                     if (!app) {
@@ -222,7 +222,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                         throw "App must be specified for ListView!";
                     }
                     this._app = app;
-                    this._options = options;
+                    this._options = this._app.$.extend(true, { delay: 1000 }, options);
                 }
                 ListsView.prototype.getLists = function () {
                     var self = this;
@@ -355,18 +355,15 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             $scope.lists = [];
                             factory.getLists().then(function () {
                                 $scope.lists = self._app.$angular.copy(factory.lists);
-                                //self._app.$.each(factory.lists, (i, list) => {
-                                //    (<any>$scope).lists.push(list);
-                                //});
                                 $scope.loading = false;
                                 deferred.resolve();
                             }, function () {
                                 $scope.loading = false;
                                 deferred.reject();
                             });
-                            $scope.settingsOpened = false;
                             $scope.selection = {
                                 settings: {
+                                    opened: false,
                                     data: [],
                                     editMode: false,
                                     onEdit: function () {
@@ -398,7 +395,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                             list = self._app.$(selectedItems).get(0);
                                         }
                                         if (list) {
-                                            if (!$scope.settingsOpened) {
+                                            if (!$scope.selection.settings.opened) {
                                                 $scope.selection.settings.editMode = false;
                                                 $scope.selection.settings.canEdit = list.$permissions.manage;
                                                 $scope.selection.settings.data.Id = list.$data.Id;
@@ -408,7 +405,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                             else {
                                                 $scope.selection.settings.data = [];
                                             }
-                                            $scope.settingsOpened = !$scope.settingsOpened;
+                                            $scope.selection.settings.opened = !$scope.selection.settings.opened;
                                         }
                                     },
                                     view: function (list) {
@@ -425,17 +422,22 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     clearSelection: function () {
                                         var selectedItems = $scope.table.selectedItems;
                                         if (selectedItems.length > 0) {
-                                            //self._app.$.each((<any>$scope).rows, (i, item) => {
-                                            //    if (item.selected) {
-                                            //        item.selected = false;
-                                            //    }
-                                            //});
                                             self._app.$.each($scope.table.rows, function (i, item) {
                                                 if (item.selected) {
                                                     item.selected = false;
                                                 }
                                             });
                                         }
+                                    }
+                                },
+                                openMenu: function (list) {
+                                    if (list) {
+                                        if (!list.$events.menuOpened) {
+                                            self._app.$.each($scope.lists, (function (i, list) {
+                                                list.$events.menuOpened = false;
+                                            }));
+                                        }
+                                        list.$events.menuOpened = !list.$events.menuOpened;
                                     }
                                 }
                             };
@@ -447,7 +449,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             }, true);
                             $scope.$watch('selection.commandBar.searchTerm', function (newValue, oldValue) {
                                 $scope.table.rows.splice(0, $scope.table.rows.length);
-                                delay(function () {
+                                self._app.delay(function () {
                                     $scope.$apply(function () {
                                         var lists;
                                         if (newValue && newValue !== oldValue) {
@@ -463,18 +465,8 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         }
                                         $scope.lists = self._app.$angular.copy(lists);
                                     });
-                                }, 1000);
+                                }, self._options.delay);
                             }, false);
-                            $scope.openMenu = function (list) {
-                                if (list) {
-                                    if (!list.$events.menuOpened) {
-                                        self._app.$.each($scope.lists, (function (i, list) {
-                                            list.$events.menuOpened = false;
-                                        }));
-                                    }
-                                    list.$events.menuOpened = !list.$events.menuOpened;
-                                }
-                            };
                         }]);
                     return deferred.promise();
                 };

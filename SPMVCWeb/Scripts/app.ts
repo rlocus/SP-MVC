@@ -28,23 +28,23 @@ class App {
         var self = this;
         if (preloadedScripts) {
             let $ = preloadedScripts["jquery"];
-            this.$ = $;
-            if (this.$) {
-                (<any>this.$).cachedScript = function (url, options) {
-                    options = $.extend(options || {}, {
+            self.$ = $;
+            if (self.$) {
+                (<any>self.$).cachedScript = function (url, options) {
+                    options = self.$.extend(options || {}, {
                         dataType: "script",
                         cache: true,
                         url: url
                     });
-                    return jQuery.ajax(options);
+                    return self.$.ajax(options);
                 };
             } else {
                 throw "jQuery is not loaded!";
             }
 
             let $angular = preloadedScripts["angular"];
-            this.$angular = $angular;
-            if (!this.$angular) {
+            self.$angular = $angular;
+            if (!self.$angular) {
                 throw "Angular is not loaded!";
             }
         }
@@ -57,7 +57,6 @@ class App {
             throw "SPAppWebUrl url parameter must be specified!";
         }
         this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, "_layouts/15");
-
         this.spApp = this.$angular.module(App.SharePointAppName, [
             'officeuifabric.core',
             'officeuifabric.components'
@@ -91,12 +90,19 @@ class App {
         return (<any>this.$).cachedScript(url);
     }
 
+    public delay = (function () {
+        var timer = 0;
+        return (callback: () => void, ms: number) => {
+            clearTimeout(timer);
+            timer = setTimeout(callback, ms);
+        };
+    })();
+
     public render(...modules: App.IModule[]) {
         var self = this;
         if (!self._initialized) {
             throw "App is not initialized!";
         }
-
         self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function (data) {
             self.ensureScript(self.scriptBase + "/sp.runtime.js").then(function (data) {
                 self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
@@ -106,7 +112,6 @@ class App {
                                 module.render();
                             });
                         }
-
                         self.$angular.element(function () {
                             self.$angular.bootstrap(document, [App.SharePointAppName]);
                         });
@@ -121,7 +126,7 @@ class App {
         return new App.Module.ListView(self, options);
     }
 
-    public get_Lists(options: App.IModuleOptions): App.Module.ListsView {
+    public get_Lists(options: App.Module.IListsViewOptions): App.Module.ListsView {
         var self = this;
         return new App.Module.ListsView(self, options);
     }
@@ -140,19 +145,11 @@ declare module App {
     }
 
     export interface IModule {
-        //constructor(app: App, options: App.IModuleOptions);
         render();
     }
 }
 
 module App.Module {
-    var delay = (function () {
-        var timer = 0;
-        return (callback: () => void, ms: number) => {
-            clearTimeout(timer);
-            timer = setTimeout(callback, ms);
-        };
-    })();
 
     export interface IListViewOptions extends App.IModuleOptions {
         listTitle: string;
@@ -268,16 +265,20 @@ module App.Module {
         updateList(list, service: App.ISPService);
     }
 
+    export interface IListsViewOptions extends App.IModuleOptions {
+        delay: number;
+    }
+
     export class ListsView implements App.IModule {
-        private _options: App.IModuleOptions;
+        private _options: IListsViewOptions;
         private _app: App;
 
-        constructor(app: App, options: App.IModuleOptions) {
+        constructor(app: App, options: IListsViewOptions) {
             if (!app) {
                 throw "App must be specified for ListView!";
             }
             this._app = app;
-            this._options = options;
+            this._options = this._app.$.extend(true, { delay: 1000 }, options);
         }
 
         public getLists() {
@@ -417,18 +418,15 @@ module App.Module {
                 (<any>$scope).lists = [];
                 factory.getLists().then(() => {
                     (<any>$scope).lists = self._app.$angular.copy(factory.lists);
-                    //self._app.$.each(factory.lists, (i, list) => {
-                    //    (<any>$scope).lists.push(list);
-                    //});
                     (<any>$scope).loading = false;
                     deferred.resolve();
                 }, () => {
                     (<any>$scope).loading = false;
                     deferred.reject();
                 });
-                (<any>$scope).settingsOpened = false;
                 (<any>$scope).selection = {
                     settings: {
+                        opened: false,
                         data: [],
                         editMode: false,
                         onEdit: () => {
@@ -460,7 +458,7 @@ module App.Module {
                                 list = self._app.$(selectedItems).get(0);
                             }
                             if (list) {
-                                if (!(<any>$scope).settingsOpened) {
+                                if (!(<any>$scope).selection.settings.opened) {
                                     (<any>$scope).selection.settings.editMode = false;
                                     (<any>$scope).selection.settings.canEdit = list.$permissions.manage;
                                     (<any>$scope).selection.settings.data.Id = list.$data.Id;
@@ -469,7 +467,7 @@ module App.Module {
                                 } else {
                                     (<any>$scope).selection.settings.data = [];
                                 }
-                                (<any>$scope).settingsOpened = !(<any>$scope).settingsOpened;
+                                (<any>$scope).selection.settings.opened = !(<any>$scope).selection.settings.opened;
                             }
                         },
                         view: function (list) {
@@ -487,17 +485,22 @@ module App.Module {
                         clearSelection: function () {
                             var selectedItems = (<any>$scope).table.selectedItems;
                             if (selectedItems.length > 0) {
-                                //self._app.$.each((<any>$scope).rows, (i, item) => {
-                                //    if (item.selected) {
-                                //        item.selected = false;
-                                //    }
-                                //});
                                 self._app.$.each((<any>$scope).table.rows, (i, item) => {
                                     if (item.selected) {
                                         item.selected = false;
                                     }
                                 });
                             }
+                        }
+                    },
+                    openMenu: (list) => {
+                        if (list) {
+                            if (!list.$events.menuOpened) {
+                                self._app.$.each((<any>$scope).lists, ((i, list) => {
+                                    list.$events.menuOpened = false;
+                                }));
+                            }
+                            list.$events.menuOpened = !list.$events.menuOpened;
                         }
                     }
                 };
@@ -509,7 +512,7 @@ module App.Module {
                 }, true);
                 $scope.$watch('selection.commandBar.searchTerm', function (newValue: string, oldValue: string) {
                     (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
-                    delay(() => {
+                    self._app.delay(() => {
                         $scope.$apply(function () {
                             var lists;
                             if (newValue && newValue !== oldValue) {
@@ -524,18 +527,8 @@ module App.Module {
                             }
                             (<any>$scope).lists = self._app.$angular.copy(lists);
                         });
-                    }, 1000);
+                    }, self._options.delay);
                 }, false);
-                (<any>$scope).openMenu = function (list) {
-                    if (list) {
-                        if (!list.$events.menuOpened) {
-                            self._app.$.each((<any>$scope).lists, (function (i, list) {
-                                list.$events.menuOpened = false;
-                            }));
-                        }
-                        list.$events.menuOpened = !list.$events.menuOpened;
-                    }
-                };
             }]);
             return deferred.promise();
         }
