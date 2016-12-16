@@ -109,7 +109,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             var self = this;
             return new App.Module.ListView(self, options);
         };
-        App.prototype.get_Lists = function (options) {
+        App.prototype.get_ListsView = function (options) {
             var self = this;
             return new App.Module.ListsView(self, options);
         };
@@ -412,6 +412,9 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         if (!list) {
                                             var selectedItems = $scope.table.selectedItems;
                                             list = self._app.$(selectedItems).get(0);
+                                        }
+                                        if (list) {
+                                            window.location.href = "/Home/List?ListId=" + list.$data.Id + "&SPHostUrl=" + decodeURIComponent(self._app.hostWebUrl) + "&SPAppWebUrl=" + decodeURIComponent(self._app.appWebUrl);
                                         }
                                     },
                                     delete: function (list) {

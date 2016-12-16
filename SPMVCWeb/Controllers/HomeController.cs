@@ -38,6 +38,12 @@ namespace SPMVCWeb.Controllers
             return View();
         }
 
+        public ActionResult List()
+        {
+            InitView();
+            return View();
+        }
+
         private ClientContext GetClientContext()
         {
             var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext);

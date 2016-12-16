@@ -126,7 +126,7 @@ class App {
         return new App.Module.ListView(self, options);
     }
 
-    public get_Lists(options: App.Module.IListsViewOptions): App.Module.ListsView {
+    public get_ListsView(options: App.Module.IListsViewOptions): App.Module.ListsView {
         var self = this;
         return new App.Module.ListsView(self, options);
     }
@@ -474,6 +474,9 @@ module App.Module {
                             if (!list) {
                                 var selectedItems = (<any>$scope).table.selectedItems;
                                 list = self._app.$(selectedItems).get(0);
+                            }
+                            if (list) {
+                                window.location.href = "/Home/List?ListId=" + list.$data.Id + "&SPHostUrl=" + decodeURIComponent(self._app.hostWebUrl) +"&SPAppWebUrl=" + decodeURIComponent(self._app.appWebUrl);
                             }
                         },
                         delete: function (list) {
