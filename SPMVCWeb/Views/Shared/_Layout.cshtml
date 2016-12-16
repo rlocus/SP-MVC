@@ -20,11 +20,12 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
-                    <li>@Html.ActionLink("About", "About", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
-                </ul><div class="navbar-right">
-                    <uif-persona uif-style="square" uif-size="medium" uif-image-url="">
+                    <li>@Html.ActionLink("Home", "Index", "Home", new {SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey]}, null)</li>
+                    <li>@Html.ActionLink("About", "About", "Home", new {SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey]}, null)</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home", new {SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey]}, null)</li>
+                </ul>
+                <div class="navbar-right">
+                    <uif-persona ng-cloak uif-style="square" uif-size="medium" uif-image-url="">
                         <uif-persona-initials uif-color="blue">@ViewBag.User.Initials</uif-persona-initials>
                         <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
                     </uif-persona>

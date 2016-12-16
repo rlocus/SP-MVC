@@ -39,6 +39,7 @@ namespace SPMVCWeb
                       "~/Content/bootstrap.css",
                       "~/Content/fabric.min.css",
                       "~/Content/fabric.components.min.css",
+                      "~/Content/angular-csp.css",
                       "~/Content/site.css"));
         }
     }

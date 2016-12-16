@@ -354,9 +354,10 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             $scope.loading = true;
                             $scope.lists = [];
                             factory.getLists().then(function () {
-                                self._app.$.each(factory.lists, function (i, list) {
-                                    $scope.lists.push(list);
-                                });
+                                $scope.lists = self._app.$angular.copy(factory.lists);
+                                //self._app.$.each(factory.lists, (i, list) => {
+                                //    (<any>$scope).lists.push(list);
+                                //});
                                 $scope.loading = false;
                                 deferred.resolve();
                             }, function () {
@@ -445,27 +446,24 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 $scope.selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
                             }, true);
                             $scope.$watch('selection.commandBar.searchTerm', function (newValue, oldValue) {
-                                //(<any>$scope).selection.commandBar.clearSelection();
-                                //(<any>$scope).lists = [];
-                                $scope.lists.splice(0, $scope.lists.length);
                                 $scope.table.rows.splice(0, $scope.table.rows.length);
-                                //(<any>$scope).rows = (<any>$scope).table.rows = [];
-                                if (newValue && newValue !== oldValue) {
-                                    delay(function () {
-                                        $scope.$apply(function () {
+                                delay(function () {
+                                    $scope.$apply(function () {
+                                        var lists;
+                                        if (newValue && newValue !== oldValue) {
+                                            lists = [];
                                             self._app.$.each(factory.lists, function (i, list) {
                                                 if (list.$data && new RegExp(newValue, 'i').test(list.$data.Title)) {
-                                                    $scope.lists.push(list);
+                                                    lists.push(list);
                                                 }
                                             });
-                                        });
-                                    }, 1000);
-                                }
-                                else {
-                                    self._app.$.each(factory.lists, function (i, list) {
-                                        $scope.lists.push(list);
+                                        }
+                                        else {
+                                            lists = factory.lists;
+                                        }
+                                        $scope.lists = self._app.$angular.copy(lists);
                                     });
-                                }
+                                }, 1000);
                             }, false);
                             $scope.openMenu = function (list) {
                                 if (list) {

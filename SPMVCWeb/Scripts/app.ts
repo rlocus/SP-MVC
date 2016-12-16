@@ -416,9 +416,10 @@ module App.Module {
                 (<any>$scope).loading = true;
                 (<any>$scope).lists = [];
                 factory.getLists().then(() => {
-                    self._app.$.each(factory.lists, (i, list) => {
-                        (<any>$scope).lists.push(list);
-                    });
+                    (<any>$scope).lists = self._app.$angular.copy(factory.lists);
+                    //self._app.$.each(factory.lists, (i, list) => {
+                    //    (<any>$scope).lists.push(list);
+                    //});
                     (<any>$scope).loading = false;
                     deferred.resolve();
                 }, () => {
@@ -505,29 +506,25 @@ module App.Module {
                     (<any>$scope).selection.commandBar.deleteEnabled = newValue.length > 0;
                     (<any>$scope).selection.commandBar.settingsEnabled = newValue.length === 1;
                     (<any>$scope).selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
-
                 }, true);
                 $scope.$watch('selection.commandBar.searchTerm', function (newValue: string, oldValue: string) {
-                    //(<any>$scope).selection.commandBar.clearSelection();
-                    //(<any>$scope).lists = [];
-                    (<any>$scope).lists.splice(0, (<any>$scope).lists.length);
                     (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
-                    //(<any>$scope).rows = (<any>$scope).table.rows = [];
-                    if (newValue && newValue !== oldValue) {
-                        delay(() => {
-                            $scope.$apply(function() {
+                    delay(() => {
+                        $scope.$apply(function () {
+                            var lists;
+                            if (newValue && newValue !== oldValue) {
+                                lists = []
                                 self._app.$.each(factory.lists, (i, list) => {
                                     if ((<any>list).$data && new RegExp(newValue, 'i').test((<any>list).$data.Title)) {
-                                        (<any>$scope).lists.push(list);
+                                        lists.push(list);
                                     }
                                 });
-                            });
-                        }, 1000);
-                    } else {
-                        self._app.$.each(factory.lists, (i, list) => {
-                            (<any>$scope).lists.push(list);
+                            } else {
+                                lists = factory.lists;
+                            }
+                            (<any>$scope).lists = self._app.$angular.copy(lists);
                         });
-                    }
+                    }, 1000);
                 }, false);
                 (<any>$scope).openMenu = function (list) {
                     if (list) {

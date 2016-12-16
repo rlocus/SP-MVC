@@ -15,7 +15,7 @@
 }
 <div ng-controller="list-controller">
     <div class="sp-navbar">
-        <uif-command-bar uif-search-term="selection.commandBar.searchTerm" placeholder="Search here...">
+        <uif-command-bar ng-cloak uif-search-term="selection.commandBar.searchTerm" placeholder="Search here...">
             <uif-command-bar-search></uif-command-bar-search>
             <uif-command-bar-side>
                 <uif-command-bar-item ng-show="selection.commandBar.selectionText" ng-click="selection.commandBar.clearSelection()">
@@ -37,7 +37,7 @@
         </uif-command-bar>
     </div>
     <div class="sp-panel">
-        <uif-panel uif-type="small" uif-is-open="settingsOpened" uif-show-overlay="true" uif-show-close="true">
+        <uif-panel ng-cloak uif-type="small" uif-is-open="settingsOpened" uif-show-overlay="true" uif-show-close="true">
             <uif-panel-header>List Settings</uif-panel-header>
             <uif-content>
                 <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
@@ -62,7 +62,7 @@
                 </div>
             </uif-content>
         </uif-panel>
-        <uif-table uif-row-select-mode="multiple">
+        <uif-table ng-cloak uif-row-select-mode="multiple">
             <uif-table-head>
                 <uif-table-row>
                     <uif-table-row-select></uif-table-row-select>
