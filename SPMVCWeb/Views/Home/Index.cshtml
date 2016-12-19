@@ -7,13 +7,13 @@
     <script type="text/javascript">
         require(["app"], function (app) {
             var lists = app.get_ListsView({
-                controllerName: "list-controller"
-            })
+                controllerName: "lists-controller"
+            });
             app.render(lists);
         });
     </script>
 }
-<div ng-controller="list-controller">
+<div ng-controller="lists-controller">
     <div class="sp-navbar">
         <uif-command-bar ng-cloak uif-search-term="selection.commandBar.searchTerm" placeholder="Search here...">
             <uif-command-bar-search></uif-command-bar-search>

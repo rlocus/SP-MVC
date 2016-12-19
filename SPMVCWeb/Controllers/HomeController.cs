@@ -1,4 +1,5 @@
 ﻿using Microsoft.SharePoint.Client;
+using SPMVCWeb.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,13 +9,6 @@ using System.Web.Mvc;
 
 namespace SPMVCWeb.Controllers
 {
-    public class PersonalData
-    {
-        public string Initials { get; set; }
-        public string Name { get; set; }
-        public string Title { get; set; }
-    }
-
     public class HomeController : Controller
     {
         [SharePointContextFilter]
@@ -24,6 +18,7 @@ namespace SPMVCWeb.Controllers
             return View();
         }
 
+        [SharePointContextFilter]
         public ActionResult About()
         {
             InitView();
@@ -31,6 +26,7 @@ namespace SPMVCWeb.Controllers
             return View();
         }
 
+        [SharePointContextFilter]
         public ActionResult Contact()
         {
             InitView();
@@ -38,9 +34,27 @@ namespace SPMVCWeb.Controllers
             return View();
         }
 
-        public ActionResult List()
+        [SharePointContextFilter]
+        public ActionResult List(Guid listId, Guid? viewId)
         {
-            InitView();
+            List list = null;
+            View view = null;
+            InitView((clientContext) =>
+            {
+                list = clientContext.Web.Lists.GetById(listId);
+                clientContext.Load(list);
+                if (viewId == null || default(Guid) == viewId)
+                {
+                    view = list.DefaultView;
+                }
+                else
+                {
+                    view = list.GetViewById(viewId.Value);
+                }
+                clientContext.Load(view);
+                clientContext.Load(view.ViewFields);
+            });
+            ViewBag.List = new ListInformation(list, view);
             return View();
         }
 
@@ -54,26 +68,25 @@ namespace SPMVCWeb.Controllers
             return null;
         }
 
-        private void InitView()
+        private void InitView(Action<ClientContext> action = null)
         {
             User spUser = null;
             ClientContext clientContext = GetClientContext();
             if (clientContext != null)
+            {
                 using (clientContext)
                 {
-                    if (clientContext != null)
+                    spUser = clientContext.Web.CurrentUser;
+                    clientContext.Load(spUser);
+                    if (action != null)
                     {
-                        spUser = clientContext.Web.CurrentUser;
-                        clientContext.Load(spUser, user => user.Title);
-                        clientContext.ExecuteQuery();
-                        ViewBag.User = new PersonalData
-                        {
-                            Initials = new Regex(@"(\b[a-zA-Z])[a-zA-Z]* ?").Replace(spUser.Title, "$1"),
-                            Name = spUser.Title
-                        };
-                        ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
+                        action.Invoke(clientContext);
                     }
+                    clientContext.ExecuteQuery();
+                    ViewBag.User = new UserInformation(spUser);
+                    ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
                 }
+            }
         }
     }
 }

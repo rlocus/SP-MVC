@@ -1,7 +1,21 @@
 ﻿
 @{
-    ViewBag.Title = "List";
+    ViewBag.Title = ViewBag.List.Title;
 }
 
-<h2>List</h2>
+@section scripts
+{
+    <script type="text/javascript">
+        require(["app"], function (app) {
+            var listJson = app.$("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List)').text();
+            var list = JSON.parse(listJson);
+            var listView = app.get_ListView({
+                controllerName: "listview-controller"
+            });
+            app.render(listView);
+        });
+    </script>
+}
+
+<h2>@ViewBag.Title</h2>
 
