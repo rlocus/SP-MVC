@@ -155,6 +155,8 @@ module App.Module {
         listTitle: string;
         listId?: string;
         listUrl?: string;
+        //viewId?: string;
+        viewXml?: string,
         orderBy?: string;
         sortAsc?: boolean;
         filter?: string;
@@ -179,20 +181,66 @@ module App.Module {
             var deferred = self._app.$.Deferred();
             var url: string = null;
             if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
-                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                    items = items.orderBy(self._options.orderBy, self._options.sortAsc);
+                if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
+                    //var query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId)
+                    //query.concat("/getitems");
+                    //url = query.toUrlAndQuery();
+                    //var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
+                    //var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                    //executor.executeAsync(<SP.RequestInfo>{
+                    //    url: url,
+                    //    method: "POST",
+                    //    body: postBody,
+                    //    headers: {
+                    //        "accept": "application/json;odata=verbose",
+                    //        "content-Type": "application/json;odata=verbose"
+                    //    },
+                    //    success: function (data) {
+                    //        var listItems = JSON.parse(<string>data.body).d.results;
+                    //        deferred.resolve(listItems);
+                    //    },
+                    //    error: function (error) {
+                    //        deferred.reject(error);
+                    //    }
+                    //});
+
+                    var query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId)
+                    query.concat("/renderlistdata(@viewXml)");
+                    query.query.add("@viewXml", "'" + self._options.viewXml + "'");
+                    url = query.toUrlAndQuery();
+                    var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                    executor.executeAsync(<SP.RequestInfo>{
+                        url: url,
+                        method: "POST",
+                        headers: {
+                            "accept": "application/json;odata=verbose",
+                            "content-Type": "application/json;odata=verbose"
+                        },
+                        success: function (data) {
+                            var listItems = JSON.parse(JSON.parse(<string>data.body).d.RenderListData);
+                            deferred.resolve(listItems);
+                        },
+                        error: function (error) {
+                            deferred.reject(error);
+                        }
+                    });
                 }
-                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                    items = items.filter(self._options.filter);
+                else {
+                    var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
+                    if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                        items = items.orderBy(self._options.orderBy, self._options.sortAsc);
+                    }
+                    if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
+                        items = items.filter(self._options.filter);
+                    }
+                    if (self._options.limit > 0) {
+                        items = items.top(self._options.limit);
+                    }
+                    if ($pnp.util.isArray(self._options.expands)) {
+                        items = items.expand(<any>self._options.expands);
+                    }
+                    url = items.toUrlAndQuery();
                 }
-                if (self._options.limit > 0) {
-                    items = items.top(self._options.limit);
-                }
-                if ($pnp.util.isArray(self._options.expands)) {
-                    items = items.expand(<any>self._options.expands);
-                }
-                url = items.toUrlAndQuery();
             } else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
                 var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl).items;
                 if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
@@ -476,7 +524,7 @@ module App.Module {
                                 list = self._app.$(selectedItems).get(0);
                             }
                             if (list) {
-                                window.location.href = "/Home/List?ListId=" + list.$data.Id + "&SPHostUrl=" + decodeURIComponent(self._app.hostWebUrl) +"&SPAppWebUrl=" + decodeURIComponent(self._app.appWebUrl);
+                                window.location.href = "/Home/List?ListId=" + list.$data.Id + "&SPHostUrl=" + decodeURIComponent(self._app.hostWebUrl) + "&SPAppWebUrl=" + decodeURIComponent(self._app.appWebUrl);
                             }
                         },
                         delete: function (list) {

@@ -10,7 +10,9 @@
             var listJson = app.$("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List)').text();
             var list = JSON.parse(listJson);
             var listView = app.get_ListView({
-                controllerName: "listview-controller"
+                controllerName: "listview-controller",
+                listId: list.ListId,
+                viewXml: app.$("<div />").html(list.ViewXml).text()
             });
             app.render(listView);
         });
@@ -19,3 +21,6 @@
 
 <h2>@ViewBag.Title</h2>
 
+<div ng-controller="listview-controller">
+
+</div>

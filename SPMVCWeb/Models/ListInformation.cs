@@ -23,6 +23,7 @@ namespace SPMVCWeb.Models
             ViewJoins = HttpUtility.HtmlEncode(view.ViewJoins);
             ViewProjectedFields = HttpUtility.HtmlEncode(view.ViewProjectedFields);
             ViewQuery = HttpUtility.HtmlEncode(view.ViewQuery);
+            ViewXml = HttpUtility.HtmlEncode(view.ListViewXml);
             Paged = view.Paged;
             RowLimit = view.RowLimit;
             ViewTitle = view.Title;
@@ -40,5 +41,7 @@ namespace SPMVCWeb.Models
         public uint RowLimit { get; private set; }
         public string ViewTitle { get; private set; }
         public string ViewUrl { get; private set; }
+
+        public string ViewXml { get; private set; }
     }
 }
