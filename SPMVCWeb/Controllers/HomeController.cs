@@ -43,6 +43,7 @@ namespace SPMVCWeb.Controllers
             {
                 list = clientContext.Web.Lists.GetById(listId);
                 clientContext.Load(list);
+                clientContext.Load(list.Fields, fields => fields.Where(f => !f.Hidden && f.Group != "_Hidden"));
                 if (viewId == null || default(Guid) == viewId)
                 {
                     view = list.DefaultView;

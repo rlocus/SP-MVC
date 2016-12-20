@@ -16,9 +16,10 @@ namespace SPMVCWeb.Models
             ListId = list.Id;
             Title = list.Title;
             ViewId = view.Id;
-            if (view.ViewFields.AreItemsAvailable)
+            if (view.ViewFields.AreItemsAvailable && list.Fields.AreItemsAvailable)
             {
-                Fields = view.ViewFields.Cast<string>().ToArray();
+                var fields = list.Fields.Where(f => view.ViewFields.Contains(f.InternalName));
+                Fields = fields.Select(FieldInformation.GetInformation).ToArray();
             }
             ViewJoins = HttpUtility.HtmlEncode(view.ViewJoins);
             ViewProjectedFields = HttpUtility.HtmlEncode(view.ViewProjectedFields);
@@ -33,7 +34,7 @@ namespace SPMVCWeb.Models
         public string Title { get; private set; }
         public Guid ListId { get; private set; }
         public Guid ViewId { get; private set; }
-        public string[] Fields { get; private set; }
+        public FieldInformation[] Fields { get; private set; }
         public string ViewJoins { get; private set; }
         public string ViewProjectedFields { get; private set; }
         public string ViewQuery { get; private set; }

@@ -131,7 +131,7 @@ class App {
         return new App.Module.ListsView(self, options);
     }
 
-    public get_BasePermissions(permMask): SP.BasePermissions {
+    public get_BasePermissions(permMask: string): SP.BasePermissions {
         var permMaskHigh = permMask.length <= 10 ? 0 : parseInt(permMask.substring(2, permMask.length - 8), 16);
         var permMaskLow = permMask.length <= 10 ? parseInt(permMask) : parseInt(permMask.substring(permMask.length - 8, permMask.length), 16);
         var permissions = new SP.BasePermissions();
