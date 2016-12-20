@@ -130,6 +130,14 @@ class App {
         var self = this;
         return new App.Module.ListsView(self, options);
     }
+
+    public get_BasePermissions(permMask): SP.BasePermissions {
+        var permMaskHigh = permMask.length <= 10 ? 0 : parseInt(permMask.substring(2, permMask.length - 8), 16);
+        var permMaskLow = permMask.length <= 10 ? parseInt(permMask) : parseInt(permMask.substring(permMask.length - 8, permMask.length), 16);
+        var permissions = new SP.BasePermissions();
+        permissions.initPropertiesFromJson({ High: permMaskHigh, Low: permMaskLow });
+        return permissions;
+    }
 }
 
 export = new App();
@@ -162,6 +170,8 @@ module App.Module {
         filter?: string;
         limit?: number;
         expands?: string[];
+        //fields?: string[];
+        onload: ($scope: ng.IScope) => void;
     }
 
     export class ListView implements App.IModule {
@@ -176,71 +186,86 @@ module App.Module {
             this._options = options;
         }
 
-        private getItems() {
+        private getEntity(listItem) {
+            var permMask = listItem["PermMask"];
+            var permissions = this._app.get_BasePermissions(permMask);
+            var $permissions = {
+                edit: permissions.has(SP.PermissionKind.editListItems),
+                delete: permissions.has(SP.PermissionKind.deleteListItems)
+            };
+            var $events = { menuOpened: false, isSelected: false };
+            return { $data: listItem, $events: $events, $permissions: $permissions };
+        }
+
+        private getListItems() {
             var self = this;
             var deferred = self._app.$.Deferred();
             var url: string = null;
+            if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
+                var query;
+                if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                    query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
+                } else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                    query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                } else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                    query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                }
+                //query.concat("/getitems");
+                //url = query.toUrlAndQuery();
+                //var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
+                //var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                //executor.executeAsync(<SP.RequestInfo>{
+                //    url: url,
+                //    method: "POST",
+                //    body: postBody,
+                //    headers: {
+                //        "accept": "application/json;odata=verbose",
+                //        "content-Type": "application/json;odata=verbose"
+                //    },
+                //    success: function (data) {
+                //        var listItems = JSON.parse(<string>data.body).d.results;
+                //        deferred.resolve(listItems);
+                //    },
+                //    error: function (error) {
+                //        deferred.reject(error);
+                //    }
+                //});
+                query.concat("/renderlistdata(@viewXml)");
+                query.query.add("@viewXml", "'" + self._options.viewXml + "'");
+                url = query.toUrlAndQuery();
+                var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                executor.executeAsync(<SP.RequestInfo>{
+                    url: url,
+                    method: "POST",
+                    headers: {
+                        "accept": "application/json;odata=verbose",
+                        "content-Type": "application/json;odata=verbose"
+                    },
+                    success: function (data) {
+                        var result = JSON.parse(JSON.parse(<string>data.body).d.RenderListData);
+                        deferred.resolve(result);
+                    },
+                    error: function (error) {
+                        deferred.reject(error);
+                    }
+                });
+                return deferred.promise();
+            }
             if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                    //var query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId)
-                    //query.concat("/getitems");
-                    //url = query.toUrlAndQuery();
-                    //var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
-                    //var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                    //executor.executeAsync(<SP.RequestInfo>{
-                    //    url: url,
-                    //    method: "POST",
-                    //    body: postBody,
-                    //    headers: {
-                    //        "accept": "application/json;odata=verbose",
-                    //        "content-Type": "application/json;odata=verbose"
-                    //    },
-                    //    success: function (data) {
-                    //        var listItems = JSON.parse(<string>data.body).d.results;
-                    //        deferred.resolve(listItems);
-                    //    },
-                    //    error: function (error) {
-                    //        deferred.reject(error);
-                    //    }
-                    //});
-
-                    var query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId)
-                    query.concat("/renderlistdata(@viewXml)");
-                    query.query.add("@viewXml", "'" + self._options.viewXml + "'");
-                    url = query.toUrlAndQuery();
-                    var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                    executor.executeAsync(<SP.RequestInfo>{
-                        url: url,
-                        method: "POST",
-                        headers: {
-                            "accept": "application/json;odata=verbose",
-                            "content-Type": "application/json;odata=verbose"
-                        },
-                        success: function (data) {
-                            var listItems = JSON.parse(JSON.parse(<string>data.body).d.RenderListData);
-                            deferred.resolve(listItems);
-                        },
-                        error: function (error) {
-                            deferred.reject(error);
-                        }
-                    });
+                var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
+                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                    items = items.orderBy(self._options.orderBy, self._options.sortAsc);
                 }
-                else {
-                    var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
-                    if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                        items = items.orderBy(self._options.orderBy, self._options.sortAsc);
-                    }
-                    if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                        items = items.filter(self._options.filter);
-                    }
-                    if (self._options.limit > 0) {
-                        items = items.top(self._options.limit);
-                    }
-                    if ($pnp.util.isArray(self._options.expands)) {
-                        items = items.expand(<any>self._options.expands);
-                    }
-                    url = items.toUrlAndQuery();
+                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
+                    items = items.filter(self._options.filter);
                 }
+                if (self._options.limit > 0) {
+                    items = items.top(self._options.limit);
+                }
+                if ($pnp.util.isArray(self._options.expands)) {
+                    items = items.expand(<any>self._options.expands);
+                }
+                url = items.toUrlAndQuery();
             } else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
                 var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl).items;
                 if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
@@ -295,20 +320,48 @@ module App.Module {
 
         public render() {
             var self = this;
-            var deferred = self._app.$.Deferred();
-            self._app.spApp.controller(self._options.controllerName, function ($scope: ng.IScope) {
-                self.getItems().then((listItems) => {
-                    (<any>$scope).listItems = listItems;
-                    $scope.$apply();
-                    deferred.resolve();
-                }, deferred.reject);
+            self._app.spApp.factory("ListViewFactory", ($q, $http) => {
+                var factory = {} as IListViewFactory;
+                factory.listItems = [];
+                factory.getListItems = () => {
+                    var deferred = $q.defer();
+                    self.getListItems().then((data: any) => {
+                        factory.listItems.splice(0, factory.listItems.length);
+                        self._app.$.each(data.Row, (function (i, listItem) {
+                            factory.listItems.push(self.getEntity(listItem));
+                        }));
+                        deferred.resolve(factory.listItems);
+                    }, deferred.reject);
+                    return deferred.promise;
+                }
+                return factory;
             });
+            var deferred = self._app.$.Deferred();
+            self._app.spApp.controller(self._options.controllerName, [
+                '$scope', 'ListViewFactory', App.SPServiceName, function ($scope: ng.IScope, factory: IListViewFactory, service: App.ISPService) {
+                    (<any>$scope).loading = true;
+                    (<any>$scope).listItems = [];
+                    factory.getListItems().then(() => {
+                        (<any>$scope).listItems = self._app.$angular.copy(factory.listItems);
+                        (<any>$scope).loading = false;
+                        deferred.resolve();
+                    }, deferred.reject);
+                    if (typeof self._options.onload === "function") {
+                        self._options.onload($scope);
+                    }
+                }
+            ]);
             return deferred.promise();
         }
     }
 
+    interface IListViewFactory {
+        listItems: Array<any>;
+        getListItems();
+    }
+
     interface IListsViewFactory {
-        lists: any;
+        lists: Array<any>;
         getLists();
         updateList(list, service: App.ISPService);
     }
@@ -459,7 +512,6 @@ module App.Module {
                 };
                 return factory;
             });
-
             var deferred = self._app.$.Deferred();
             self._app.spApp.controller(self._options.controllerName, ['$scope', 'ListsViewFactory', App.SPServiceName, function ($scope: ng.IScope, factory: IListsViewFactory, service: App.ISPService) {
                 (<any>$scope).loading = true;

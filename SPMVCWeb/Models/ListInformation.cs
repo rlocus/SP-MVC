@@ -41,7 +41,6 @@ namespace SPMVCWeb.Models
         public uint RowLimit { get; private set; }
         public string ViewTitle { get; private set; }
         public string ViewUrl { get; private set; }
-
         public string ViewXml { get; private set; }
     }
 }

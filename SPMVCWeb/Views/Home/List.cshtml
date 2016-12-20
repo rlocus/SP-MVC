@@ -12,7 +12,10 @@
             var listView = app.get_ListView({
                 controllerName: "listview-controller",
                 listId: list.ListId,
-                viewXml: app.$("<div />").html(list.ViewXml).text()
+                viewXml: app.$("<div />").html(list.ViewXml).text(),
+                onload: function ($scope) {
+                    $scope.fields = list.Fields
+                }
             });
             app.render(listView);
         });
@@ -22,5 +25,27 @@
 <h2>@ViewBag.Title</h2>
 
 <div ng-controller="listview-controller">
-
+    <div class="sp-panel">
+        <uif-table ng-cloak uif-row-select-mode="multiple">
+            <uif-table-head>
+                <uif-table-row>
+                    <uif-table-row-select></uif-table-row-select>
+                    <uif-table-header ng-repeat="field in fields" uif-order-by="field">{{field}}</uif-table-header>
+                    <uif-table-header></uif-table-header>
+                </uif-table-row>
+            </uif-table-head>
+            <uif-table-body>
+                <uif-table-row ng-repeat="listItem in listItems | orderBy:table.orderBy:!table.orderAsc" uif-item="listItem" uif-selected="{{listItem.$events.isSelected}}">
+                    <uif-table-row-select></uif-table-row-select>
+                    <uif-table-cell ng-repeat="field in fields"><span class="ms-u-noWrap">{{listItem.$data[field]}}</span></uif-table-cell>
+                    <uif-pivot-ellipsis ng-click="selection.openMenu(listItem)">
+                        <uif-contextual-menu uif-is-open="listItem.$events.menuOpened" uif-close-on-click="true">
+                            <uif-contextual-menu-item uif-text="'View'" ng-click="selection.commandBar.view(listItem)"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'Delete'" disabled="{{listItem.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
+                        </uif-contextual-menu>
+                    </uif-pivot-ellipsis>
+                </uif-table-row>
+            </uif-table-body>
+        </uif-table>
+    </div>
 </div>

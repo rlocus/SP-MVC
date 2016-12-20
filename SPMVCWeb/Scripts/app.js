@@ -113,6 +113,13 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             var self = this;
             return new App.Module.ListsView(self, options);
         };
+        App.prototype.get_BasePermissions = function (permMask) {
+            var permMaskHigh = permMask.length <= 10 ? 0 : parseInt(permMask.substring(2, permMask.length - 8), 16);
+            var permMaskLow = permMask.length <= 10 ? parseInt(permMask) : parseInt(permMask.substring(permMask.length - 8, permMask.length), 16);
+            var permissions = new SP.BasePermissions();
+            permissions.initPropertiesFromJson({ High: permMaskHigh, Low: permMaskLow });
+            return permissions;
+        };
         App.SharePointAppName = "SharePointApp";
         App.SPServiceName = "SPService";
         return App;
@@ -129,70 +136,87 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     this._app = app;
                     this._options = options;
                 }
-                ListView.prototype.getItems = function () {
+                ListView.prototype.getEntity = function (listItem) {
+                    var permMask = listItem["PermMask"];
+                    var permissions = this._app.get_BasePermissions(permMask);
+                    var $permissions = {
+                        edit: permissions.has(SP.PermissionKind.editListItems),
+                        delete: permissions.has(SP.PermissionKind.deleteListItems)
+                    };
+                    var $events = { menuOpened: false, isSelected: false };
+                    return { $data: listItem, $events: $events, $permissions: $permissions };
+                };
+                ListView.prototype.getListItems = function () {
                     var self = this;
                     var deferred = self._app.$.Deferred();
                     var url = null;
+                    if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
+                        var query;
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                            query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
+                        }
+                        else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                            query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                        }
+                        else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                            query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                        }
+                        //query.concat("/getitems");
+                        //url = query.toUrlAndQuery();
+                        //var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
+                        //var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        //executor.executeAsync(<SP.RequestInfo>{
+                        //    url: url,
+                        //    method: "POST",
+                        //    body: postBody,
+                        //    headers: {
+                        //        "accept": "application/json;odata=verbose",
+                        //        "content-Type": "application/json;odata=verbose"
+                        //    },
+                        //    success: function (data) {
+                        //        var listItems = JSON.parse(<string>data.body).d.results;
+                        //        deferred.resolve(listItems);
+                        //    },
+                        //    error: function (error) {
+                        //        deferred.reject(error);
+                        //    }
+                        //});
+                        query.concat("/renderlistdata(@viewXml)");
+                        query.query.add("@viewXml", "'" + self._options.viewXml + "'");
+                        url = query.toUrlAndQuery();
+                        var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        executor.executeAsync({
+                            url: url,
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json;odata=verbose",
+                                "content-Type": "application/json;odata=verbose"
+                            },
+                            success: function (data) {
+                                var result = JSON.parse(JSON.parse(data.body).d.RenderListData);
+                                deferred.resolve(result);
+                            },
+                            error: function (error) {
+                                deferred.reject(error);
+                            }
+                        });
+                        return deferred.promise();
+                    }
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                        if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                            //var query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId)
-                            //query.concat("/getitems");
-                            //url = query.toUrlAndQuery();
-                            //var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
-                            //var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                            //executor.executeAsync(<SP.RequestInfo>{
-                            //    url: url,
-                            //    method: "POST",
-                            //    body: postBody,
-                            //    headers: {
-                            //        "accept": "application/json;odata=verbose",
-                            //        "content-Type": "application/json;odata=verbose"
-                            //    },
-                            //    success: function (data) {
-                            //        var listItems = JSON.parse(<string>data.body).d.results;
-                            //        deferred.resolve(listItems);
-                            //    },
-                            //    error: function (error) {
-                            //        deferred.reject(error);
-                            //    }
-                            //});
-                            var query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
-                            query.concat("/renderlistdata(@viewXml)");
-                            query.query.add("@viewXml", "'" + self._options.viewXml + "'");
-                            url = query.toUrlAndQuery();
-                            var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                            executor.executeAsync({
-                                url: url,
-                                method: "POST",
-                                headers: {
-                                    "accept": "application/json;odata=verbose",
-                                    "content-Type": "application/json;odata=verbose"
-                                },
-                                success: function (data) {
-                                    var listItems = JSON.parse(JSON.parse(data.body).d.RenderListData);
-                                    deferred.resolve(listItems);
-                                },
-                                error: function (error) {
-                                    deferred.reject(error);
-                                }
-                            });
+                        var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                            items = items.orderBy(self._options.orderBy, self._options.sortAsc);
                         }
-                        else {
-                            var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                items = items.orderBy(self._options.orderBy, self._options.sortAsc);
-                            }
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                                items = items.filter(self._options.filter);
-                            }
-                            if (self._options.limit > 0) {
-                                items = items.top(self._options.limit);
-                            }
-                            if ($pnp.util.isArray(self._options.expands)) {
-                                items = items.expand(self._options.expands);
-                            }
-                            url = items.toUrlAndQuery();
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
+                            items = items.filter(self._options.filter);
                         }
+                        if (self._options.limit > 0) {
+                            items = items.top(self._options.limit);
+                        }
+                        if ($pnp.util.isArray(self._options.expands)) {
+                            items = items.expand(self._options.expands);
+                        }
+                        url = items.toUrlAndQuery();
                     }
                     else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
                         var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl).items;
@@ -248,14 +272,37 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 };
                 ListView.prototype.render = function () {
                     var self = this;
-                    var deferred = self._app.$.Deferred();
-                    self._app.spApp.controller(self._options.controllerName, function ($scope) {
-                        self.getItems().then(function (listItems) {
-                            $scope.listItems = listItems;
-                            $scope.$apply();
-                            deferred.resolve();
-                        }, deferred.reject);
+                    self._app.spApp.factory("ListViewFactory", function ($q, $http) {
+                        var factory = {};
+                        factory.listItems = [];
+                        factory.getListItems = function () {
+                            var deferred = $q.defer();
+                            self.getListItems().then(function (data) {
+                                factory.listItems.splice(0, factory.listItems.length);
+                                self._app.$.each(data.Row, (function (i, listItem) {
+                                    factory.listItems.push(self.getEntity(listItem));
+                                }));
+                                deferred.resolve(factory.listItems);
+                            }, deferred.reject);
+                            return deferred.promise;
+                        };
+                        return factory;
                     });
+                    var deferred = self._app.$.Deferred();
+                    self._app.spApp.controller(self._options.controllerName, [
+                        '$scope', 'ListViewFactory', App.SPServiceName, function ($scope, factory, service) {
+                            $scope.loading = true;
+                            $scope.listItems = [];
+                            factory.getListItems().then(function () {
+                                $scope.listItems = self._app.$angular.copy(factory.listItems);
+                                $scope.loading = false;
+                                deferred.resolve();
+                            }, deferred.reject);
+                            if (typeof self._options.onload === "function") {
+                                self._options.onload($scope);
+                            }
+                        }
+                    ]);
                     return deferred.promise();
                 };
                 return ListView;
