@@ -6,14 +6,18 @@
 {
     <script type="text/javascript">
         require(["app"], function (app) {
-            var lists = app.get_ListsView({
+            var listsView = app.get_ListsView({
                 controllerName: "lists-controller"
             });
-            app.render(lists);
+            //app.render(lists);
+            app.$('body').on("chrome-loaded", function () {
+                app.$('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
+                app.render(listsView);
+            });
         });
     </script>
 }
-<div ng-controller="lists-controller">
+<div id="lists_container" ng-controller="lists-controller">
     <div class="sp-navbar">
         <uif-command-bar ng-cloak uif-search-term="selection.commandBar.searchTerm" placeholder="Search here...">
             <uif-command-bar-search></uif-command-bar-search>
@@ -23,75 +27,78 @@
                     {{selection.commandBar.selectionText}}
                 </uif-command-bar-item>
                 <uif-command-bar-item ng-show="selection.commandBar.settingsEnabled" ng-click="selection.commandBar.openSettings()">
-                    <span>List Settings</span>
+                    <uif-icon uif-type="settings"></uif-icon>
+                    <span>SETTINGS</span>
                 </uif-command-bar-item>
             </uif-command-bar-side>
-            <uif-command-bar-main uif-show-overflow='true'>
+            <uif-command-bar-main uif-show-overflow='table.selectedItems.length > 0'>
                 <uif-command-bar-item ng-click="selection.commandBar.view()" ng-show="selection.commandBar.viewEnabled">
-                    <span>View</span>
+                    <uif-icon uif-type="eye"></uif-icon>
+                    <span>VIEW</span>
                 </uif-command-bar-item>
                 <uif-command-bar-item ng-click="selection.commandBar.delete()" ng-show="selection.commandBar.deleteEnabled">
-                    <span>Delete</span>
+                    <uif-icon uif-type="xCircle"></uif-icon>
+                    <span>DELETE</span>
                 </uif-command-bar-item>
             </uif-command-bar-main>
         </uif-command-bar>
     </div>
-<div class="sp-panel">
-    <h2>@ViewBag.Title</h2>
-    <uif-panel ng-cloak uif-type="small" uif-is-open="selection.settings.opened" uif-show-overlay="true" uif-show-close="true">
-        <uif-panel-header>List Settings</uif-panel-header>
-        <uif-content>
-            <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
-                <div class="animate-switch" ng-switch-when="true">
-                    <div>
-                        <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required/>
+    <div class="sp-panel">
+        <h2>@ViewBag.Title</h2>
+        <uif-panel ng-cloak uif-type="small" uif-is-open="selection.settings.opened" uif-show-overlay="true" uif-show-close="true">
+            <uif-panel-header>List Settings</uif-panel-header>
+            <uif-content>
+                <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
+                    <div class="animate-switch" ng-switch-when="true">
+                        <div>
+                            <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required />
+                        </div>
+                        <div>
+                            <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description" />
+                        </div>
+                        <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
                     </div>
-                    <div>
-                        <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description"/>
-                    </div>
-                    <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
-                </div>
-                <div class="animate-switch" ng-switch-default>
-                    <uif-label><h4>{{selection.settings.data.Title}}</h4></uif-label>
-                    <uif-label>{{selection.settings.data.Description}}</uif-label>
-                    <div class="animate-switch-container" ng-switch on="selection.settings.canEdit">
-                        <div class="animate-switch" ng-switch-when="true">
-                            <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                    <div class="animate-switch" ng-switch-default>
+                        <uif-label><h4>{{selection.settings.data.Title}}</h4></uif-label>
+                        <uif-label>{{selection.settings.data.Description}}</uif-label>
+                        <div class="animate-switch-container" ng-switch on="selection.settings.canEdit">
+                            <div class="animate-switch" ng-switch-when="true">
+                                <uif-button ng-click="selection.settings.onEdit()">Edit</uif-button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </uif-content>
-    </uif-panel>
-    <uif-table ng-cloak uif-row-select-mode="multiple">
-        <uif-table-head>
-            <uif-table-row>
-                <uif-table-row-select></uif-table-row-select>
-                <uif-table-header uif-order-by="$data.Title">Title</uif-table-header>
-                <uif-table-header></uif-table-header>
-                <uif-table-header uif-order-by="$data.Type">Type</uif-table-header>
-                <uif-table-header>Description</uif-table-header>
-                <uif-table-header uif-order-by="$data.ItemCount">Items</uif-table-header>
-            </uif-table-row>
-        </uif-table-head>
-        <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
-            <uif-table-row uif-item="list" uif-selected="{{list.$events.isSelected}}">
-                <uif-table-row-select></uif-table-row-select>
-                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Title}}</span></uif-table-cell>
-                <uif-pivot-ellipsis ng-click="selection.openMenu(list)">
-                    <uif-contextual-menu uif-is-open="list.$events.menuOpened" uif-close-on-click="true">
-                        <uif-contextual-menu-item uif-text="'View'" ng-click="selection.commandBar.view(list)"></uif-contextual-menu-item>
-                        <uif-contextual-menu-item uif-text="'Delete'" disabled="{{list.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
-                        <uif-contextual-menu-item uif-text="'Settings'" ng-click="selection.commandBar.openSettings(list)"></uif-contextual-menu-item>
-                    </uif-contextual-menu>
-                </uif-pivot-ellipsis>
-                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Type}}</span></uif-table-cell>
-                <uif-table-cell>{{list.$data.Description}}</uif-table-cell>
-                <uif-table-cell><span class="ms-u-noWrap">{{list.$data.ItemCount}}</span></uif-table-cell>
-            </uif-table-row>
-        </uif-table-body>
-    </uif-table>
-    <div class="sp-spinner">
-        <uif-spinner ng-cloak uif-size="large" ng-show="loading"></uif-spinner>
+            </uif-content>
+        </uif-panel>
+        <uif-table ng-cloak uif-row-select-mode="multiple">
+            <uif-table-head>
+                <uif-table-row>
+                    <uif-table-row-select></uif-table-row-select>
+                    <uif-table-header uif-order-by="$data.Title">Title</uif-table-header>
+                    <uif-table-header></uif-table-header>
+                    <uif-table-header uif-order-by="$data.Type">Type</uif-table-header>
+                    <uif-table-header>Description</uif-table-header>
+                    <uif-table-header uif-order-by="$data.ItemCount">Items</uif-table-header>
+                </uif-table-row>
+            </uif-table-head>
+            <uif-table-body ng-repeat="list in lists | orderBy:table.orderBy:!table.orderAsc">
+                <uif-table-row uif-item="list" uif-selected="{{list.$events.isSelected}}">
+                    <uif-table-row-select></uif-table-row-select>
+                    <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Title}}</span></uif-table-cell>
+                    <uif-pivot-ellipsis ng-click="selection.openMenu(list)">
+                        <uif-contextual-menu uif-is-open="list.$events.menuOpened" uif-close-on-click="true">
+                            <uif-contextual-menu-item uif-text="'VIEW'" ng-click="selection.commandBar.view(list)"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'DELETE'" ng-click="selection.commandBar.delete(list)" disabled="{{list.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'SETTINGS'" ng-click="selection.commandBar.openSettings(list)"></uif-contextual-menu-item>
+                        </uif-contextual-menu>
+                    </uif-pivot-ellipsis>
+                    <uif-table-cell><span class="ms-u-noWrap">{{list.$data.Type}}</span></uif-table-cell>
+                    <uif-table-cell>{{list.$data.Description}}</uif-table-cell>
+                    <uif-table-cell><span class="ms-u-noWrap">{{list.$data.ItemCount}}</span></uif-table-cell>
+                </uif-table-row>
+            </uif-table-body>
+        </uif-table>
+        <div class="sp-spinner">
+            <uif-spinner ng-cloak uif-size="large" ng-show="loading"></uif-spinner>
+        </div>
     </div>
-</div>

@@ -298,6 +298,59 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 $scope.loading = false;
                                 deferred.resolve();
                             }, deferred.reject);
+                            $scope.selection = {
+                                commandBar: {
+                                    searchTerm: null,
+                                    createEnabled: false,
+                                    viewEnabled: false,
+                                    deleteEnabled: false,
+                                    view: function (listItem) {
+                                        if (!listItem) {
+                                            var selectedItems = $scope.table.selectedItems;
+                                            listItem = self._app.$(selectedItems).get(0);
+                                        }
+                                        if (listItem) {
+                                        }
+                                    },
+                                    delete: function (listItem) {
+                                        if (!listItem) {
+                                            var selectedItems = $scope.table.selectedItems;
+                                        }
+                                    },
+                                    clearSelection: function () {
+                                        var selectedItems = $scope.table.selectedItems;
+                                        if (selectedItems.length > 0) {
+                                            self._app.$.each($scope.table.rows, function (i, item) {
+                                                if (item.selected) {
+                                                    item.selected = false;
+                                                }
+                                            });
+                                        }
+                                    }
+                                },
+                                openMenu: function (listItem) {
+                                    if (listItem) {
+                                        if (!listItem.$events.menuOpened) {
+                                            self._app.$.each($scope.listItems, (function (i, listItem) {
+                                                listItem.$events.menuOpened = false;
+                                            }));
+                                        }
+                                        listItem.$events.menuOpened = !listItem.$events.menuOpened;
+                                    }
+                                }
+                            };
+                            $scope.$watch('table.selectedItems', function (newValue, oldValue) {
+                                $scope.selection.commandBar.viewEnabled = newValue.length === 1;
+                                $scope.selection.commandBar.deleteEnabled = newValue.length > 0;
+                                $scope.selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
+                            }, true);
+                            $scope.$watch('selection.commandBar.searchTerm', function (newValue, oldValue) {
+                                //(<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
+                                //self._app.delay(() => {
+                                //    $scope.$apply(function () {
+                                //    });
+                                //}, self._options.delay);
+                            }, false);
                             if (typeof self._options.onload === "function") {
                                 self._options.onload($scope);
                             }

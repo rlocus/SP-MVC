@@ -24,15 +24,39 @@
                     };
                 }
             });
-            app.render(listView);
+            //app.render(listView);
+            app.$('body').on("chrome-loaded", function () {
+                app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
+                app.render(listView);
+            });
         });
     </script>
 }
 
-<h2>@ViewBag.Title</h2>
-
-<div ng-controller="listview-controller">
+<div id="listView_container" ng-controller="listview-controller">
+    <div class="sp-navbar">
+        <uif-command-bar ng-cloak uif-search-term="selection.commandBar.searchTerm" placeholder="Search here...">
+            <uif-command-bar-search></uif-command-bar-search>
+            <uif-command-bar-side>
+                <uif-command-bar-item ng-show="selection.commandBar.selectionText" ng-click="selection.commandBar.clearSelection()">
+                    <uif-icon uif-type="trash"></uif-icon>
+                    {{selection.commandBar.selectionText}}
+                </uif-command-bar-item>
+            </uif-command-bar-side>
+            <uif-command-bar-main uif-show-overflow='table.selectedItems.length > 0'>
+                <uif-command-bar-item ng-click="selection.commandBar.view()" ng-show="selection.commandBar.viewEnabled">
+                    <uif-icon uif-type="eye"></uif-icon>
+                    <span>VIEW</span>
+                </uif-command-bar-item>
+                <uif-command-bar-item ng-click="selection.commandBar.delete()" ng-show="selection.commandBar.deleteEnabled">
+                    <uif-icon uif-type="xCircle"></uif-icon>
+                    <span>DELETE</span>
+                </uif-command-bar-item>
+            </uif-command-bar-main>
+        </uif-command-bar>
+    </div>
     <div class="sp-panel">
+        <h2>@ViewBag.Title</h2>
         <uif-table ng-cloak uif-row-select-mode="multiple">
             <uif-table-head>
                 <uif-table-row>
@@ -47,8 +71,8 @@
                     <uif-table-cell ng-repeat="field in fields" ng-bind-html="getFieldValue(listItem,field) | unsafe"></uif-table-cell>
                     <uif-pivot-ellipsis ng-click="selection.openMenu(listItem)">
                         <uif-contextual-menu uif-is-open="listItem.$events.menuOpened" uif-close-on-click="true">
-                            <uif-contextual-menu-item uif-text="'View'" ng-click="selection.commandBar.view(listItem)"></uif-contextual-menu-item>
-                            <uif-contextual-menu-item uif-text="'Delete'" disabled="{{listItem.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'VIEW'" ng-click="selection.commandBar.view(listItem)"></uif-contextual-menu-item>
+                            <uif-contextual-menu-item uif-text="'DELETE'" ng-click="selection.commandBar.delete(listItem)" disabled="{{listItem.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
                         </uif-contextual-menu>
                     </uif-pivot-ellipsis>
                 </uif-table-row>

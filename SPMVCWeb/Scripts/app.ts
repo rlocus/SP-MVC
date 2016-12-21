@@ -60,7 +60,7 @@ class App {
         this.spApp = this.$angular.module(App.SharePointAppName, [
             'officeuifabric.core',
             'officeuifabric.components'
-        ]).service(App.SPServiceName, function($http, $q) {
+        ]).service(App.SPServiceName, function ($http, $q) {
             this.getFormDigest = () => {
                 var deferred = self.$.Deferred();
                 var url = $pnp.util.combinePaths(self.appWebUrl, "_api/contextinfo")
@@ -72,17 +72,17 @@ class App {
                         "accept": "application/json;odata=verbose",
                         "content-Type": "application/json;odata=verbose"
                     },
-                    success: function(data) {
+                    success: function (data) {
                         var formDigestValue = JSON.parse(<string>data.body).d.GetContextWebInformation.FormDigestValue;
                         deferred.resolve(formDigestValue);
                     },
-                    error: function(error) {
+                    error: function (error) {
                         deferred.reject(error);
                     }
                 });
                 return deferred.promise();
             }
-        }).filter('unsafe', function($sce) { return $sce.trustAsHtml; });
+        }).filter('unsafe', function ($sce) { return $sce.trustAsHtml; });
         this._initialized = true;
     }
 
@@ -346,6 +346,62 @@ module App.Module {
                         (<any>$scope).loading = false;
                         deferred.resolve();
                     }, deferred.reject);
+                    (<any>$scope).selection = {
+                        commandBar: {
+                            searchTerm: null,
+                            createEnabled: false,
+                            viewEnabled: false,
+                            deleteEnabled: false,
+                            view: function (listItem) {
+                                if (!listItem) {
+                                    var selectedItems = (<any>$scope).table.selectedItems;
+                                    listItem = self._app.$(selectedItems).get(0);
+                                }
+                                if (listItem) {
+                                }
+                            },
+                            delete: function (listItem) {
+                                if (!listItem) {
+                                    var selectedItems = (<any>$scope).table.selectedItems;
+
+                                }
+                            },
+                            clearSelection: function () {
+                                var selectedItems = (<any>$scope).table.selectedItems;
+                                if (selectedItems.length > 0) {
+                                    self._app.$.each((<any>$scope).table.rows, (i, item) => {
+                                        if (item.selected) {
+                                            item.selected = false;
+                                        }
+                                    });
+                                }
+                            }
+                        },
+                        openMenu: (listItem) => {
+                            if (listItem) {
+                                if (!listItem.$events.menuOpened) {
+                                    self._app.$.each((<any>$scope).listItems, ((i, listItem) => {
+                                        listItem.$events.menuOpened = false;
+                                    }));
+                                }
+                                listItem.$events.menuOpened = !listItem.$events.menuOpened;
+                            }
+                        }
+                    };
+                    $scope.$watch('table.selectedItems', function (newValue: Array<any>, oldValue: Array<any>) {
+                        (<any>$scope).selection.commandBar.viewEnabled = newValue.length === 1;
+                        (<any>$scope).selection.commandBar.deleteEnabled = newValue.length > 0;
+                        (<any>$scope).selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
+                    }, true);
+                    $scope.$watch('selection.commandBar.searchTerm', function (newValue: string, oldValue: string) {
+                        //(<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
+                        //self._app.delay(() => {
+                        //    $scope.$apply(function () {
+                               
+                        //    });
+                        //}, self._options.delay);
+                    }, false);
+
                     if (typeof self._options.onload === "function") {
                         self._options.onload($scope);
                     }

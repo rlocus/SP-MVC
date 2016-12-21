@@ -36,6 +36,7 @@ require(["jquery", "angular", "app"], function ($, angular, app) {
         "jquery": $,
         "angular": angular
     });
+    //$('body').fadeIn();
     app.ensureScript(app.scriptBase + "/MicrosoftAjax.js").then(function () {
         app.ensureScript(app.scriptBase + "/SP.Runtime.js").then(function () {
             app.ensureScript(app.scriptBase + "/SP.js").then(function () {
@@ -60,6 +61,7 @@ require(["jquery", "angular", "app"], function ($, angular, app) {
             window.chromeLoaded = function () {
                 $('body').fadeIn();
                 $('.body-content').css("padding-top", $('#divSPChrome').height());
+                $('body').trigger("chrome-loaded");
             };
             //Load the Chrome Control in the divSPChrome element of the page
             var chromeNavigation = new SP.UI.Controls.Navigation('divSPChrome', options);

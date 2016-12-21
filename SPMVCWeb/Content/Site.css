@@ -33,7 +33,7 @@ textarea {
 
 .sp-navbar {
     position: fixed;
-    top: 80px;
+    top: 50px;
     z-index: 200;
     right: 0;
     left: 0;
