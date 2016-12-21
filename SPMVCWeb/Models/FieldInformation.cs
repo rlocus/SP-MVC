@@ -12,14 +12,28 @@ namespace SPMVCWeb.Models
         {
             Id = field.Id;
             Name = field.InternalName;
-            Title = field.Title;
-            Description = field.Description;
+            Title = HttpUtility.HtmlEncode(field.Title);
+            Description = HttpUtility.HtmlEncode(field.Description);
+            IsReadOnly = field.ReadOnlyField;
+            TypeKind = (uint)field.FieldTypeKind;
+            TypeName = field.TypeAsString;
+            Required = field.Required;
+            Filterable = field.Filterable;
+            Sortable = field.Sortable;
+            DefaultValue = HttpUtility.HtmlEncode(field.DefaultValue);
         }
 
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public string Title { get; private set; }
         public string Description { get; private set; }
+        public bool IsReadOnly { get; private set; }
+        public uint TypeKind { get; private set; }
+        public string TypeName { get; private set; }
+        public bool Required { get; private set; }
+        public bool Filterable { get; private set; }
+        public bool Sortable { get; private set; }
+        public string DefaultValue { get; private set; }
 
         public static FieldInformation GetInformation(Field field)
         {

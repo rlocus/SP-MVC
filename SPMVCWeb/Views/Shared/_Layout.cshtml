@@ -7,8 +7,9 @@
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
 </head>
-<body>
+<body style="display: none">
     <div class="navbar navbar-inverse navbar-fixed-top">
+        <div id="divSPChrome"></div>
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -20,9 +21,9 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home", new {SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey]}, null)</li>
-                    <li>@Html.ActionLink("About", "About", "Home", new {SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey]}, null)</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home", new {SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey]}, null)</li>
+                    <li>@Html.ActionLink("Home", "Index", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("About", "About", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
                 </ul>
                 <div class="navbar-right">
                     <uif-persona ng-cloak uif-style="square" uif-size="medium" uif-image-url="">

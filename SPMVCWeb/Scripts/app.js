@@ -73,7 +73,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     });
                     return deferred.promise();
                 };
-            });
+            }).filter('unsafe', function ($sce) { return $sce.trustAsHtml; });
             this._initialized = true;
         };
         App.prototype.ensureScript = function (url) {
@@ -88,10 +88,10 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             if (!self._initialized) {
                 throw "App is not initialized!";
             }
-            self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function (data) {
-                self.ensureScript(self.scriptBase + "/sp.runtime.js").then(function (data) {
-                    self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
-                        self.ensureScript(self.scriptBase + "/SP.js").then(function (data) {
+            self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function () {
+                self.ensureScript(self.scriptBase + "/SP.Runtime.js").then(function () {
+                    self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function () {
+                        self.ensureScript(self.scriptBase + "/SP.js").then(function () {
                             if ($pnp.util.isArray(modules)) {
                                 self.$.each(modules, function (i, module) {
                                     module.render();

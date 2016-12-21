@@ -60,7 +60,7 @@ class App {
         this.spApp = this.$angular.module(App.SharePointAppName, [
             'officeuifabric.core',
             'officeuifabric.components'
-        ]).service(App.SPServiceName, function ($http, $q) {
+        ]).service(App.SPServiceName, function($http, $q) {
             this.getFormDigest = () => {
                 var deferred = self.$.Deferred();
                 var url = $pnp.util.combinePaths(self.appWebUrl, "_api/contextinfo")
@@ -72,17 +72,17 @@ class App {
                         "accept": "application/json;odata=verbose",
                         "content-Type": "application/json;odata=verbose"
                     },
-                    success: function (data) {
+                    success: function(data) {
                         var formDigestValue = JSON.parse(<string>data.body).d.GetContextWebInformation.FormDigestValue;
                         deferred.resolve(formDigestValue);
                     },
-                    error: function (error) {
+                    error: function(error) {
                         deferred.reject(error);
                     }
                 });
                 return deferred.promise();
             }
-        });
+        }).filter('unsafe', function($sce) { return $sce.trustAsHtml; });
         this._initialized = true;
     }
 
@@ -103,10 +103,10 @@ class App {
         if (!self._initialized) {
             throw "App is not initialized!";
         }
-        self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function (data) {
-            self.ensureScript(self.scriptBase + "/sp.runtime.js").then(function (data) {
-                self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function (data) {
-                    self.ensureScript(self.scriptBase + "/SP.js").then(function (data) {
+        self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function () {
+            self.ensureScript(self.scriptBase + "/SP.Runtime.js").then(function () {
+                self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function () {
+                    self.ensureScript(self.scriptBase + "/SP.js").then(function () {
                         if ($pnp.util.isArray(modules)) {
                             self.$.each(modules, (i: number, module: App.IModule) => {
                                 module.render();
