@@ -14,6 +14,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 };
             })();
             this._initialized = false;
+            this._scriptPromises = {};
         }
         App.prototype.init = function (preloadedScripts) {
             var self = this;
@@ -77,7 +78,16 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             this._initialized = true;
         };
         App.prototype.ensureScript = function (url) {
-            return this.$.cachedScript(url);
+            if (url) {
+                url = url.toLowerCase().replace("~sphost", this.scriptBase);
+                var scriptPromise = this._scriptPromises[url];
+                if (!scriptPromise) {
+                    scriptPromise = this.$.cachedScript(url);
+                    this._scriptPromises[url] = scriptPromise;
+                }
+                return scriptPromise;
+            }
+            return null;
         };
         App.prototype.render = function () {
             var modules = [];
@@ -88,10 +98,10 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             if (!self._initialized) {
                 throw "App is not initialized!";
             }
-            self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function () {
-                self.ensureScript(self.scriptBase + "/SP.Runtime.js").then(function () {
-                    self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function () {
-                        self.ensureScript(self.scriptBase + "/SP.js").then(function () {
+            self.ensureScript("~sphost/MicrosoftAjax.js").then(function () {
+                self.ensureScript("~sphost/SP.Runtime.js").then(function () {
+                    self.ensureScript("~sphost/SP.RequestExecutor.js").then(function () {
+                        self.ensureScript("~sphost/SP.js").then(function () {
                             if ($pnp.util.isArray(modules)) {
                                 self.$.each(modules, function (i, module) {
                                     module.render();

@@ -16,12 +16,13 @@ class App {
     public spApp: ng.IModule;
 
     private _initialized: boolean;
-
+    private _scriptPromises;
     static SharePointAppName = "SharePointApp";
     static SPServiceName = "SPService";
 
     constructor() {
         this._initialized = false;
+        this._scriptPromises = {};
     }
 
     public init(preloadedScripts: any[]) {
@@ -87,7 +88,16 @@ class App {
     }
 
     public ensureScript(url): JQueryXHR {
-        return (<any>this.$).cachedScript(url);
+        if (url) {
+            url = url.toLowerCase().replace("~sphost", this.scriptBase);
+            var scriptPromise = this._scriptPromises[url];
+            if (!scriptPromise) {
+                scriptPromise = (<any>this.$).cachedScript(url);
+                this._scriptPromises[url] = scriptPromise;
+            }
+            return scriptPromise;
+        }
+        return null;
     }
 
     public delay = (function () {
@@ -103,10 +113,10 @@ class App {
         if (!self._initialized) {
             throw "App is not initialized!";
         }
-        self.ensureScript(self.scriptBase + "/MicrosoftAjax.js").then(function () {
-            self.ensureScript(self.scriptBase + "/SP.Runtime.js").then(function () {
-                self.ensureScript(self.scriptBase + "/SP.RequestExecutor.js").then(function () {
-                    self.ensureScript(self.scriptBase + "/SP.js").then(function () {
+        self.ensureScript("~sphost/MicrosoftAjax.js").then(function () {
+            self.ensureScript("~sphost/SP.Runtime.js").then(function () {
+                self.ensureScript("~sphost/SP.RequestExecutor.js").then(function () {
+                    self.ensureScript("~sphost/SP.js").then(function () {
                         if ($pnp.util.isArray(modules)) {
                             self.$.each(modules, (i: number, module: App.IModule) => {
                                 module.render();
@@ -397,7 +407,7 @@ module App.Module {
                         //(<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
                         //self._app.delay(() => {
                         //    $scope.$apply(function () {
-                               
+
                         //    });
                         //}, self._options.delay);
                     }, false);
