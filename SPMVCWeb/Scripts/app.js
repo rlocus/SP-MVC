@@ -50,6 +50,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             }
             this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, "_layouts/15");
             this.spApp = this.$angular.module(App.SharePointAppName, [
+                //'ngSanitize',
                 'officeuifabric.core',
                 'officeuifabric.components'
             ]).service(App.SPServiceName, function ($http, $q) {
@@ -74,7 +75,27 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     });
                     return deferred.promise();
                 };
-            }).filter('unsafe', function ($sce) { return $sce.trustAsHtml; });
+            }).filter('unsafe', function ($sce) {
+                return $sce.trustAsHtml;
+            }).directive('compile', [
+                '$compile', function ($compile) {
+                    return function (scope, element, attrs) {
+                        scope.$watch(function (scope) {
+                            // watch the 'compile' expression for changes
+                            return scope.$eval(attrs.compile);
+                        }, function (value) {
+                            // when the 'compile' expression changes
+                            // assign it into the current DOM
+                            element.html(value);
+                            // compile the new DOM and link it to the current
+                            // scope.
+                            // NOTE: we only compile .childNodes so that
+                            // we don't get into infinite loop compiling ourselves
+                            $compile(element.contents())(scope);
+                        });
+                    };
+                }
+            ]);
             this._initialized = true;
         };
         App.prototype.ensureScript = function (url) {
@@ -127,7 +148,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             var permMaskHigh = permMask.length <= 10 ? 0 : parseInt(permMask.substring(2, permMask.length - 8), 16);
             var permMaskLow = permMask.length <= 10 ? parseInt(permMask) : parseInt(permMask.substring(permMask.length - 8, permMask.length), 16);
             var permissions = new SP.BasePermissions();
-            permissions.initPropertiesFromJson({ High: permMaskHigh, Low: permMaskLow });
+            permissions.initPropertiesFromJson({ "High": permMaskHigh, "Low": permMaskLow });
             return permissions;
         };
         App.SharePointAppName = "SharePointApp";

@@ -6,6 +6,7 @@ require.config({
         //"es6-promise": 'es6-promise.min',
         "pnp": 'pnp.min',
         "angular": 'angular.min',
+        //"angular-sanitize": 'angular-sanitize.min',
         "ngOfficeUiFabric": 'ngOfficeUiFabric.min'
     },
     shim: {
@@ -15,8 +16,9 @@ require.config({
         angular: {
             exports: 'angular'
         },
+        //'angular-sanitize': ['angular'],
         ngOfficeUiFabric: ['angular'],
-        app: ['jquery', 'pnp', 'angular', 'ngOfficeUiFabric'],
+        app: ['jquery', 'pnp', 'angular', /*'angular-sanitize',*/ 'ngOfficeUiFabric']
     }
 });
 
@@ -31,7 +33,7 @@ if (typeof window.jQuery == "undefined") {
 
 // you can add additional requirements in here but you would need to manually add them to the preloaded modules object
 // we are also showing how to include poly-fills for fetch and es6 promises if needed.
-require(["jquery", "angular", "app"], function ($, angular, app) {
+require(["jquery", "angular", "app"/*, "angular-sanitize"*/], function ($, angular, app) {
     app.init({
         "jquery": $,
         "angular": angular
@@ -42,7 +44,7 @@ require(["jquery", "angular", "app"], function ($, angular, app) {
             app.ensureScript(app.scriptBase + "/SP.js").then(function () {
                 //Execute the correct script based on the isDialog
                 //Load the SP.UI.Controls.js file to render the App Chrome
-                app.ensureScript(app.scriptBase + "/SP.UI.Controls.js").then(function() {
+                app.ensureScript(app.scriptBase + "/SP.UI.Controls.js").then(function () {
                     //Set the chrome options for launching Help, Account, and Contact pages
                     var options = {
                         'siteUrl': app.hostWebUrl,

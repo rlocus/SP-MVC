@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Xml.Linq;
 using Microsoft.SharePoint.Client;
 
 namespace SPMVCWeb.Models
@@ -21,6 +22,39 @@ namespace SPMVCWeb.Models
             Filterable = field.Filterable;
             Sortable = field.Sortable;
             DefaultValue = HttpUtility.HtmlEncode(field.DefaultValue);
+            var schemaXml = XElement.Parse(field.SchemaXml);
+            var listItemMenuAllowed = schemaXml.Attribute("ListItemMenuAllowed");
+            if (listItemMenuAllowed != null)
+            {
+                if (listItemMenuAllowed.Value == "Required")
+                {
+                    ListItemMenuAllowed = true;
+                }
+                else if (listItemMenuAllowed.Value == "Allowed")
+                {
+                    var listItemMenu = schemaXml.Attribute("ListItemMenu");
+                    if (listItemMenu != null)
+                    {
+                        ListItemMenuAllowed = listItemMenu.Value.ToUpper() == "TRUE";
+                    }
+                }
+            }
+            var linkToItemAllowed = schemaXml.Attribute("LinkToItemAllowed");
+            if (linkToItemAllowed != null)
+            {
+                if (linkToItemAllowed.Value == "Required")
+                {
+                    LinkToItemAllowed = true;
+                }
+                else if (linkToItemAllowed.Value == "Allowed")
+                {
+                    var linkToItem = schemaXml.Attribute("LinkToItem");
+                    if (linkToItem != null)
+                    {
+                        LinkToItemAllowed = linkToItem.Value.ToUpper() == "TRUE";
+                    }
+                }
+            }
         }
 
         public Guid Id { get; private set; }
@@ -34,6 +68,8 @@ namespace SPMVCWeb.Models
         public bool Filterable { get; private set; }
         public bool Sortable { get; private set; }
         public string DefaultValue { get; private set; }
+        public bool? ListItemMenuAllowed { get; private set; }
+        public bool? LinkToItemAllowed { get; private set; }
 
         public static FieldInformation GetInformation(Field field)
         {

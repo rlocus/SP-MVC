@@ -58,3 +58,11 @@ textarea {
 .sp-spinner {
     margin-top: 5px;
 }
+
+table.spitem-menu {
+    width: 100%;
+}
+
+table.spitem-menu td.contextual-menu {
+    float: right;
+}

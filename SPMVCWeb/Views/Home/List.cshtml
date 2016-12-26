@@ -20,6 +20,13 @@
                         if (field.Name == "LinkTitle") {
                             value = "<a>" + listItem.$data["Title"] + "</a>";
                         }
+                        if (field.ListItemMenuAllowed) {
+                            value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
+                                "<uif-contextual-menu ng-click=\"selection.openMenu(listItem)\" uif-is-open=\"listItem.$events.menuOpened\" uif-close-on-click=\"true\">" +
+                                "<uif-contextual-menu-item uif-text=\"'VIEW'\" ng-click=\"selection.commandBar.view(listItem)\"></uif-contextual-menu-item>" +
+                                "<uif-contextual-menu-item uif-text=\"'DELETE'\" ng-click=\"selection.commandBar.delete(listItem)\" disabled=\"{{listItem.$permissions.delete ? '' : 'disabled'}}\"></uif-contextual-menu-item>" +
+                                "</uif-contextual-menu></uif-pivot-ellipsis>");
+                        }
                         return value;
                     };
                 }
@@ -62,19 +69,12 @@
                 <uif-table-row>
                     <uif-table-row-select></uif-table-row-select>
                     <uif-table-header ng-repeat="field in fields" uif-order-by="{{field.Name}}"><span class="ms-u-noWrap">{{field.Title}}</span></uif-table-header>
-                    <uif-table-header></uif-table-header>
                 </uif-table-row>
             </uif-table-head>
             <uif-table-body>
                 <uif-table-row ng-repeat="listItem in listItems | orderBy:table.orderBy:!table.orderAsc" uif-item="listItem" uif-selected="{{listItem.$events.isSelected}}">
                     <uif-table-row-select></uif-table-row-select>
-                    <uif-table-cell ng-repeat="field in fields" ng-bind-html="getFieldValue(listItem,field) | unsafe"></uif-table-cell>
-                    <uif-pivot-ellipsis ng-click="selection.openMenu(listItem)">
-                        <uif-contextual-menu uif-is-open="listItem.$events.menuOpened" uif-close-on-click="true">
-                            <uif-contextual-menu-item uif-text="'VIEW'" ng-click="selection.commandBar.view(listItem)"></uif-contextual-menu-item>
-                            <uif-contextual-menu-item uif-text="'DELETE'" ng-click="selection.commandBar.delete(listItem)" disabled="{{listItem.$permissions.manage ? '' : 'disabled'}}"></uif-contextual-menu-item>
-                        </uif-contextual-menu>
-                    </uif-pivot-ellipsis>
+                    <uif-table-cell ng-repeat="field in fields" compile="getFieldValue(listItem,field)" uif-item="field"></uif-table-cell>
                 </uif-table-row>
             </uif-table-body>
         </uif-table>
