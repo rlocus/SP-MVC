@@ -181,6 +181,58 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     var self = this;
                     var deferred = self._app.$.Deferred();
                     var url = null;
+                    if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
+                        var query;
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                            query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists;
+                            query.concat("/GetById(@list)");
+                            query.query.add("@list", "'" + self._options.listId + "'");
+                        }
+                        else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                            query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                        }
+                        else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                            query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                        }
+                        query.concat("/RenderListDataAsStream");
+                        query.query.add("View", self._options.viewId);
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                            query.query.add("SortField", self._options.orderBy);
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
+                            query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
+                        }
+                        url = query.toUrlAndQuery();
+                        var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": 0 | 1 | 2 /*| 4 | 8*/ };
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
+                            parameters.ViewXml = self._options.viewXml;
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
+                            parameters.Paging = self._options.paged;
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
+                            parameters.FolderServerRelativeUrl = self._options.rootFolder;
+                        }
+                        var postBody = JSON.stringify({ "parameters": parameters });
+                        var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        executor.executeAsync({
+                            url: url,
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json;odata=verbose",
+                                "content-Type": "application/json;odata=verbose"
+                            },
+                            body: postBody,
+                            success: function (data) {
+                                var result = JSON.parse(data.body);
+                                deferred.resolve(result);
+                            },
+                            error: function (error) {
+                                deferred.reject(error);
+                            }
+                        });
+                        return deferred.promise();
+                    }
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
                         var query;
                         if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
@@ -310,7 +362,8 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             var deferred = $q.defer();
                             self.getListItems().then(function (data) {
                                 factory.listItems.splice(0, factory.listItems.length);
-                                self._app.$.each(data.Row, (function (i, listItem) {
+                                var rows = data.Row ? data.Row : (data.ListData ? data.ListData.Row : data);
+                                self._app.$.each(rows, (function (i, listItem) {
                                     factory.listItems.push(self.getEntity(listItem));
                                 }));
                                 deferred.resolve(factory.listItems);

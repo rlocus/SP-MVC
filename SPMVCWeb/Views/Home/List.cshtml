@@ -11,8 +11,10 @@
             var list = JSON.parse(listJson);
             var listView = app.get_ListView({
                 controllerName: "listview-controller",
-                listId: list.ListId,
-                viewXml: app.$("<div />").html(list.ViewXml).text(),
+                //listId: list.ListId,
+                listUrl: list.ListUrl,
+                viewId: list.ViewId,
+                //viewXml: app.$("<div />").html(list.ViewXml).text(),
                 onload: function ($scope) {
                     $scope.fields = list.Fields;
                     $scope.getFieldValue = function (listItem, field) {

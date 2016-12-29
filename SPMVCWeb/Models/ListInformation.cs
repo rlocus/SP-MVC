@@ -29,6 +29,7 @@ namespace SPMVCWeb.Models
             RowLimit = view.RowLimit;
             ViewTitle = view.Title;
             ViewUrl = view.ServerRelativeUrl;
+            ListUrl = list.RootFolder.ServerRelativeUrl;
         }
 
         public string Title { get; private set; }
@@ -42,6 +43,7 @@ namespace SPMVCWeb.Models
         public uint RowLimit { get; private set; }
         public string ViewTitle { get; private set; }
         public string ViewUrl { get; private set; }
+        public string ListUrl { get; private set; }
         public string ViewXml { get; private set; }
     }
 }
