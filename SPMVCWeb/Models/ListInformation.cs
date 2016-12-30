@@ -13,12 +13,20 @@ namespace SPMVCWeb.Models
         {
             if (list == null) throw new ArgumentNullException("list");
             if (view == null) throw new ArgumentNullException("view");
-            ListId = list.Id;
+            Id = list.Id;
             Title = list.Title;
             ViewId = view.Id;
             if (view.ViewFields.AreItemsAvailable && list.Fields.AreItemsAvailable)
             {
-                var fields = list.Fields.Where(f => view.ViewFields.Contains(f.InternalName));
+                List<Field> fields = new List<Field>();
+                foreach (string fieldName in view.ViewFields)
+                {
+                    var field = list.Fields.FirstOrDefault(f => f.InternalName == fieldName);
+                    if (field != null)
+                    {
+                        fields.Add(field);
+                    }
+                }
                 Fields = fields.Select(FieldInformation.GetInformation).ToArray();
             }
             ViewJoins = HttpUtility.HtmlEncode(view.ViewJoins);
@@ -33,7 +41,7 @@ namespace SPMVCWeb.Models
         }
 
         public string Title { get; private set; }
-        public Guid ListId { get; private set; }
+        public Guid Id { get; private set; }
         public Guid ViewId { get; private set; }
         public FieldInformation[] Fields { get; private set; }
         public string ViewJoins { get; private set; }

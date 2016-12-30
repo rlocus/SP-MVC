@@ -11,16 +11,19 @@
             var list = JSON.parse(listJson);
             var listView = app.get_ListView({
                 controllerName: "listview-controller",
-                //listId: list.ListId,
+                listId: list.Id,
+                listTitle: list.Title,
                 listUrl: list.ListUrl,
                 viewId: list.ViewId,
-                //viewXml: app.$("<div />").html(list.ViewXml).text(),
+                viewXml: app.$("<div />").html(list.ViewXml).text(),
+                renderMethod: 0,
+                renderOptions: 0 | 1 | 2 /*| 4 | 8*/,
                 onload: function ($scope) {
                     $scope.fields = list.Fields;
                     $scope.getFieldValue = function (listItem, field) {
                         var value = listItem.$data[field.Name];
                         if (field.Name == "LinkTitle") {
-                            value = "<a>" + listItem.$data["Title"] + "</a>";
+                            value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
                         }
                         if (field.ListItemMenuAllowed) {
                             value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
