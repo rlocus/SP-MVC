@@ -244,7 +244,7 @@ module App.Module {
             return { $data: listItem, $events: $events, $permissions: $permissions };
         }
 
-        private getListItems() {
+        private getListItems(token: string) {
             var self = this;
             var deferred = self._app.$.Deferred();
             var url: string = null;
@@ -261,7 +261,22 @@ module App.Module {
                         query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
                     }
                     query.concat("/RenderListDataAsStream");
-                    query.query.add("View", self._options.viewId);
+                    if (token) {
+                        while ((<any>token).startsWith("?") || (<any>token).startsWith("&")) {
+                            token = token.slice(1, token.length);
+                        }
+                        var qParameters = token.split("&");
+                        for (var i in qParameters) {
+                            var qParameter = qParameters[i].split("=");
+                            var key = self._app.$(qParameter).get(0);
+                            var value = self._app.$(qParameter).get(1);
+                            if (key && value) {
+                                query.query.add(key, value);
+                            }
+                        }
+                    } else {
+                        query.query.add("View", self._options.viewId);
+                    }
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
                         query.query.add("SortField", self._options.orderBy);
                     }
@@ -271,10 +286,10 @@ module App.Module {
                     url = query.toUrlAndQuery();
                     var parameters = <any>{ "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                        parameters.ViewXml = self._options.viewXml;
+                        //parameters.ViewXml = self._options.viewXml;
                     }
                     if (!$pnp.util.stringIsNullOrEmpty(<any>self._options.paged)) {
-                        parameters.Paging = self._options.paged;
+                        //parameters.Paging = self._options.paged == true? "TRUE" : "FALSE";
                     }
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
                         parameters.FolderServerRelativeUrl = self._options.rootFolder;
@@ -307,7 +322,7 @@ module App.Module {
                     } else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
                         query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
                     }
-                    query.concat("/renderlistdata(@viewXml)");
+                    query.concat("/renderListData(@viewXml)");
                     query.query.add("@viewXml", "'" + self._options.viewXml + "'");
                     url = query.toUrlAndQuery();
                     var executor = new SP.RequestExecutor(self._app.appWebUrl);
@@ -435,15 +450,20 @@ module App.Module {
             self._app.spApp.factory("ListViewFactory", ($q, $http) => {
                 var factory = {} as IListViewFactory;
                 factory.listItems = [];
-                factory.getListItems = () => {
+                factory.getListItems = (isPrev: boolean) => {
                     var deferred = $q.defer();
-                    self.getListItems().then((data: any) => {
+                    var token = isPrev == true ? factory.$prevToken : factory.$nextToken;
+                    self.getListItems(token).then((data: any) => {
                         factory.listItems.splice(0, factory.listItems.length);
+                        factory.$nextToken = data.NextHref ? data.NextHref : (data.ListData ? data.ListData.NextHref : null);
+                        factory.$prevToken = data.PrevHref ? data.PrevHref : (data.ListData ? data.ListData.PrevHref : null);
+                        factory.$first = data.FirstRow ? data.FirstRow : (data.ListData ? data.ListData.FirstRow : 0);
+                        factory.$last = data.LastRow ? data.LastRow : (data.ListData ? data.ListData.LastRow : 0);
                         var rows = data.Row ? data.Row : (data.ListData ? data.ListData.Row : data);
                         self._app.$.each(rows, (function (i, listItem) {
                             factory.listItems.push(self.getEntity(listItem));
                         }));
-                        deferred.resolve(factory.listItems);
+                        deferred.resolve();
                     }, deferred.reject);
                     return deferred.promise;
                 }
@@ -454,7 +474,7 @@ module App.Module {
                 '$scope', 'ListViewFactory', App.SPServiceName, function ($scope: ng.IScope, factory: IListViewFactory, service: App.ISPService) {
                     (<any>$scope).loading = true;
                     (<any>$scope).listItems = [];
-                    factory.getListItems().then(() => {
+                    factory.getListItems(false).then(() => {
                         (<any>$scope).listItems = self._app.$angular.copy(factory.listItems);
                         (<any>$scope).loading = false;
                         deferred.resolve();
@@ -499,6 +519,28 @@ module App.Module {
                                 }
                                 listItem.$events.menuOpened = !listItem.$events.menuOpened;
                             }
+                        },
+                        pager: {
+                            first: 0,
+                            last: 0,
+                            next: function () {
+                                factory.getListItems(false).then(() => {
+                                    (<any>$scope).listItems = self._app.$angular.copy(factory.listItems);
+                                    (<any>$scope).selection.pager.first = factory.$first;
+                                    (<any>$scope).selection.pager.last = factory.$last;
+                                    //(<any>$scope).loading = false;
+                                    deferred.resolve();
+                                }, deferred.reject);
+                            },
+                            prev: function () {
+                                factory.getListItems(true).then(() => {
+                                    (<any>$scope).listItems = self._app.$angular.copy(factory.listItems);
+                                    (<any>$scope).selection.pager.first = factory.$first;
+                                    (<any>$scope).selection.pager.last = factory.$last;
+                                    //(<any>$scope).loading = false;
+                                    deferred.resolve();
+                                }, deferred.reject);
+                            },
                         }
                     };
                     $scope.$watch('table.selectedItems', function (newValue: Array<any>, oldValue: Array<any>) {
@@ -526,7 +568,11 @@ module App.Module {
 
     interface IListViewFactory {
         listItems: Array<any>;
-        getListItems();
+        $nextToken: string;
+        $prevToken: string;
+        $first: number,
+        $last: number,
+        getListItems(isPrev: boolean);
     }
 
     interface IListsViewFactory {

@@ -16,6 +16,7 @@
                 listUrl: list.ListUrl,
                 viewId: list.ViewId,
                 viewXml: app.$("<div />").html(list.ViewXml).text(),
+                paged: list.Paged,
                 renderMethod: 0,
                 renderOptions: 0 | 1 | 2 /*| 4 | 8*/,
                 onload: function ($scope) {
@@ -83,5 +84,10 @@
                 </uif-table-row>
             </uif-table-body>
         </uif-table>
+        <ul class="pagination">
+            <li><a ng-click="selection.pager.prev()">Previous</a></li>
+            <li>{{selection.pager.first}} - {{selection.pager.last}}</li>
+            <li><a ng-click="selection.pager.next()">Next</a></li>
+        </ul>
     </div>
 </div>

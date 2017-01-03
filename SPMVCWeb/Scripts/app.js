@@ -186,7 +186,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     var $events = { menuOpened: false, isSelected: false };
                     return { $data: listItem, $events: $events, $permissions: $permissions };
                 };
-                ListView.prototype.getListItems = function () {
+                ListView.prototype.getListItems = function (token) {
                     var self = this;
                     var deferred = self._app.$.Deferred();
                     var url = null;
@@ -205,7 +205,23 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
                             }
                             query.concat("/RenderListDataAsStream");
-                            query.query.add("View", self._options.viewId);
+                            if (token) {
+                                while (token.startsWith("?") || token.startsWith("&")) {
+                                    token = token.slice(1, token.length);
+                                }
+                                var qParameters = token.split("&");
+                                for (var i in qParameters) {
+                                    var qParameter = qParameters[i].split("=");
+                                    var key = self._app.$(qParameter).get(0);
+                                    var value = self._app.$(qParameter).get(1);
+                                    if (key && value) {
+                                        query.query.add(key, value);
+                                    }
+                                }
+                            }
+                            else {
+                                query.query.add("View", self._options.viewId);
+                            }
                             if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
                                 query.query.add("SortField", self._options.orderBy);
                             }
@@ -215,10 +231,8 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             url = query.toUrlAndQuery();
                             var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
                             if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                                parameters.ViewXml = self._options.viewXml;
                             }
                             if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
-                                parameters.Paging = self._options.paged;
                             }
                             if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
                                 parameters.FolderServerRelativeUrl = self._options.rootFolder;
@@ -253,7 +267,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
                                 query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
                             }
-                            query.concat("/renderlistdata(@viewXml)");
+                            query.concat("/renderListData(@viewXml)");
                             query.query.add("@viewXml", "'" + self._options.viewXml + "'");
                             url = query.toUrlAndQuery();
                             var executor = new SP.RequestExecutor(self._app.appWebUrl);
@@ -385,15 +399,20 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     self._app.spApp.factory("ListViewFactory", function ($q, $http) {
                         var factory = {};
                         factory.listItems = [];
-                        factory.getListItems = function () {
+                        factory.getListItems = function (isPrev) {
                             var deferred = $q.defer();
-                            self.getListItems().then(function (data) {
+                            var token = isPrev == true ? factory.$prevToken : factory.$nextToken;
+                            self.getListItems(token).then(function (data) {
                                 factory.listItems.splice(0, factory.listItems.length);
+                                factory.$nextToken = data.NextHref ? data.NextHref : (data.ListData ? data.ListData.NextHref : null);
+                                factory.$prevToken = data.PrevHref ? data.PrevHref : (data.ListData ? data.ListData.PrevHref : null);
+                                factory.$first = data.FirstRow ? data.FirstRow : (data.ListData ? data.ListData.FirstRow : 0);
+                                factory.$last = data.LastRow ? data.LastRow : (data.ListData ? data.ListData.LastRow : 0);
                                 var rows = data.Row ? data.Row : (data.ListData ? data.ListData.Row : data);
                                 self._app.$.each(rows, (function (i, listItem) {
                                     factory.listItems.push(self.getEntity(listItem));
                                 }));
-                                deferred.resolve(factory.listItems);
+                                deferred.resolve();
                             }, deferred.reject);
                             return deferred.promise;
                         };
@@ -404,7 +423,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                         '$scope', 'ListViewFactory', App.SPServiceName, function ($scope, factory, service) {
                             $scope.loading = true;
                             $scope.listItems = [];
-                            factory.getListItems().then(function () {
+                            factory.getListItems(false).then(function () {
                                 $scope.listItems = self._app.$angular.copy(factory.listItems);
                                 $scope.loading = false;
                                 deferred.resolve();
@@ -448,6 +467,28 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         }
                                         listItem.$events.menuOpened = !listItem.$events.menuOpened;
                                     }
+                                },
+                                pager: {
+                                    first: 0,
+                                    last: 0,
+                                    next: function () {
+                                        factory.getListItems(false).then(function () {
+                                            $scope.listItems = self._app.$angular.copy(factory.listItems);
+                                            $scope.selection.pager.first = factory.$first;
+                                            $scope.selection.pager.last = factory.$last;
+                                            //(<any>$scope).loading = false;
+                                            deferred.resolve();
+                                        }, deferred.reject);
+                                    },
+                                    prev: function () {
+                                        factory.getListItems(true).then(function () {
+                                            $scope.listItems = self._app.$angular.copy(factory.listItems);
+                                            $scope.selection.pager.first = factory.$first;
+                                            $scope.selection.pager.last = factory.$last;
+                                            //(<any>$scope).loading = false;
+                                            deferred.resolve();
+                                        }, deferred.reject);
+                                    },
                                 }
                             };
                             $scope.$watch('table.selectedItems', function (newValue, oldValue) {
