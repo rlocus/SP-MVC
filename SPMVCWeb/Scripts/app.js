@@ -153,6 +153,35 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             }
             return permissions;
         };
+        App.prototype.getQueryParam = function (url, name) {
+            var self = this;
+            if (url) {
+                var search = null;
+                if (URL) {
+                    search = new URL(url).search;
+                }
+                else {
+                    var a = document.createElement('a');
+                    a.href = url;
+                    search = a.search;
+                }
+                if (search) {
+                    while (search.startsWith("?") || search.startsWith("&")) {
+                        search = search.slice(1, search.length);
+                    }
+                    var qParameters = search.split("&");
+                    for (var i in qParameters) {
+                        var qParameter = qParameters[i].split("=");
+                        var key = decodeURIComponent(self.$(qParameter).get(0));
+                        if (key && key.toUpperCase() === name.toUpperCase()) {
+                            var value = decodeURIComponent(self.$(qParameter).get(1));
+                            return value;
+                        }
+                    }
+                }
+            }
+            return "";
+        };
         App.SharePointAppName = "SharePointApp";
         App.SPServiceName = "SPService";
         return App;
@@ -162,10 +191,10 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
         var Module;
         (function (Module) {
             (function (RenderMethod) {
-                RenderMethod[RenderMethod["RenderListDataAsStream"] = 0] = "RenderListDataAsStream";
-                RenderMethod[RenderMethod["GetItems"] = 1] = "GetItems";
+                RenderMethod[RenderMethod["Default"] = 0] = "Default";
+                RenderMethod[RenderMethod["RenderListDataAsStream"] = 1] = "RenderListDataAsStream";
                 RenderMethod[RenderMethod["RenderListData"] = 2] = "RenderListData";
-                RenderMethod[RenderMethod["Default"] = 3] = "Default";
+                RenderMethod[RenderMethod["GetItems"] = 3] = "GetItems";
             })(Module.RenderMethod || (Module.RenderMethod = {}));
             var RenderMethod = Module.RenderMethod;
             var ListView = (function () {
@@ -186,13 +215,30 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     var $events = { menuOpened: false, isSelected: false };
                     return { $data: listItem, $events: $events, $permissions: $permissions };
                 };
-                ListView.prototype.getListItems = function (token) {
+                ListView.prototype.addToken = function (query, token) {
+                    var self = this;
+                    if (token) {
+                        while (token.startsWith("?") || token.startsWith("&")) {
+                            token = token.slice(1, token.length);
+                        }
+                        var qParameters = token.split("&");
+                        for (var i in qParameters) {
+                            var qParameter = qParameters[i].split("=");
+                            var key = self._app.$(qParameter).get(0);
+                            var value = self._app.$(qParameter).get(1);
+                            if (key && value) {
+                                query.query.add(key, value);
+                            }
+                        }
+                    }
+                };
+                ListView.prototype.getListItems = function (token /*, prevItemId?: number, pageLastRow?: number*/) {
                     var self = this;
                     var deferred = self._app.$.Deferred();
                     var url = null;
                     switch (self._options.renderMethod) {
                         case RenderMethod.RenderListDataAsStream:
-                            var query;
+                            var query = null;
                             if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
                                 query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists;
                                 query.concat("/GetById(@list)");
@@ -204,183 +250,50 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
                                 query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
                             }
-                            query.concat("/RenderListDataAsStream");
-                            if (token) {
-                                while (token.startsWith("?") || token.startsWith("&")) {
-                                    token = token.slice(1, token.length);
+                            if (query) {
+                                query.concat("/RenderListDataAsStream");
+                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                                    self.addToken(query, token);
                                 }
-                                var qParameters = token.split("&");
-                                for (var i in qParameters) {
-                                    var qParameter = qParameters[i].split("=");
-                                    var key = self._app.$(qParameter).get(0);
-                                    var value = self._app.$(qParameter).get(1);
-                                    if (key && value) {
-                                        query.query.add(key, value);
+                                else {
+                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
+                                        query.query.add("View", self._options.viewId);
+                                    }
+                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                                        query.query.add("SortField", self._options.orderBy);
+                                    }
+                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
+                                        query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
                                     }
                                 }
-                            }
-                            else {
-                                query.query.add("View", self._options.viewId);
-                            }
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                query.query.add("SortField", self._options.orderBy);
-                            }
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
-                                query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
-                            }
-                            url = query.toUrlAndQuery();
-                            var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                            }
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
-                            }
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
-                                parameters.FolderServerRelativeUrl = self._options.rootFolder;
-                            }
-                            var postBody = JSON.stringify({ "parameters": parameters });
-                            var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                            executor.executeAsync({
-                                url: url,
-                                method: "POST",
-                                headers: {
-                                    "accept": "application/json;odata=verbose",
-                                    "content-Type": "application/json;odata=verbose"
-                                },
-                                body: postBody,
-                                success: function (data) {
-                                    var result = JSON.parse(data.body);
-                                    deferred.resolve(result);
-                                },
-                                error: function (error) {
-                                    deferred.reject(error);
+                                //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
+                                //    query.query.add("p_ID", prevItemId);
+                                //}
+                                //if (!$pnp.util.stringIsNullOrEmpty(<any>pageLastRow)) {
+                                //    query.query.add("PageLastRow", pageLastRow);
+                                //}
+                                url = query.toUrlAndQuery();
+                                var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
+                                if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
                                 }
-                            });
-                            break;
-                        case RenderMethod.RenderListData:
-                            var query;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
-                            }
-                            query.concat("/renderListData(@viewXml)");
-                            query.query.add("@viewXml", "'" + self._options.viewXml + "'");
-                            url = query.toUrlAndQuery();
-                            var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                            executor.executeAsync({
-                                url: url,
-                                method: "POST",
-                                headers: {
-                                    "accept": "application/json;odata=verbose",
-                                    "content-Type": "application/json;odata=verbose"
-                                },
-                                success: function (data) {
-                                    var result = JSON.parse(JSON.parse(data.body).d.RenderListData);
-                                    deferred.resolve(result);
-                                },
-                                error: function (error) {
-                                    deferred.reject(error);
+                                if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
                                 }
-                            });
-                            break;
-                        case RenderMethod.GetItems:
-                            var query;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
-                            }
-                            query.concat("/getitems");
-                            url = query.toUrlAndQuery();
-                            var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
-                            var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                            executor.executeAsync({
-                                url: url,
-                                method: "POST",
-                                body: postBody,
-                                headers: {
-                                    "accept": "application/json;odata=verbose",
-                                    "content-Type": "application/json;odata=verbose"
-                                },
-                                success: function (data) {
-                                    var listItems = JSON.parse(data.body).d.results;
-                                    deferred.resolve(listItems);
-                                },
-                                error: function (error) {
-                                    deferred.reject(error);
+                                if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
+                                    parameters.FolderServerRelativeUrl = self._options.rootFolder;
                                 }
-                            });
-                            break;
-                        case RenderMethod.Default:
-                        default:
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                    items = items.orderBy(self._options.orderBy, self._options.sortAsc);
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                                    items = items.filter(self._options.filter);
-                                }
-                                if (self._options.limit > 0) {
-                                    items = items.top(self._options.limit);
-                                }
-                                if ($pnp.util.isArray(self._options.expands)) {
-                                    items = items.expand(self._options.expands);
-                                }
-                                url = items.toUrlAndQuery();
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl).items;
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                    items = items.orderBy(self._options.orderBy, self._options.sortAsc);
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                                    items = items.filter(self._options.filter);
-                                }
-                                if (self._options.limit > 0) {
-                                    items = items.top(self._options.limit);
-                                }
-                                if ($pnp.util.isArray(self._options.expands)) {
-                                    items = items.expand(self._options.expands);
-                                }
-                                url = items.toUrlAndQuery();
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                var items = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listTitle).items;
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                    items = items.orderBy(self._options.orderBy, self._options.sortAsc);
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                                    items = items.filter(self._options.filter);
-                                }
-                                if (self._options.limit > 0) {
-                                    items = items.top(self._options.limit);
-                                }
-                                if ($pnp.util.isArray(self._options.expands)) {
-                                    items = items.expand(self._options.expands);
-                                }
-                                url = items.toUrlAndQuery();
-                            }
-                            if (url !== null) {
+                                var postBody = JSON.stringify({ "parameters": parameters });
                                 var executor = new SP.RequestExecutor(self._app.appWebUrl);
                                 executor.executeAsync({
                                     url: url,
-                                    method: "GET",
+                                    method: "POST",
                                     headers: {
                                         "accept": "application/json;odata=verbose",
                                         "content-Type": "application/json;odata=verbose"
                                     },
+                                    body: postBody,
                                     success: function (data) {
-                                        var listItems = JSON.parse(data.body).d.results;
-                                        deferred.resolve(listItems);
+                                        var result = JSON.parse(data.body);
+                                        deferred.resolve(result);
                                     },
                                     error: function (error) {
                                         deferred.reject(error);
@@ -391,27 +304,226 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 deferred.reject("List is not specified.");
                             }
                             break;
+                        case RenderMethod.RenderListData:
+                            var query = null;
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                            }
+                            if (query) {
+                                query.concat("/renderListData(@viewXml)");
+                                query.query.add("@viewXml", "'" + self._options.viewXml + "'");
+                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                                    self.addToken(query, token);
+                                }
+                                else {
+                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
+                                        query.query.add("View", self._options.viewId);
+                                    }
+                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                                        query.query.add("SortField", self._options.orderBy);
+                                    }
+                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
+                                        query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
+                                    }
+                                }
+                                //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
+                                //    query.query.add("p_ID", prevItemId);
+                                //}
+                                //if (!$pnp.util.stringIsNullOrEmpty(<any>pageLastRow)) {
+                                //    query.query.add("PageLastRow", pageLastRow);
+                                //}
+                                url = query.toUrlAndQuery();
+                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                                executor.executeAsync({
+                                    url: url,
+                                    method: "POST",
+                                    headers: {
+                                        "accept": "application/json;odata=verbose",
+                                        "content-Type": "application/json;odata=verbose"
+                                    },
+                                    success: function (data) {
+                                        var result = JSON.parse(JSON.parse(data.body).d.RenderListData);
+                                        deferred.resolve({ ListData: result });
+                                    },
+                                    error: function (error) {
+                                        deferred.reject(error);
+                                    }
+                                });
+                            }
+                            else {
+                                deferred.reject("List is not specified.");
+                            }
+                            break;
+                        case RenderMethod.GetItems:
+                            var query = null;
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                            }
+                            if (query) {
+                                query.concat("/GetItems");
+                                if ($pnp.util.isArray(self._options.expands)) {
+                                    query = query.expand(self._options.expands);
+                                }
+                                url = query.toUrlAndQuery();
+                                var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
+                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                                executor.executeAsync({
+                                    url: url,
+                                    method: "POST",
+                                    body: postBody,
+                                    headers: {
+                                        "accept": "application/json;odata=verbose",
+                                        "content-Type": "application/json;odata=verbose"
+                                    },
+                                    success: function (data) {
+                                        var d = JSON.parse(data.body).d;
+                                        var listData = { Row: d.results, NextHref: null, PrevHref: null };
+                                        deferred.resolve({ ListData: listData });
+                                    },
+                                    error: function (error) {
+                                        deferred.reject(error);
+                                    }
+                                });
+                            }
+                            else {
+                                deferred.reject("List is not specified.");
+                            }
+                            break;
+                        case RenderMethod.Default:
+                            var query = null;
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl).items;
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listTitle).items;
+                            }
+                            if (query) {
+                                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                                    query = query.orderBy(self._options.orderBy, self._options.sortAsc);
+                                }
+                                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
+                                    query = query.filter(self._options.filter);
+                                }
+                                if (self._options.limit > 0) {
+                                    query = query.top(self._options.limit);
+                                }
+                                if ($pnp.util.isArray(self._options.expands)) {
+                                    query = query.expand(self._options.expands);
+                                }
+                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                                    query.query.add("$skiptoken", encodeURIComponent(token));
+                                }
+                                url = query.toUrlAndQuery();
+                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                                executor.executeAsync({
+                                    url: url,
+                                    method: "GET",
+                                    headers: {
+                                        "accept": "application/json;odata=verbose",
+                                        "content-Type": "application/json;odata=verbose"
+                                    },
+                                    success: function (data) {
+                                        var d = JSON.parse(data.body).d;
+                                        var listData = { Row: d.results, NextHref: null, PrevHref: null };
+                                        listData.NextHref = self._app.getQueryParam(d["__next"], "$skiptoken");
+                                        listData.PrevHref = self._app.getQueryParam(d["__prev"], "$skiptoken");
+                                        deferred.resolve({ ListData: listData });
+                                    },
+                                    error: function (error) {
+                                        deferred.reject(error);
+                                    }
+                                });
+                            }
+                            else {
+                                deferred.reject("List is not specified.");
+                            }
+                            break;
+                        default:
+                            var context = new SP.ClientContext(self._app.appWebUrl);
+                            var factory = new SP.ProxyWebRequestExecutorFactory(self._app.appWebUrl);
+                            context.set_webRequestExecutorFactory(factory);
+                            var appContextSite = new SP.AppContextSite(context, self._app.hostWebUrl);
+                            var web = appContextSite.get_web();
+                            var list = null;
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                                list = web.get_lists().getById(self._options.listId);
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                                list = web.getList(self._options.listUrl);
+                            }
+                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                                list = web.get_lists().getByTitle(self._options.listTitle);
+                            }
+                            if (list) {
+                                var camlQuery = new SP.CamlQuery();
+                                camlQuery.set_viewXml(self._options.viewXml);
+                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                                    var position = new SP.ListItemCollectionPosition();
+                                    position.set_pagingInfo(token);
+                                    camlQuery.set_listItemCollectionPosition(position);
+                                }
+                                var items = list.getItems(camlQuery);
+                                context.load(items);
+                                context.executeQueryAsync(function () {
+                                    var listData = { Row: self._app.$.map(items.get_data(), function (item) { return item.get_fieldValues(); }), NextHref: null, PrevHref: null };
+                                    var position = items.get_listItemCollectionPosition();
+                                    if (position) {
+                                        listData.NextHref = position.get_pagingInfo();
+                                    }
+                                    deferred.resolve({ ListData: listData });
+                                }, deferred.reject);
+                            }
+                            else {
+                                deferred.reject("List is not specified.");
+                            }
+                            break;
                     }
                     return deferred.promise();
                 };
                 ListView.prototype.render = function () {
                     var self = this;
+                    //var allTokens = [];
                     self._app.spApp.factory("ListViewFactory", function ($q, $http) {
                         var factory = {};
                         factory.listItems = [];
                         factory.getListItems = function (isPrev) {
                             var deferred = $q.defer();
-                            var token = isPrev == true ? factory.$prevToken : factory.$nextToken;
-                            self.getListItems(token).then(function (data) {
+                            var token, prevItemId;
+                            if (isPrev == true) {
+                                token = factory.$prevToken;
+                                prevItemId = factory.listItems.length > 0 ? factory.listItems[0].$data.ID : null;
+                            }
+                            else {
+                                token = factory.$nextToken;
+                                prevItemId = factory.listItems.length > 0 ? factory.listItems[factory.listItems.length - 1].$data.ID : null;
+                            }
+                            self.getListItems(token /*, prevItemId, factory.$last*/).then(function (data) {
                                 factory.listItems.splice(0, factory.listItems.length);
-                                factory.$nextToken = data.NextHref ? data.NextHref : (data.ListData ? data.ListData.NextHref : null);
-                                factory.$prevToken = data.PrevHref ? data.PrevHref : (data.ListData ? data.ListData.PrevHref : null);
-                                factory.$first = data.FirstRow ? data.FirstRow : (data.ListData ? data.ListData.FirstRow : 0);
-                                factory.$last = data.LastRow ? data.LastRow : (data.ListData ? data.ListData.LastRow : 0);
-                                var rows = data.Row ? data.Row : (data.ListData ? data.ListData.Row : data);
-                                self._app.$.each(rows, (function (i, listItem) {
-                                    factory.listItems.push(self.getEntity(listItem));
-                                }));
+                                if (data.ListData) {
+                                    factory.$nextToken = data.ListData.NextHref;
+                                    factory.$prevToken = data.ListData.PrevHref;
+                                    factory.$first = data.ListData.FirstRow;
+                                    factory.$last = data.ListData.LastRow;
+                                    //window.console.info(factory);
+                                    self._app.$.each(data.ListData.Row, (function (i, listItem) {
+                                        factory.listItems.push(self.getEntity(listItem));
+                                    }));
+                                }
                                 deferred.resolve();
                             }, deferred.reject);
                             return deferred.promise;
@@ -425,6 +537,8 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             $scope.listItems = [];
                             factory.getListItems(false).then(function () {
                                 $scope.listItems = self._app.$angular.copy(factory.listItems);
+                                $scope.selection.pager.first = factory.$first;
+                                $scope.selection.pager.last = factory.$last;
                                 $scope.loading = false;
                                 deferred.resolve();
                             }, deferred.reject);
@@ -472,6 +586,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     first: 0,
                                     last: 0,
                                     next: function () {
+                                        self._options.paged = null;
                                         factory.getListItems(false).then(function () {
                                             $scope.listItems = self._app.$angular.copy(factory.listItems);
                                             $scope.selection.pager.first = factory.$first;
@@ -481,6 +596,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         }, deferred.reject);
                                     },
                                     prev: function () {
+                                        self._options.paged = null;
                                         factory.getListItems(true).then(function () {
                                             $scope.listItems = self._app.$angular.copy(factory.listItems);
                                             $scope.selection.pager.first = factory.$first;
@@ -595,11 +711,26 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 };
                 ListsView.prototype.getEntity = function (list) {
                     switch (list.BaseType) {
+                        case 0:
+                            list.Type = "List";
+                            break;
                         case 1:
                             list.Type = "Document Library";
                             break;
+                        case 2:
+                            list.Type = "Unused";
+                            break;
+                        case 3:
+                            list.Type = "Discussion Board";
+                            break;
+                        case 4:
+                            list.Type = "Survey";
+                            break;
+                        case 5:
+                            list.Type = "Issue";
+                            break;
                         default:
-                            list.Type = "List";
+                            list.Type = "None";
                             break;
                     }
                     var permissions = new SP.BasePermissions();
