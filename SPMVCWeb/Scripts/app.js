@@ -497,7 +497,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 };
                 ListView.prototype.render = function () {
                     var self = this;
-                    //var allTokens = [];
+                    var allTokens = [];
                     self._app.spApp.factory("ListViewFactory", function ($q, $http) {
                         var factory = {};
                         factory.listItems = [];
@@ -505,12 +505,16 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             var deferred = $q.defer();
                             var token, prevItemId;
                             if (isPrev == true) {
-                                token = factory.$prevToken;
-                                prevItemId = factory.listItems.length > 0 ? factory.listItems[0].$data.ID : null;
+                                allTokens.pop();
+                                if (allTokens.length > 1) {
+                                    token = allTokens[allTokens.length - 2];
+                                }
+                                else {
+                                    token = null;
+                                }
                             }
                             else {
                                 token = factory.$nextToken;
-                                prevItemId = factory.listItems.length > 0 ? factory.listItems[factory.listItems.length - 1].$data.ID : null;
                             }
                             self.getListItems(token /*, prevItemId, factory.$last*/).then(function (data) {
                                 factory.listItems.splice(0, factory.listItems.length);
@@ -519,6 +523,15 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     factory.$prevToken = data.ListData.PrevHref;
                                     factory.$first = data.ListData.FirstRow;
                                     factory.$last = data.ListData.LastRow;
+                                    if (isPrev == true) {
+                                        allTokens.pop();
+                                    }
+                                    else {
+                                        if (!token) {
+                                            allTokens = [];
+                                        }
+                                    }
+                                    allTokens.push(factory.$nextToken);
                                     //window.console.info(factory);
                                     self._app.$.each(data.ListData.Row, (function (i, listItem) {
                                         factory.listItems.push(self.getEntity(listItem));
