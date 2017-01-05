@@ -275,6 +275,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 url = query.toUrlAndQuery();
                                 var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
                                 if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
+                                    parameters.ViewXml = self._options.viewXml;
                                 }
                                 if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
                                 }
@@ -501,41 +502,58 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     self._app.spApp.factory("ListViewFactory", function ($q, $http) {
                         var factory = {};
                         factory.listItems = [];
-                        factory.getListItems = function (isPrev) {
-                            var deferred = $q.defer();
-                            var token, prevItemId;
-                            if (isPrev == true) {
-                                allTokens.pop();
-                                if (allTokens.length > 1) {
-                                    token = allTokens[allTokens.length - 2];
-                                }
-                                else {
-                                    token = null;
+                        factory.getToken = function (isPrev, offset) {
+                            if (offset === void 0) { offset = 0; }
+                            var token = null;
+                            if (isPrev == true && self._options.appendRows !== true) {
+                                token = factory.$prevToken;
+                                var skipNext = 2 + Math.max(0, offset);
+                                if (allTokens.length > skipNext) {
+                                    token = allTokens[(allTokens.length - 1) - skipNext];
                                 }
                             }
                             else {
                                 token = factory.$nextToken;
+                                if (offset > 0) {
+                                    var index = allTokens.indexOf(factory.$nextToken);
+                                    if (index + offset < allTokens.length) {
+                                        token = allTokens[index + offset];
+                                    }
+                                }
                             }
-                            self.getListItems(token /*, prevItemId, factory.$last*/).then(function (data) {
-                                factory.listItems.splice(0, factory.listItems.length);
+                            return token;
+                        };
+                        factory.getListItems = function (isPrev, offset) {
+                            if (offset === void 0) { offset = 0; }
+                            var deferred = $q.defer();
+                            var token = factory.getToken(isPrev, offset);
+                            self.getListItems(token).then(function (data) {
+                                if (!token || !self._options.appendRows) {
+                                    factory.listItems.splice(0, factory.listItems.length);
+                                }
                                 if (data.ListData) {
+                                    self._app.$.each(data.ListData.Row, (function (i, listItem) {
+                                        factory.listItems.push(self.getEntity(listItem));
+                                    }));
                                     factory.$nextToken = data.ListData.NextHref;
                                     factory.$prevToken = data.ListData.PrevHref;
-                                    factory.$first = data.ListData.FirstRow;
-                                    factory.$last = data.ListData.LastRow;
-                                    if (isPrev == true) {
-                                        allTokens.pop();
+                                    factory.$first = self._options.appendRows === true ? (factory.listItems.length > 0 ? 1 : 0) : (data.ListData.FirstRow ? Number(data.ListData.FirstRow) : 0);
+                                    factory.$last = self._options.appendRows === true ? (factory.listItems.length) : (data.ListData.LastRow ? Number(data.ListData.LastRow) : 0);
+                                    if (isPrev == true && self._options.appendRows !== true) {
+                                        var skipNext = 2 + Math.max(0, offset);
+                                        while (skipNext > 0) {
+                                            allTokens.pop();
+                                            skipNext--;
+                                        }
                                     }
                                     else {
                                         if (!token) {
                                             allTokens = [];
                                         }
                                     }
-                                    allTokens.push(factory.$nextToken);
-                                    //window.console.info(factory);
-                                    self._app.$.each(data.ListData.Row, (function (i, listItem) {
-                                        factory.listItems.push(self.getEntity(listItem));
-                                    }));
+                                    if (self._options.appendRows !== true) {
+                                        allTokens.push(factory.$nextToken);
+                                    }
                                 }
                                 deferred.resolve();
                             }, deferred.reject);
@@ -552,6 +570,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 $scope.listItems = self._app.$angular.copy(factory.listItems);
                                 $scope.selection.pager.first = factory.$first;
                                 $scope.selection.pager.last = factory.$last;
+                                $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                 $scope.loading = false;
                                 deferred.resolve();
                             }, deferred.reject);
@@ -598,22 +617,28 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 pager: {
                                     first: 0,
                                     last: 0,
-                                    next: function () {
-                                        self._options.paged = null;
-                                        factory.getListItems(false).then(function () {
+                                    prevEnabled: false,
+                                    nextEnabled: false,
+                                    next: function (offset) {
+                                        factory.getListItems(false, offset).then(function () {
+                                            $scope.selection.commandBar.clearSelection();
                                             $scope.listItems = self._app.$angular.copy(factory.listItems);
                                             $scope.selection.pager.first = factory.$first;
                                             $scope.selection.pager.last = factory.$last;
+                                            $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                            $scope.selection.pager.prevEnabled = self._options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(true));
                                             //(<any>$scope).loading = false;
                                             deferred.resolve();
                                         }, deferred.reject);
                                     },
-                                    prev: function () {
-                                        self._options.paged = null;
-                                        factory.getListItems(true).then(function () {
+                                    prev: function (offset) {
+                                        factory.getListItems(true, offset).then(function () {
+                                            $scope.selection.commandBar.clearSelection();
                                             $scope.listItems = self._app.$angular.copy(factory.listItems);
                                             $scope.selection.pager.first = factory.$first;
                                             $scope.selection.pager.last = factory.$last;
+                                            $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                            $scope.selection.pager.prevEnabled = self._options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(true));
                                             //(<any>$scope).loading = false;
                                             deferred.resolve();
                                         }, deferred.reject);

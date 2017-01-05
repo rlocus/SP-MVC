@@ -36,6 +36,8 @@
                         }
                         return value;
                     };
+                    $scope.prevText = "previous " + list.RowLimit;
+                    $scope.nextText = "next " + list.RowLimit;
                 }
             });
             //app.render(listView);
@@ -85,10 +87,10 @@
                 </uif-table-row>
             </uif-table-body>
         </uif-table>
-        <ul class="pagination">
-            <li><a ng-click="selection.pager.prev()">Previous</a></li>
+        <ul class="pagination" ng-show="selection.pager.first > 0">
+            <li><a ng-click="selection.pager.prev()" ng-show="selection.pager.prevEnabled">{{prevText}}</a></li>
             <li><a>{{selection.pager.first}} - {{selection.pager.last}}</a></li>
-            <li><a ng-click="selection.pager.next()">Next</a></li>
+            <li><a ng-click="selection.pager.next()" ng-show="selection.pager.nextEnabled">{{nextText}}</a></li>
         </ul>
     </div>
 </div>
