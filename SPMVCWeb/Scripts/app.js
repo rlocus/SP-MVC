@@ -97,6 +97,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                 }
             ]);
             this._initialized = true;
+            self.$(self).trigger("app-init");
         };
         App.prototype.ensureScript = function (url) {
             if (url) {
@@ -131,6 +132,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             self.$angular.element(function () {
                                 self.$angular.bootstrap(document, [App.SharePointAppName]);
                             });
+                            self.$(self).trigger("app-render");
                         });
                     });
                 });

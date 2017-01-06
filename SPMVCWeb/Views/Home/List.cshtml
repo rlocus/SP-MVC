@@ -6,7 +6,7 @@
 @section scripts
 {
     <script type="text/javascript">
-        require(["app"], function (app) {
+        require(["jquery", "angular", "app"], function ($, angular, app) {
             var listJson = app.$("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List)').text();
             var list = JSON.parse(listJson);
             var listView = app.get_ListView({
@@ -40,11 +40,16 @@
                     $scope.nextText = "+" + list.RowLimit;
                 }
             });
-            //app.render(listView);
-            app.$('body').on("chrome-loaded", function () {
-                app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
-                app.render(listView);
-            });
+            //$(app).on("app-init", function () {
+                if (!window.renderSPChrome) {
+                    app.render(listView);
+                } else {
+                    $('body').on("chrome-loaded", function () {
+                        app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
+                        app.render(listView);
+                    });
+                }
+            //});
         });
     </script>
 }

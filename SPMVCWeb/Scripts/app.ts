@@ -109,6 +109,7 @@ class App {
             }
         ]);
         this._initialized = true;
+        self.$(self).trigger("app-init");
     }
 
     public ensureScript(url): JQueryXHR {
@@ -149,6 +150,7 @@ class App {
                         self.$angular.element(function () {
                             self.$angular.bootstrap(document, [App.SharePointAppName]);
                         });
+                        self.$(self).trigger("app-render");
                     });
                 });
             });
