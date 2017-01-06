@@ -87,10 +87,10 @@
                 </uif-table-row>
             </uif-table-body>
         </uif-table>
-        <ul class="pagination" ng-show="selection.pager.first > 0">
-            <li><a ng-click="selection.pager.prev()" ng-show="selection.pager.prevEnabled">{{prevText}}</a></li>
-            <li><a>{{selection.pager.first}} - {{selection.pager.last}}</a></li>
-            <li><a ng-click="selection.pager.next()" ng-show="selection.pager.nextEnabled">{{nextText}}</a></li>
+        <ul class="pager" ng-show="selection.pager.first > 0">
+            <li><a class="page-prev" ng-click="selection.pager.prev()" ng-show="selection.pager.prevEnabled"><span>{{prevText}}</span></a></li>
+            <li><a class="page-title" ng-click="selection.pager.refresh()"><span>{{selection.pager.first}} - {{selection.pager.last}}</span></a></li>
+            <li><a class="page-next" ng-click="selection.pager.next()" ng-show="selection.pager.nextEnabled"><span>{{nextText}}</span></a></li>
         </ul>
     </div>
 </div>
