@@ -9,16 +9,14 @@
             var listsView = app.get_ListsView({
                 controllerName: "lists-controller"
             });
-            //$(app).on("app-init", function () {
-                if (!window.renderSPChrome) {
+            if (!window.renderSPChrome) {
+                app.render(listsView);
+            } else {
+                $('body').on("chrome-loaded", function () {
+                    app.$('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
                     app.render(listsView);
-                } else {
-                    $('body').on("chrome-loaded", function () {
-                        app.$('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
-                        app.render(listsView);
-                    });
-                }
-            //});
+                });
+            }
         });
     </script>
 }
@@ -29,7 +27,7 @@
             <uif-command-bar-side>
                 <uif-command-bar-item ng-show="selection.commandBar.selectionText" ng-click="selection.commandBar.clearSelection()">
                     <uif-icon uif-type="trash"></uif-icon>
-                    {{selection.commandBar.selectionText}}
+                    <span>{{selection.commandBar.selectionText}}</span>
                 </uif-command-bar-item>
                 <uif-command-bar-item ng-show="selection.commandBar.settingsEnabled" ng-click="selection.commandBar.openSettings()">
                     <uif-icon uif-type="settings"></uif-icon>
@@ -107,3 +105,4 @@
             <uif-spinner ng-cloak uif-size="large" ng-show="loading"></uif-spinner>
         </div>
     </div>
+</div>

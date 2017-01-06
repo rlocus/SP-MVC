@@ -70,3 +70,11 @@ table.spitem-menu {
 .sp-panel .pager a {
     cursor: pointer;
 }
+
+.sp-panel .pager a:hover {
+    text-decoration: none;
+}
+
+.sp-navbar a:hover {
+    text-decoration: none;
+}

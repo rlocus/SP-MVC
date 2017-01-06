@@ -566,6 +566,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             $scope.selection = {
                                 commandBar: {
                                     searchTerm: null,
+                                    selectionText: "",
                                     createEnabled: false,
                                     viewEnabled: false,
                                     deleteEnabled: false,
@@ -902,6 +903,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 },
                                 commandBar: {
                                     searchTerm: null,
+                                    selectionText: "",
                                     createEnabled: false,
                                     viewEnabled: false,
                                     deleteEnabled: false,

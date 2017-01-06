@@ -609,6 +609,7 @@ module App.Module {
                     (<any>$scope).selection = {
                         commandBar: {
                             searchTerm: null,
+                            selectionText: "",
                             createEnabled: false,
                             viewEnabled: false,
                             deleteEnabled: false,
@@ -969,6 +970,7 @@ module App.Module {
                     },
                     commandBar: {
                         searchTerm: null,
+                        selectionText: "",
                         createEnabled: false,
                         viewEnabled: false,
                         deleteEnabled: false,
