@@ -707,7 +707,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 //}, self._options.delay);
                             }, false);
                             if (typeof self._options.onload === "function") {
-                                self._options.onload($scope);
+                                self._options.onload($scope, factory);
                             }
                         }
                     ]);

@@ -20,7 +20,7 @@
                 paged: list.Paged,
                 renderMethod: 1,
                 renderOptions: 0 | 1 | 2 /*| 4 | 8*/,
-                onload: function ($scope) {
+                onload: function ($scope, factory) {
                     $scope.fields = list.Fields;
                     $scope.getFieldValue = function (listItem, field) {
                         var value = listItem.$data[field.Name];
@@ -36,8 +36,8 @@
                         }
                         return value;
                     };
-                    $scope.prevText = "previous " + list.RowLimit;
-                    $scope.nextText = "next " + list.RowLimit;
+                    $scope.prevText = "-" + list.RowLimit;
+                    $scope.nextText = "+" + list.RowLimit;
                 }
             });
             //app.render(listView);
@@ -60,6 +60,18 @@
                 </uif-command-bar-item>
             </uif-command-bar-side>
             <uif-command-bar-main uif-show-overflow='table.selectedItems.length > 0'>
+                <uif-command-bar-item ng-click="selection.pager.prev()" ng-show="selection.pager.prevEnabled">
+                    <uif-icon uif-type="caretLeft"></uif-icon>
+                    <span>{{prevText}}</span>
+                </uif-command-bar-item>
+                <uif-command-bar-item ng-click="selection.pager.refresh()" ng-show="selection.pager.first > 0">
+                    <uif-icon uif-type="refresh"></uif-icon>
+                    <span>{{selection.pager.first}} - {{selection.pager.last}}</span>
+                </uif-command-bar-item>
+                <uif-command-bar-item ng-click="selection.pager.next()" ng-show="selection.pager.nextEnabled">
+                    <uif-icon uif-type="caretRight"></uif-icon>
+                    <span>{{nextText}}</span>
+                </uif-command-bar-item>
                 <uif-command-bar-item ng-click="selection.commandBar.view()" ng-show="selection.commandBar.viewEnabled">
                     <uif-icon uif-type="eye"></uif-icon>
                     <span>VIEW</span>

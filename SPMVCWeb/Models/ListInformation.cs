@@ -15,6 +15,8 @@ namespace SPMVCWeb.Models
             if (view == null) throw new ArgumentNullException("view");
             Id = list.Id;
             Title = list.Title;
+            ListTemplate = list.BaseTemplate;
+            ListType = (int)list.BaseType;
             ViewId = view.Id;
             if (view.ViewFields.AreItemsAvailable && list.Fields.AreItemsAvailable)
             {
@@ -42,6 +44,8 @@ namespace SPMVCWeb.Models
 
         public string Title { get; private set; }
         public Guid Id { get; private set; }
+        public int ListTemplate { get; private set; }
+        public int ListType { get; private set; }
         public Guid ViewId { get; private set; }
         public FieldInformation[] Fields { get; private set; }
         public string ViewJoins { get; private set; }

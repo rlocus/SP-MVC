@@ -242,7 +242,7 @@ module App.Module {
         appendRows: boolean;
         renderMethod: RenderMethod,
         renderOptions: number,
-        onload: ($scope: ng.IScope) => void;
+        onload: ($scope: ng.IScope, factory: IListViewFactory) => void;
     }
 
     export enum RenderMethod {
@@ -745,7 +745,7 @@ module App.Module {
                     }, false);
 
                     if (typeof self._options.onload === "function") {
-                        self._options.onload($scope);
+                        self._options.onload($scope, factory);
                     }
                 }
             ]);
