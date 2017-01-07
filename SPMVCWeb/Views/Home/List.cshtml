@@ -24,8 +24,25 @@
                     $scope.fields = list.Fields;
                     $scope.getFieldValue = function (listItem, field) {
                         var value = listItem.$data[field.Name];
-                        if (field.Name == "LinkTitle") {
-                            value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                        switch (field.TypeKind) {
+                            case 12: //Computed
+                                switch (field.Name) {
+                                    case "DocIcon":
+                                        if (listItem.$data.FSObjType === "1") {
+                                            value = "<uif-icon uif-type=\"folder\"></uif-icon>";
+                                        }
+                                        else {
+                                            value = "<uif-icon uif-type=\"document\"></uif-icon>";
+                                        }
+                                        break;
+                                    case "LinkTitle":
+                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                                        break;
+                                    case "LinkFilename":
+                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
+                                        break;
+                                }
+                                break;
                         }
                         if (field.ListItemMenuAllowed) {
                             value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
@@ -72,8 +89,8 @@
                     <span>{{selection.pager.first}} - {{selection.pager.last}}</span>
                 </uif-command-bar-item>
                 <uif-command-bar-item ng-click="selection.pager.next()" ng-show="selection.pager.nextEnabled">
-                    <uif-icon uif-type="caretRight"></uif-icon>
                     <span>{{nextText}}</span>
+                    <uif-icon uif-type="caretRight"></uif-icon>
                 </uif-command-bar-item>
                 <uif-command-bar-item ng-click="selection.commandBar.view()" ng-show="selection.commandBar.viewEnabled">
                     <uif-icon uif-type="eye"></uif-icon>
