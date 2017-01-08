@@ -17,13 +17,13 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                @Html.ActionLink("SP MVC", "Index", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, new { @class = "navbar-brand" })
+                @Html.ActionLink("SP MVC", "Index", "Home", new { SPHostUrl = AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.SPAppWebUrlKey] }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
-                    <li>@Html.ActionLink("About", "About", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { SPHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("Home", "Index", "Home", new { SPHostUrl = AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("About", "About", "Home", new { SPHostUrl = AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.SPAppWebUrlKey] }, null)</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { SPHostUrl = AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.GetSPHostUrl(HttpContext.Current.Request).AbsoluteUri, SPAppWebUrl = HttpContext.Current.Request[AspNet.Owin.SharePoint.Addin.Authentication.Context.SharePointContext.SPAppWebUrlKey] }, null)</li>
                 </ul>
                 <div class="navbar-right">
                     <uif-persona ng-cloak uif-style="square" uif-size="medium" uif-image-url="">

@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using SPMVCWeb.Filters;
+using System.Web;
 using System.Web.Mvc;
 
 namespace SPMVCWeb
@@ -7,7 +8,9 @@ namespace SPMVCWeb
     {
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
-            filters.Add(new HandleErrorAttribute());
+            //filters.Add(new AuthorizeAttribute());
+            //filters.Add(new HostUrlActionFilter());
+            filters.Add(new HandleErrorAttribute());           
         }
     }
 }

@@ -1,14 +1,13 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using AspNet.Owin.SharePoint.Addin.Authentication.Context;
+using Microsoft.SharePoint.Client;
 using SPMVCWeb.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Web;
 using System.Web.Mvc;
 
 namespace SPMVCWeb.Controllers
 {
+    //[Authorize]
     public class HomeController : Controller
     {
         [SharePointContextFilter]
@@ -34,7 +33,7 @@ namespace SPMVCWeb.Controllers
             return View();
         }
 
-        [SharePointContextFilter]
+        [SharePointContextFilter]    
         public ActionResult List(Guid listId, Guid? viewId)
         {
             List list = null;
@@ -62,6 +61,7 @@ namespace SPMVCWeb.Controllers
 
         private ClientContext GetClientContext()
         {
+            //var spContext = SPContextProvider.Get(User as ClaimsPrincipal);
             var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext);
             if (spContext != null)
             {

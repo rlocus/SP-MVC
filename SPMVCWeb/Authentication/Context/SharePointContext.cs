@@ -5,9 +5,8 @@ using System;
 using System.Net;
 using System.Security.Principal;
 using System.Web;
-using System.Web.Configuration;
 
-namespace SPMVCWeb
+namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 {
     /// <summary>
     /// Encapsulates all the information from SharePoint.

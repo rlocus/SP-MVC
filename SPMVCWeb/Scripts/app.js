@@ -1,6 +1,7 @@
 /// <reference path="typings/angularjs/angular.d.ts" />
 /// <reference path="typings/sharepoint/SharePoint.d.ts" />
 /// <reference path="typings/sharepoint/pnp.d.ts" />
+/// <reference path="typings/microsoft-ajax/microsoft.ajax.d.ts" />
 define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp, $) {
     "use strict";
     //import * as $angular from "angular";

@@ -13,6 +13,12 @@ namespace SPMVCWeb
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
+            //routes.MapRoute(
+            //    name: "Auth",
+            //    url: "Auth",
+            //    defaults: new { controller = "Auth", action = "AppRedirect" }
+            //);
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",

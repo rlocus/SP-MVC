@@ -1,6 +1,7 @@
 ﻿/// <reference path="typings/angularjs/angular.d.ts" />
 /// <reference path="typings/sharepoint/SharePoint.d.ts" />
 /// <reference path="typings/sharepoint/pnp.d.ts" />
+/// <reference path="typings/microsoft-ajax/microsoft.ajax.d.ts" />
 
 import * as $pnp from "pnp";
 import * as $ from "jquery";
