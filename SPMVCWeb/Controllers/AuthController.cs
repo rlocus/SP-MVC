@@ -4,6 +4,7 @@ using System;
 using System.Net.Http;
 using System.Web;
 using System.Web.Mvc;
+using AspNet.Owin.SharePoint.Addin.Authentication.Context;
 
 namespace SPMVCWeb.Controllers
 {
@@ -14,7 +15,7 @@ namespace SPMVCWeb.Controllers
         [HttpPost]
         public ActionResult AppRedirect(string hostUrl)
         {
-            var redirectUrl = $"/?h={hostUrl}";
+            var redirectUrl = string.Format("/?{0}={1}", SharePointContext.SPHostUrlKey, hostUrl);
             if (User.Identity.IsAuthenticated)
             {
                 return Redirect(redirectUrl);
@@ -27,13 +28,15 @@ namespace SPMVCWeb.Controllers
         public ActionResult Login(string returnUrl)
         {
             var queryString = new Uri("http://tempuri.org" + returnUrl).ParseQueryString();
-            var hostUrl = queryString["h"];
-            if (string.IsNullOrEmpty(hostUrl))
+            //var hostUrl = queryString["h"];
+            string spHostUrlString = TokenHelper.EnsureTrailingSlash(queryString[SharePointContext.SPHostUrlKey]);
+            Uri spHostUrl;
+            if (string.IsNullOrEmpty(spHostUrlString) || (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl) &&
+                                            (spHostUrl.Scheme == Uri.UriSchemeHttp || spHostUrl.Scheme == Uri.UriSchemeHttps)))
             {
                 throw new Exception("Unable to determine host url");
             }
-
-            return new ChallengeResult(SPAddinAuthenticationDefaults.AuthenticationType, hostUrl, returnUrl);
+            return new ChallengeResult(SPAddinAuthenticationDefaults.AuthenticationType, spHostUrl.ToString(), returnUrl);
         }
 
         private class ChallengeResult : HttpUnauthorizedResult

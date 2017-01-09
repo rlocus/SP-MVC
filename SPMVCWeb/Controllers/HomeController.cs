@@ -61,7 +61,7 @@ namespace SPMVCWeb.Controllers
 
         private ClientContext GetClientContext()
         {
-            //var spContext = SPContextProvider.Get(User as ClaimsPrincipal);
+            //var spContext = SPContextProvider.Get(User as System.Security.Claims.ClaimsPrincipal);
             var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext);
             if (spContext != null)
             {

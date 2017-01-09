@@ -51,6 +51,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 
 		public static SharePointContextToken ReadAndValidateContextToken(string contextTokenString, string appHostName)
 		{
+		    if (string.IsNullOrEmpty(contextTokenString)) return null;
 			return TokenHelper.ReadAndValidateContextToken(contextTokenString, appHostName);
 		}
 
@@ -71,26 +72,28 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 
 		public static string GetContextTokenFromRequest(IOwinRequest request)
 		{
-			using (var reader = new StreamReader(request.Body, Encoding.UTF8, true))
-			{
-				var formData = GetForm(reader.ReadToEnd());
+            //return TokenHelper.GetContextTokenFromRequest(((System.Web.HttpContextBase)request.Environment["System.Web.HttpContextBase"]).Request);
 
-				string[] paramNames = { "AppContext", "AppContextToken", "AccessToken", "SPAppToken" };
+            using (var reader = new StreamReader(request.Body, Encoding.UTF8, true))
+            {
+                var formData = GetForm(reader.ReadToEnd());
 
-				foreach (string paramName in paramNames)
-				{
-					if (!string.IsNullOrEmpty(formData[paramName]))
-					{
-						return formData[paramName];
-					}
-					if (!string.IsNullOrEmpty(request.Query[paramName]))
-					{
-						return request.Query[paramName];
-					}
-				}
-			}
-			return null;
-		}
+                string[] paramNames = { "AppContext", "AppContextToken", "AccessToken", "SPAppToken" };
+
+                foreach (string paramName in paramNames)
+                {
+                    if (!string.IsNullOrEmpty(formData[paramName]))
+                    {
+                        return formData[paramName];
+                    }
+                    if (!string.IsNullOrEmpty(request.Query[paramName]))
+                    {
+                        return request.Query[paramName];
+                    }
+                }
+            }
+            return null;
+        }
 
 		public static string GetWindowsUserSid(IOwinContext context)
 		{
@@ -133,7 +136,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 				existing.Add(value);
 			}
 		};
-
 
 		private static IFormCollection GetForm(string text)
 		{

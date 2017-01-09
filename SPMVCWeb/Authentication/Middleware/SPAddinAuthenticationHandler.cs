@@ -38,7 +38,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 			Uri spHostUrl;
 			if (!Uri.TryCreate(Request.Query[SharePointContext.SPHostUrlKey], UriKind.Absolute, out spHostUrl))
 			{
-				throw new Exception("Can not get host url from query string");
+				throw new Exception("Cannot get host url from query string");
 			}
 
 			Uri spAppWebUrl;
@@ -47,7 +47,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 				identity.AddClaim(new Claim(SPAddinClaimTypes.SPAppWebUrl, spAppWebUrl.AbsoluteUri));
 			}
 
-			string accessToken;
+			string accessToken = null;
 			
 			if (AuthHelper.IsHighTrustApp())
 			{
@@ -63,19 +63,21 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 				var contextTokenString = AuthHelper.GetContextTokenFromRequest(Request);
 				var contextToken = AuthHelper.ReadAndValidateContextToken(contextTokenString, Request.Uri.Authority);
 
-				identity.AddClaim(new Claim(SPAddinClaimTypes.RefreshToken, contextToken.RefreshToken));
-				identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, contextToken.Realm));
-				identity.AddClaim(new Claim(SPAddinClaimTypes.TargetPrincipalName, contextToken.TargetPrincipalName));
-				identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, contextToken.CacheKey));
-
-				accessToken = AuthHelper.GetAcsAccessToken(contextToken.RefreshToken, contextToken.TargetPrincipalName, spHostUrl.Authority, contextToken.Realm);
+			    if (contextToken != null)
+			    {
+			        identity.AddClaim(new Claim(SPAddinClaimTypes.RefreshToken, contextToken.RefreshToken));
+			        identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, contextToken.Realm));
+			        identity.AddClaim(new Claim(SPAddinClaimTypes.TargetPrincipalName, contextToken.TargetPrincipalName));
+			        identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, contextToken.CacheKey));
+			        accessToken = AuthHelper.GetAcsAccessToken(contextToken.RefreshToken, contextToken.TargetPrincipalName, spHostUrl.Authority, contextToken.Realm);
+			    }
 			}
 
 			return await CreateTicket(accessToken, identity, spHostUrl);
 		}
 
 		protected override Task ApplyResponseChallengeAsync()
-		{
+        {
 			if (Response.StatusCode == 401)
 			{
 				var challenge = Helper.LookupChallenge(Options.AuthenticationType, Options.AuthenticationMode);

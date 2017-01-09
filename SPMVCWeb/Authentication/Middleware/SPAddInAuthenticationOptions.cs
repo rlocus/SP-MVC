@@ -1,5 +1,4 @@
-﻿using AspNet.Owin.SharePoint.Addin.Authentication.Common;
-using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
+﻿using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 

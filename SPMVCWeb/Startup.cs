@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using Microsoft.AspNet.SignalR;
+﻿using Microsoft.AspNet.SignalR;
 using Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using System.Configuration;
 using AspNet.Owin.SharePoint.Addin.Authentication.Middleware;
-using AspNet.Owin.SharePoint.Addin.Authentication.Context;
 using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
+using System.Threading.Tasks;
 
 namespace SPMVCWeb
 {
@@ -29,7 +25,14 @@ namespace SPMVCWeb
 
             //app.UseSPAddinAuthentication(new SPAddInAuthenticationOptions
             //{
-            //    ClientId = ConfigurationManager.AppSettings["ClientId"]
+            //    ClientId = ConfigurationManager.AppSettings["ClientId"],
+            //    Provider = new SPAddinAuthenticationProvider()
+            //    {
+            //        OnAuthenticated = (context) =>
+            //        {
+            //            return Task.FromResult<object>(null);
+            //        }
+            //    }
             //});
         }
     }
