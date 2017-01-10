@@ -12,7 +12,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 
 		protected readonly ClaimsPrincipal _claimsPrincipal;
 
-		protected string RefreshToken
+		public string RefreshToken
 		{
 			get
 			{
@@ -25,7 +25,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 			}
 		}
 
-		protected string UserKey
+        public string UserKey
 		{
 			get
 			{
@@ -38,7 +38,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 			}
 		}
 
-		protected string Realm
+        public string Realm
 		{
 			get
 			{
@@ -51,7 +51,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 			}
 		}
 
-		protected string TargetPrincipalName
+        public string TargetPrincipalName
 		{
 			get
 			{
@@ -64,7 +64,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 			}
 		}
 
-		protected Uri SPHostUrl
+        public Uri SPHostUrl
 		{
 			get
 			{
@@ -77,7 +77,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 			}
 		}
 
-		protected Uri SPAppWebUrl
+        public Uri SPAppWebUrl
 		{
 			get
 			{
@@ -157,9 +157,9 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 			return $"{Realm}_{host}";
 		}
 
-		protected bool IsAccessTokenValid(AccessToken token)
-		{
-			return !string.IsNullOrEmpty(token?.Value) && token.ExpiredOn > DateTime.UtcNow;
-		}
+		//protected bool IsAccessTokenValid(AccessToken token)
+		//{
+		//	return !string.IsNullOrEmpty(token?.Value) && token.ExpiredOn > DateTime.UtcNow;
+		//}
 	}
 }

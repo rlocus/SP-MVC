@@ -21,11 +21,11 @@ namespace SPMVCWeb.Controllers
             return authorized;
         }
 
-        protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
-        {
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+        //protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
+        //{
+        //    var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
 
-            base.HandleUnauthorizedRequest(filterContext);
-        }
+        //    base.HandleUnauthorizedRequest(filterContext);
+        //}
     }
 }

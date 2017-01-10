@@ -36,12 +36,22 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                 identity = new ClaimsIdentity(Options.SignInAsAuthenticationType);
             }
             Uri spHostUrl;
-            if (!Uri.TryCreate(Request.Query[SharePointContext.SPHostUrlKey], UriKind.Absolute, out spHostUrl))
+            string spHostUrlString = TokenHelper.EnsureTrailingSlash(Request.Query.Get(SharePointContext.SPHostUrlKey));
+            if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
             {
-                throw new Exception("Cannot get host url from query string");
+                throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPHostUrlKey));
             }
+            else
+            {
+                identity.AddClaim(new Claim(SPAddinClaimTypes.SPHostUrl, spHostUrl.AbsoluteUri));
+            }
+            string spAppWebUrlString = TokenHelper.EnsureTrailingSlash(Request.Query.Get(SharePointContext.SPAppWebUrlKey));
             Uri spAppWebUrl;
-            if (Uri.TryCreate(Request.Query[SharePointContext.SPAppWebUrlKey], UriKind.Absolute, out spAppWebUrl))
+            if (!Uri.TryCreate(spAppWebUrlString, UriKind.Absolute, out spAppWebUrl))
+            {
+                //throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPAppWebUrlKey));
+            }
+            else
             {
                 identity.AddClaim(new Claim(SPAddinClaimTypes.SPAppWebUrl, spAppWebUrl.AbsoluteUri));
             }
@@ -103,7 +113,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             {
                 Path = Options.CallbackPath.Value
             };
-            var postRedirectUrl = string.Format("{0}?{{StandardTokens}}&SPAppWebUrl={{SPAppWebUrl}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString);
+            var postRedirectUrl = string.Format("{0}?{{StandardTokens}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString);
             var redirectUri = TokenHelper.GetAppContextTokenRequestUrl(hostUrl.AbsoluteUri, WebUtility.UrlEncode(postRedirectUrl));
             return redirectUri;
         }
@@ -165,21 +175,14 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                     identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.LoginName, null, Options.AuthenticationType));
                     identity.AddClaim(new Claim(ClaimTypes.Name, user.Title));
                     identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
-                    identity.AddClaim(new Claim(SPAddinClaimTypes.SPHostUrl, spHostUrl.AbsoluteUri));
+                    //identity.AddClaim(new Claim(SPAddinClaimTypes.SPHostUrl, spHostUrl.AbsoluteUri));
                     await Options.Provider.Authenticated(new SPAddinAuthenticatedContext(Context, user, identity));
+                    return new AuthenticationTicket(identity, properties);
                 }
                 catch (ServerUnauthorizedAccessException)
                 {
-                    Response.StatusCode = 401;
-                    //properties.RedirectUri = GetAppContextTokenRequestUrl(spHostUrl, "");
-                    //throw new UnauthorizedAccessException(e.Message);
                 }
-                catch (Exception)
-                {
-                    Response.StatusCode = 401;
-                    //properties.RedirectUri = GetAppContextTokenRequestUrl(spHostUrl, "");
-                }
-                return new AuthenticationTicket(identity, properties);
+                return null;
             }
         }
     }

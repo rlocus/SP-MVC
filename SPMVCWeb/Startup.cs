@@ -16,18 +16,18 @@ namespace SPMVCWeb
     {
         public void Configuration(IAppBuilder app)
         {
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false: Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
             if (cookieAuthenticationEnabled)
             {
                 var cookieAuth = new CookieAuthenticationOptions
                 {
-                    LoginPath = new PathString("/Auth/Login"),
+                    AuthenticationType = SPAddinAuthenticationDefaults.AuthenticationType,
+                    LoginPath = new PathString("/login"),
+                    LogoutPath = new PathString("/logout"),
                     Provider = new AddInCookieAuthenticationProvider()
                 };
-
                 app.SetDefaultSignInAsAuthenticationType(cookieAuth.AuthenticationType);
                 app.UseCookieAuthentication(cookieAuth);
-
                 app.UseSPAddinAuthentication(new SPAddInAuthenticationOptions
                 {
                     ClientId = ConfigurationManager.AppSettings["ClientId"],

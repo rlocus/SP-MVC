@@ -4,6 +4,7 @@ using Microsoft.Owin.Security.Cookies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -15,24 +16,30 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Provider
         {
             if (context.Identity.IsAuthenticated)
             {
-                //var queryStringHostUrl = context.Request.Query["h"];
-
-                if (context.Request.Path.Value.Contains("Auth") ||
-                context.Request.Path.Value.StartsWith("signin") || context.Request.Path.Value.Contains(context.Options.LoginPath.Value))
+                if (context.Request.Path.Value.Contains(context.Options.LoginPath.Value))
                 {
                     return Task.FromResult<object>(null);
                 }
-
+                var spContext = SPContextProvider.Get(new ClaimsPrincipal(context.Identity));
+                string spHostUrlString = TokenHelper.EnsureTrailingSlash(context.Request.Query.Get(SharePointContext.SPHostUrlKey));
                 Uri spHostUrl;
-                if (!Uri.TryCreate(context.Request.Query[SharePointContext.SPHostUrlKey], UriKind.Absolute, out spHostUrl))
+                if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
                 {
-                    throw new Exception("Unable to determine host url");
+                    throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPHostUrlKey));
                 }
-
-                var hostUrl = context.Identity.FindFirst(SPAddinClaimTypes.SPHostUrl);
-                if (hostUrl == null || !hostUrl.Value.Equals(spHostUrl.AbsoluteUri, StringComparison.OrdinalIgnoreCase))
+                //string spAppWebUrlString = TokenHelper.EnsureTrailingSlash(context.Request.Query.Get(SharePointContext.SPAppWebUrlKey));
+                //Uri spAppWebUrl;
+                //if (string.IsNullOrEmpty(spAppWebUrlString) || (!Uri.TryCreate(spAppWebUrlString, UriKind.Absolute, out spAppWebUrl) &&
+                //                                (spAppWebUrl.Scheme == Uri.UriSchemeHttp || spAppWebUrl.Scheme == Uri.UriSchemeHttps)))
+                //{
+                //    throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPAppWebUrlKey));
+                //}
+                if (spContext != null)
                 {
-                    context.RejectIdentity();
+                    if (spHostUrl != null && !spContext.SPHostUrl.AbsoluteUri.TrimEnd('/').Equals(spHostUrl.AbsoluteUri.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.RejectIdentity();
+                    }
                 }
             }
             return Task.FromResult<object>(null);

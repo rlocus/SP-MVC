@@ -19,7 +19,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 		public SPAddInAuthenticationOptions() : base(SPAddinAuthenticationDefaults.AuthenticationType)
 		{
 			Description.Caption = SPAddinAuthenticationDefaults.AuthenticationType;
-			CallbackPath = new PathString("/signin-spaddin/");
+			CallbackPath = new PathString(/*"/signin-spaddin/"*/"/");
 			AuthenticationMode = AuthenticationMode.Passive;
 		}
 	}
