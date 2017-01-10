@@ -16,9 +16,9 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Provider
             if (context.Identity.IsAuthenticated)
             {
                 //var queryStringHostUrl = context.Request.Query["h"];
-               
-                    if (context.Request.Path.Value.Contains("Auth") ||
-                    context.Request.Path.Value.StartsWith("signin") || context.Request.Path.Value.Contains(context.Options.LoginPath.Value))
+
+                if (context.Request.Path.Value.Contains("Auth") ||
+                context.Request.Path.Value.StartsWith("signin") || context.Request.Path.Value.Contains(context.Options.LoginPath.Value))
                 {
                     return Task.FromResult<object>(null);
                 }
@@ -29,9 +29,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Provider
                     throw new Exception("Unable to determine host url");
                 }
 
-                var hostUrl = context.Identity.FindFirst(SPAddinClaimTypes.SPHostUrl).Value;
-
-                if (!hostUrl.Equals(spHostUrl.AbsoluteUri, StringComparison.OrdinalIgnoreCase))
+                var hostUrl = context.Identity.FindFirst(SPAddinClaimTypes.SPHostUrl);
+                if (hostUrl == null || !hostUrl.Value.Equals(spHostUrl.AbsoluteUri, StringComparison.OrdinalIgnoreCase))
                 {
                     context.RejectIdentity();
                 }

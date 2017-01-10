@@ -24,6 +24,12 @@ namespace SPMVCWeb
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
             );
+
+            routes.MapRoute(
+                name: "DefaultApi",
+                url: "api/{controller}/{id}",
+                defaults: new { id = UrlParameter.Optional }
+                ).RouteHandler = new SessionRouteHandler();
         }
     }
 }

@@ -22,6 +22,7 @@
     <WorkflowPartId>{2266dabc-f2b7-46fa-ab5d-34d3f3a1ae3c}</WorkflowPartId>
     <CspkgPartId>{7356bb99-476e-46e4-ba51-78c13023f04c}</CspkgPartId>
     <SqlPackagePartId>{916f48ea-791b-44b5-9d72-335ffa415626}</SqlPackagePartId>
+    <ActivePublishProfile>SPMVCUser</ActivePublishProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

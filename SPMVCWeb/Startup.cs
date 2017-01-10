@@ -7,6 +7,8 @@ using System.Configuration;
 using AspNet.Owin.SharePoint.Addin.Authentication.Middleware;
 using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
 using System.Threading.Tasks;
+using System.Web.Configuration;
+using System;
 
 namespace SPMVCWeb
 {
@@ -14,26 +16,30 @@ namespace SPMVCWeb
     {
         public void Configuration(IAppBuilder app)
         {
-            //var cookieAuth = new CookieAuthenticationOptions
-            //{
-            //    LoginPath = new PathString("/Auth/Login"),
-            //    Provider = new AddInCookieAuthenticationProvider()
-            //};
+            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false: Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            if (cookieAuthenticationEnabled)
+            {
+                var cookieAuth = new CookieAuthenticationOptions
+                {
+                    LoginPath = new PathString("/Auth/Login"),
+                    Provider = new AddInCookieAuthenticationProvider()
+                };
 
-            //app.SetDefaultSignInAsAuthenticationType(cookieAuth.AuthenticationType);
-            //app.UseCookieAuthentication(cookieAuth);
+                app.SetDefaultSignInAsAuthenticationType(cookieAuth.AuthenticationType);
+                app.UseCookieAuthentication(cookieAuth);
 
-            //app.UseSPAddinAuthentication(new SPAddInAuthenticationOptions
-            //{
-            //    ClientId = ConfigurationManager.AppSettings["ClientId"],
-            //    Provider = new SPAddinAuthenticationProvider()
-            //    {
-            //        OnAuthenticated = (context) =>
-            //        {
-            //            return Task.FromResult<object>(null);
-            //        }
-            //    }
-            //});
+                app.UseSPAddinAuthentication(new SPAddInAuthenticationOptions
+                {
+                    ClientId = ConfigurationManager.AppSettings["ClientId"],
+                    Provider = new SPAddinAuthenticationProvider()
+                    {
+                        OnAuthenticated = (context) =>
+                        {
+                            return Task.FromResult<object>(null);
+                        }
+                    }
+                });
+            }
         }
     }
 }

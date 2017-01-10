@@ -1,5 +1,6 @@
 using AspNet.Owin.SharePoint.Addin.Authentication.Context;
 using System;
+using System.Web.Configuration;
 using System.Web.Mvc;
 
 namespace SPMVCWeb
@@ -15,6 +16,9 @@ namespace SPMVCWeb
             {
                 throw new ArgumentNullException("filterContext");
             }
+
+            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            if (cookieAuthenticationEnabled) return;
 
             Uri redirectUrl;
             switch (SharePointContextProvider.CheckRedirectionStatus(filterContext.HttpContext, out redirectUrl))

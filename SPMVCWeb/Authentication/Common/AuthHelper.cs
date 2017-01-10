@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
 using Microsoft.IdentityModel.S2S.Tokens;
 using Microsoft.Owin;
-using Microsoft.SharePoint.Client;
 using FormCollection = Microsoft.Owin.FormCollection;
 using AspNet.Owin.SharePoint.Addin.Authentication.Context;
 
 namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 {
-	internal static class AuthHelper
+    internal static class AuthHelper
 	{
 		public static string GetS2SAccessToken(Uri applicationUri, string userId)
 		{
@@ -32,42 +30,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 			}
 
 			return GetS2SAccessTokenWithClaims(applicationUri.Authority, realm, claims);
-		}
-
-		public static string GetAppContextTokenRequestUrl(string contextUrl, string redirectUri)
-		{
-			return TokenHelper.GetAppContextTokenRequestUrl(contextUrl, redirectUri);
-		}
-
-		public static ClientContext GetClientContextWithAccessToken(string targetUrl, string accessToken)
-		{
-			return TokenHelper.GetClientContextWithAccessToken(targetUrl, accessToken);
-		}
-
-		public static string EnsureTrailingSlash(string url)
-		{
-			return TokenHelper.EnsureTrailingSlash(url);
-		}
-
-		public static SharePointContextToken ReadAndValidateContextToken(string contextTokenString, string appHostName)
-		{
-		    if (string.IsNullOrEmpty(contextTokenString)) return null;
-			return TokenHelper.ReadAndValidateContextToken(contextTokenString, appHostName);
-		}
-
-		public static string GetRealmFromTargetUrl(Uri targetApplicationUri)
-		{
-			return TokenHelper.GetRealmFromTargetUrl(targetApplicationUri);
-		}
-
-		public static bool IsHighTrustApp()
-		{
-			return TokenHelper.IsHighTrustApp();
-		}
-
-		public static string GetAcsAccessToken(string refreshToken, string targetPrincipalName, string targetHost, string targetRealm)
-		{
-			return TokenHelper.GetAccessToken(refreshToken, targetPrincipalName, targetHost, targetRealm).AccessToken;
 		}
 
 		public static string GetContextTokenFromRequest(IOwinRequest request)
@@ -111,7 +73,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 		public static IIdentity GetHttpRequestIdentity(IOwinContext context)
 		{
 			var httpRequest = ((System.Web.HttpContextBase)context.Environment["System.Web.HttpContextBase"]).Request;
-
 			return httpRequest.LogonUserIdentity;
 		}
 
@@ -125,7 +86,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
 		private static readonly Action<string, string, object> AppendItemCallback = (name, value, state) =>
 		{
 			var dictionary = (IDictionary<string, List<String>>)state;
-
 			List<string> existing;
 			if (!dictionary.TryGetValue(name, out existing))
 			{

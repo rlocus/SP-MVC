@@ -3,11 +3,12 @@ using Microsoft.SharePoint.Client;
 using SPMVCWeb.Models;
 using System;
 using System.Linq;
+using System.Web.Configuration;
 using System.Web.Mvc;
 
 namespace SPMVCWeb.Controllers
 {
-    //[Authorize]
+    [SPAuthorize]
     public class HomeController : Controller
     {
         [SharePointContextFilter]
@@ -33,7 +34,7 @@ namespace SPMVCWeb.Controllers
             return View();
         }
 
-        [SharePointContextFilter]    
+        [SharePointContextFilter]
         public ActionResult List(Guid listId, Guid? viewId)
         {
             List list = null;
@@ -61,11 +62,22 @@ namespace SPMVCWeb.Controllers
 
         private ClientContext GetClientContext()
         {
-            //var spContext = SPContextProvider.Get(User as System.Security.Claims.ClaimsPrincipal);
-            var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext);
-            if (spContext != null)
+            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            if (cookieAuthenticationEnabled)
             {
-                return spContext.CreateUserClientContextForSPHost();
+                var spContext = SPContextProvider.Get(User as System.Security.Claims.ClaimsPrincipal);
+                if (spContext != null)
+                {
+                    return spContext.CreateUserClientContextForSPHost();
+                }
+            }
+            else
+            {
+                var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext);
+                if (spContext != null)
+                {
+                    return spContext.CreateUserClientContextForSPHost();
+                }
             }
             return null;
         }
