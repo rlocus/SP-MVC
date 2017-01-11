@@ -1,27 +1,39 @@
 ﻿using System;
 using System.Security.Claims;
 using AspNet.Owin.SharePoint.Addin.Authentication.Caching;
-using AspNet.Owin.SharePoint.Addin.Authentication.Common;
 using Microsoft.SharePoint.Client;
 
-namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
+namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
 	public abstract class SPContext
 	{
 		public static ITokenCache Cache;
 
-		protected readonly ClaimsPrincipal _claimsPrincipal;
+		protected readonly ClaimsIdentity _claimsIdentity;
 
-		public string RefreshToken
+        public string ClientId
+        {
+            get
+            {
+                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.ClientId))
+                {
+                    throw new Exception("Unable to find Client Id under current user's claims");
+                }
+
+                return _claimsIdentity.FindFirst(SPAddinClaimTypes.ClientId).Value;
+            }
+        }
+
+        public string RefreshToken
 		{
 			get
 			{
-				if (!_claimsPrincipal.HasClaim(c => c.Type == SPAddinClaimTypes.RefreshToken))
+				if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.RefreshToken))
 				{
 					throw new Exception("Unable to find Refresh Token under current user's claims");
 				}
 
-				return _claimsPrincipal.FindFirst(SPAddinClaimTypes.RefreshToken).Value;
+				return _claimsIdentity.FindFirst(SPAddinClaimTypes.RefreshToken).Value;
 			}
 		}
 
@@ -29,12 +41,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 		{
 			get
 			{
-				if (!_claimsPrincipal.HasClaim(c => c.Type == SPAddinClaimTypes.CacheKey))
+				if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.CacheKey))
 				{
 					throw new Exception("Unable to find User Hash Key under current user's claims");
 				}
 
-				return _claimsPrincipal.FindFirst(SPAddinClaimTypes.CacheKey).Value;
+				return _claimsIdentity.FindFirst(SPAddinClaimTypes.CacheKey).Value;
 			}
 		}
 
@@ -42,12 +54,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 		{
 			get
 			{
-				if (!_claimsPrincipal.HasClaim(c => c.Type == SPAddinClaimTypes.Realm))
+				if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.Realm))
 				{
 					throw new Exception("Unable to find Realm under current user's claims");
 				}
 
-				return _claimsPrincipal.FindFirst(SPAddinClaimTypes.Realm).Value;
+				return _claimsIdentity.FindFirst(SPAddinClaimTypes.Realm).Value;
 			}
 		}
 
@@ -55,12 +67,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 		{
 			get
 			{
-				if (!_claimsPrincipal.HasClaim(c => c.Type == SPAddinClaimTypes.TargetPrincipalName))
+				if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.TargetPrincipalName))
 				{
 					throw new Exception("Unable to find TargetPrincipalName under current user's claims");
 				}
 
-				return _claimsPrincipal.FindFirst(SPAddinClaimTypes.TargetPrincipalName).Value;
+				return _claimsIdentity.FindFirst(SPAddinClaimTypes.TargetPrincipalName).Value;
 			}
 		}
 
@@ -68,12 +80,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 		{
 			get
 			{
-				if (!_claimsPrincipal.HasClaim(c => c.Type == SPAddinClaimTypes.SPHostUrl))
+				if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.SPHostUrl))
 				{
 					throw new Exception("Unable to find SPHostUrl under current user's claims");
 				}
 
-				return new Uri(_claimsPrincipal.FindFirst(SPAddinClaimTypes.SPHostUrl).Value);
+				return new Uri(_claimsIdentity.FindFirst(SPAddinClaimTypes.SPHostUrl).Value);
 			}
 		}
 
@@ -81,12 +93,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 		{
 			get
 			{
-				if (!_claimsPrincipal.HasClaim(c => c.Type == SPAddinClaimTypes.SPAppWebUrl))
+				if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.SPAppWebUrl))
 				{
 					throw new Exception("Unable to find SPAppWebUrl under current user's claims");
 				}
 
-				return new Uri(_claimsPrincipal.FindFirst(SPAddinClaimTypes.SPAppWebUrl).Value);
+				return new Uri(_claimsIdentity.FindFirst(SPAddinClaimTypes.SPAppWebUrl).Value);
 			}
 		}
 
@@ -97,10 +109,17 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 
 		protected SPContext(ClaimsPrincipal claimsPrincipal)
 		{
-			_claimsPrincipal = claimsPrincipal;
+		    if (claimsPrincipal == null) throw new ArgumentNullException("claimsPrincipal");
+		    _claimsIdentity = (ClaimsIdentity)claimsPrincipal.Identity;
 		}
 
-		protected ClientContext GetUserClientContext(Uri host)
+	    protected SPContext(ClaimsIdentity claimsIdentity)
+	    {
+	        if (claimsIdentity == null) throw new ArgumentNullException("claimsIdentity");
+	        _claimsIdentity = claimsIdentity;
+	    }
+
+	    protected ClientContext GetUserClientContext(Uri host)
 		{
 			var accessToken = Cache.Get(GetUserCacheKey(host.Authority));
 			if (accessToken == null)

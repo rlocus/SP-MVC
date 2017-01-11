@@ -31,6 +31,7 @@ namespace SPMVCWeb
                 app.UseSPAddinAuthentication(new SPAddInAuthenticationOptions
                 {
                     ClientId = ConfigurationManager.AppSettings["ClientId"],
+                    SPHostUrl = ConfigurationManager.AppSettings["SPHostUrl"],
                     Provider = new SPAddinAuthenticationProvider()
                     {
                         OnAuthenticated = (context) =>

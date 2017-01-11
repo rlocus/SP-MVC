@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Security.Claims;
-using AspNet.Owin.SharePoint.Addin.Authentication.Common;
 
-namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
+namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
 	public class AcsContext : SPContext 
 	{
@@ -10,7 +9,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Context
 		{
 		}
 
-		protected override AccessToken CreateUserAccessToken(Uri host)
+        public AcsContext(ClaimsIdentity claimsIdentity) : base(claimsIdentity)
+        {
+        }
+
+        protected override AccessToken CreateUserAccessToken(Uri host)
 		{
 			var oauthToken = TokenHelper.GetAccessToken(RefreshToken, TargetPrincipalName, host.Authority, Realm);
 

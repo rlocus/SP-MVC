@@ -8,9 +8,8 @@ using System.Text;
 using Microsoft.IdentityModel.S2S.Tokens;
 using Microsoft.Owin;
 using FormCollection = Microsoft.Owin.FormCollection;
-using AspNet.Owin.SharePoint.Addin.Authentication.Context;
 
-namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
+namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
     internal static class AuthHelper
 	{

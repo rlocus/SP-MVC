@@ -17,7 +17,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 			:base(next, options)
 		{
 			_logger = app.CreateLogger<SPAddInAuthenticationMiddleware>();
-
 			if (string.IsNullOrEmpty(Options.SignInAsAuthenticationType))
 			{
 				options.SignInAsAuthenticationType = app.GetDefaultSignInAsAuthenticationType();

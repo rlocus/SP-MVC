@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using AspNet.Owin.SharePoint.Addin.Authentication.Common;
 
 namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
 {

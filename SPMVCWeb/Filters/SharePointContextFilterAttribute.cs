@@ -1,4 +1,4 @@
-using AspNet.Owin.SharePoint.Addin.Authentication.Context;
+using AspNet.Owin.SharePoint.Addin.Authentication;
 using System;
 using System.Web.Configuration;
 using System.Web.Mvc;

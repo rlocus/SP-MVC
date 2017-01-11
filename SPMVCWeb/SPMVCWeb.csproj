@@ -280,14 +280,14 @@
     <Compile Include="App_Start\SessionRouteHandler.cs" />
     <Compile Include="Authentication\Caching\DefaultTokenCache.cs" />
     <Compile Include="Authentication\Caching\ITokenCache.cs" />
-    <Compile Include="Authentication\Common\AccessToken.cs" />
-    <Compile Include="Authentication\Common\AuthHelper.cs" />
-    <Compile Include="Authentication\Common\SPAddinClaimTypes.cs" />
-    <Compile Include="Authentication\Context\AcsContext.cs" />
+    <Compile Include="Authentication\AccessToken.cs" />
+    <Compile Include="Authentication\AuthHelper.cs" />
+    <Compile Include="Authentication\SPAddinClaimTypes.cs" />
+    <Compile Include="Authentication\AcsContext.cs" />
     <Compile Include="Authentication\Provider\AddInCookieAuthenticationProvider.cs" />
-    <Compile Include="Authentication\Context\HighTrustContext.cs" />
-    <Compile Include="Authentication\Context\SPContext.cs" />
-    <Compile Include="Authentication\Context\SPContextProvider.cs" />
+    <Compile Include="Authentication\HighTrustContext.cs" />
+    <Compile Include="Authentication\SPContext.cs" />
+    <Compile Include="Authentication\SPContextProvider.cs" />
     <Compile Include="Authentication\Middleware\SPAddinAuthenticationDefaults.cs" />
     <Compile Include="Authentication\Middleware\SPAddinAuthenticationExtensions.cs" />
     <Compile Include="Authentication\Middleware\SPAddinAuthenticationHandler.cs" />
@@ -309,9 +309,9 @@
     <Compile Include="Models\ListInformation.cs" />
     <Compile Include="Models\UserInformation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Authentication\Context\SharePointContext.cs" />
+    <Compile Include="Authentication\SharePointContext.cs" />
     <Compile Include="Startup.cs" />
-    <Compile Include="Authentication\Context\TokenHelper.cs" />
+    <Compile Include="Authentication\TokenHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap-theme.css" />

@@ -1,6 +1,4 @@
-﻿using AspNet.Owin.SharePoint.Addin.Authentication.Common;
-
-namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
+﻿namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
 {
 	public interface ITokenCache
 	{

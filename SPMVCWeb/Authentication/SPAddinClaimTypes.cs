@@ -1,8 +1,9 @@
-﻿namespace AspNet.Owin.SharePoint.Addin.Authentication.Common
+﻿namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
 	public class SPAddinClaimTypes
 	{
-		public const string SPHostUrl = "spaddin:hosturl";
+        public const string ClientId = "spaddin:clientid";
+        public const string SPHostUrl = "spaddin:hosturl";
 		public const string SPAppWebUrl = "spaddin:appweburl";
 		public const string RefreshToken = "spaddin:refreshtoken";
 		public const string CacheKey = "spaddin:cachekey";

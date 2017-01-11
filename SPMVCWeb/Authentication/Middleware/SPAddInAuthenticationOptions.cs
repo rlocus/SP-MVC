@@ -8,18 +8,20 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 	{
 		public string ClientId { get; set; }
 
-		public string SignInAsAuthenticationType { get; set; }
+        public string SPHostUrl { get; set; }
+
+        public string SignInAsAuthenticationType { get; set; }
 
 		public ISecureDataFormat<AuthenticationProperties> StateDataFormat { get; set; }
 
-		public PathString CallbackPath { get; set; }
+		//public PathString CallbackPath { get; set; }
 
 		public ISPAddinAuthenticationProvider Provider { get; set; }
 
 		public SPAddInAuthenticationOptions() : base(SPAddinAuthenticationDefaults.AuthenticationType)
 		{
 			Description.Caption = SPAddinAuthenticationDefaults.AuthenticationType;
-			CallbackPath = new PathString(/*"/signin-spaddin/"*/"/");
+			//CallbackPath = new PathString(/*"/signin-spaddin/"*/"/");
 			AuthenticationMode = AuthenticationMode.Passive;
 		}
 	}
