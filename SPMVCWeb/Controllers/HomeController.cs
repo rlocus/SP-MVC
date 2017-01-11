@@ -2,19 +2,30 @@
 using Microsoft.SharePoint.Client;
 using SPMVCWeb.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Configuration;
 using System.Web.Mvc;
+using Newtonsoft.Json;
 
 namespace SPMVCWeb.Controllers
 {
-    [SPAuthorize]
+    [SPAuthorize(Permissions = PermissionKind.EmptyMask, SPGroup = "", SiteAdminRequired = false)]
     public class HomeController : Controller
     {
         [SharePointContextFilter]
         public ActionResult Index()
         {
-            InitView();
+            Site site = null;
+            Web web = null;
+            InitView((clientContext) =>
+            {
+                site = clientContext.Site;
+                clientContext.Load(site);
+                web = clientContext.Web;
+                clientContext.Load(web);
+            });
+            ViewBag.PageContextInfo = getPageContextInfo(site, web);
             return View();
         }
 
@@ -101,6 +112,52 @@ namespace SPMVCWeb.Controllers
                     ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
                 }
             }
+        }
+
+        private SPPageContextInfo getPageContextInfo(Site site, Web web)
+        {
+            SPPageContextInfo pageContextInfo = new SPPageContextInfo();
+            if (site != null)
+            {
+                if (site.IsPropertyAvailable("SiteServerRelativeUrl"))
+                    pageContextInfo.SiteServerRelativeUrl = site.ServerRelativeUrl;
+                if (site.IsPropertyAvailable("Url"))
+                    pageContextInfo.SiteAbsoluteUrl = site.Url;
+            }
+            if (web != null)
+            {
+                if (web.IsPropertyAvailable("ServerRelativeUrl"))
+                    pageContextInfo.WebServerRelativeUrl = web.ServerRelativeUrl;
+                if (web.IsPropertyAvailable("Url"))
+                    pageContextInfo.WebAbsoluteUrl = web.Url;
+                if (web.IsPropertyAvailable("Language"))
+                    pageContextInfo.WebLanguage = web.Language;
+                if (web.IsPropertyAvailable("SiteLogoUrl"))
+                    pageContextInfo.WebLogoUrl = web.SiteLogoUrl;
+                if (web.IsPropertyAvailable("EffectiveBasePermissions"))
+                {
+                    var permissions = new List<int>();
+                    foreach (var pk in (PermissionKind[])Enum.GetValues(typeof(PermissionKind)))
+                    {
+                        if (web.EffectiveBasePermissions.Has(pk) && pk != PermissionKind.EmptyMask)
+                        {
+                            permissions.Add((int)pk);
+                        }
+                    }
+                    pageContextInfo.WebPermMasks = JsonConvert.SerializeObject(permissions);
+                }
+                if (web.IsPropertyAvailable("Title"))
+                    pageContextInfo.WebTitle = web.Title;
+                if (web.IsPropertyAvailable("UIVersion"))
+                    pageContextInfo.WebUIVersion = web.UIVersion;
+
+                User user = web.CurrentUser;
+                if (user.IsPropertyAvailable("Id"))
+                    pageContextInfo.UserId = user.Id;
+                if (user.IsPropertyAvailable("LoginName"))
+                    pageContextInfo.UserLoginName = user.LoginName;
+            }
+            return pageContextInfo;
         }
     }
 }

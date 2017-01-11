@@ -12,6 +12,7 @@ namespace SPMVCWeb.Filters
         public override void OnResultExecuting(ResultExecutingContext filterContext)
         {
             filterContext.Controller.ViewBag.SPHostUrl = SharePointContext.GetSPHostUrl(filterContext.HttpContext.Request);
+            filterContext.Controller.ViewBag.SPAppWebUrl = filterContext.HttpContext.Request[SharePointContext.SPAppWebUrlKey];
         }
     }
 }

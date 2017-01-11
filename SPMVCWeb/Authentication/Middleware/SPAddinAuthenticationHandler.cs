@@ -112,7 +112,14 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             {
                 //Path = /*Options.CallbackPath.Value*/
             };
-            var redirectUri = string.Format("{0}?{{StandardTokens}}&{{{2}}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString, SharePointContext.SPAppWebUrlKey);
+            var queryNameValueCollection = HttpUtility.ParseQueryString(uriBuilder.Query);
+            queryNameValueCollection.Remove(SharePointContext.SPHostUrlKey);
+            queryNameValueCollection.Remove(SharePointContext.SPAppWebUrlKey);
+            queryNameValueCollection.Remove(SharePointContext.SPLanguageKey);
+            queryNameValueCollection.Remove(SharePointContext.SPClientTagKey);
+            queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
+            var redirectUri = string.Format("{0}?{{StandardTokens}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString);
+            //var redirectUri = string.Format("{0}?{{StandardTokens}}&{{{2}}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString, SharePointContext.SPAppWebUrlKey);
             var tokenRequestUrl = TokenHelper.GetAppContextTokenRequestUrl(hostUrl.AbsoluteUri, WebUtility.UrlEncode(redirectUri));
             return tokenRequestUrl;
         }
@@ -199,8 +206,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                     try
                     {
                         clientContext.ExecuteQuery();
-                        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.LoginName, null,
-                            Options.AuthenticationType));
+                        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.LoginName, null, Options.AuthenticationType));
                         identity.AddClaim(new Claim(ClaimTypes.Name, user.Title));
                         identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                         await Options.Provider.Authenticated(new SPAddinAuthenticatedContext(Context, user, identity));
