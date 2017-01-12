@@ -52,7 +52,7 @@ namespace SPMVCWeb.Models
         [JsonProperty("appWebUrl")]
         public string AppWebUrl { get; set; }
 
-        [JsonProperty("spRegionalSettings")]
+        [JsonProperty("regionalSettings")]
         public SPRegionalInfo RegionalInfo { get; set; }
     }
 }

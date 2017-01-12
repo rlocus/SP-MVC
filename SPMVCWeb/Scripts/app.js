@@ -49,7 +49,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             if ($pnp.util.stringIsNullOrEmpty(this.appWebUrl)) {
                 throw "SPAppWebUrl url parameter must be specified!";
             }
-            this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, "_layouts/15");
+            this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, window._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty(window._spPageContextInfo.layoutsUrl) ? window._spPageContextInfo.layoutsUrl : "_layouts/15");
             this.spApp = this.$angular.module(App.SharePointAppName, [
                 //'ngSanitize',
                 'officeuifabric.core',
@@ -70,8 +70,18 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             var formDigestValue = JSON.parse(data.body).d.GetContextWebInformation.FormDigestValue;
                             deferred.resolve(formDigestValue);
                         },
-                        error: function (error) {
-                            deferred.reject(error);
+                        error: function (data, errorCode, errorMessage) {
+                            if (data.body) {
+                                try {
+                                    var error = JSON.parse(data.body);
+                                    if (error && error.error) {
+                                        errorMessage = error.error.message.value;
+                                    }
+                                }
+                                catch (e) { }
+                            }
+                            self.$(self).trigger("app-error", [errorMessage]);
+                            deferred.reject(data, errorCode, errorMessage);
                         }
                     });
                     return deferred.promise();
@@ -102,7 +112,9 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
         };
         App.prototype.ensureScript = function (url) {
             if (url) {
-                url = url.toLowerCase().replace("~sphost", this.scriptBase);
+                url = url.toLowerCase().replace("~sphost", this.hostWebUrl)
+                    .replace("~spapp", this.appWebUrl)
+                    .replace("~splayouts", this.scriptBase);
                 var scriptPromise = this._scriptPromises[url];
                 if (!scriptPromise) {
                     scriptPromise = this.$.cachedScript(url);
@@ -121,10 +133,10 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
             if (!self._initialized) {
                 throw "App is not initialized!";
             }
-            self.ensureScript("~sphost/MicrosoftAjax.js").then(function () {
-                self.ensureScript("~sphost/SP.Runtime.js").then(function () {
-                    self.ensureScript("~sphost/SP.RequestExecutor.js").then(function () {
-                        self.ensureScript("~sphost/SP.js").then(function () {
+            self.ensureScript("~splayouts/MicrosoftAjax.js").then(function () {
+                self.ensureScript("~splayouts/SP.Runtime.js").then(function () {
+                    self.ensureScript("~splayouts/SP.RequestExecutor.js").then(function () {
+                        self.ensureScript("~splayouts/SP.js").then(function () {
                             if ($pnp.util.isArray(modules)) {
                                 self.$.each(modules, function (i, module) {
                                     module.render();
@@ -299,12 +311,23 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         var result = JSON.parse(data.body);
                                         deferred.resolve(result);
                                     },
-                                    error: function (error) {
-                                        deferred.reject(error);
+                                    error: function (data, errorCode, errorMessage) {
+                                        if (data.body) {
+                                            try {
+                                                var error = JSON.parse(data.body);
+                                                if (error && error.error) {
+                                                    errorMessage = error.error.message.value;
+                                                }
+                                            }
+                                            catch (e) { }
+                                        }
+                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                        deferred.reject(data, errorCode, errorMessage);
                                     }
                                 });
                             }
                             else {
+                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                                 deferred.reject("List is not specified.");
                             }
                             break;
@@ -355,12 +378,23 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         var result = JSON.parse(JSON.parse(data.body).d.RenderListData);
                                         deferred.resolve({ ListData: result });
                                     },
-                                    error: function (error) {
-                                        deferred.reject(error);
+                                    error: function (data, errorCode, errorMessage) {
+                                        if (data.body) {
+                                            try {
+                                                var error = JSON.parse(data.body);
+                                                if (error && error.error) {
+                                                    errorMessage = error.error.message.value;
+                                                }
+                                            }
+                                            catch (e) { }
+                                        }
+                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                        deferred.reject(data, errorCode, errorMessage);
                                     }
                                 });
                             }
                             else {
+                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                                 deferred.reject("List is not specified.");
                             }
                             break;
@@ -396,12 +430,23 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         var listData = { Row: d.results, NextHref: null, PrevHref: null };
                                         deferred.resolve({ ListData: listData });
                                     },
-                                    error: function (error) {
-                                        deferred.reject(error);
+                                    error: function (data, errorCode, errorMessage) {
+                                        if (data.body) {
+                                            try {
+                                                var error = JSON.parse(data.body);
+                                                if (error && error.error) {
+                                                    errorMessage = error.error.message.value;
+                                                }
+                                            }
+                                            catch (e) { }
+                                        }
+                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                        deferred.reject(data, errorCode, errorMessage);
                                     }
                                 });
                             }
                             else {
+                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                                 deferred.reject("List is not specified.");
                             }
                             break;
@@ -448,12 +493,23 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         listData.PrevHref = self._app.getQueryParam(d["__prev"], "$skiptoken");
                                         deferred.resolve({ ListData: listData });
                                     },
-                                    error: function (error) {
-                                        deferred.reject(error);
+                                    error: function (data, errorCode, errorMessage) {
+                                        if (data.body) {
+                                            try {
+                                                var error = JSON.parse(data.body);
+                                                if (error && error.error) {
+                                                    errorMessage = error.error.message.value;
+                                                }
+                                            }
+                                            catch (e) { }
+                                        }
+                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                        deferred.reject(data, errorCode, errorMessage);
                                     }
                                 });
                             }
                             else {
+                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                                 deferred.reject("List is not specified.");
                             }
                             break;
@@ -490,10 +546,13 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                         listData.NextHref = position.get_pagingInfo();
                                     }
                                     deferred.resolve({ ListData: listData });
-                                }, deferred.reject);
+                                }, function (sender, args) {
+                                    self._app.$(self._app).trigger("app-error", [args.get_message(), args.get_stackTrace()]);
+                                    deferred.reject(sender, args);
+                                });
                             }
                             else {
-                                deferred.reject("List is not specified.");
+                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                             }
                             break;
                     }
@@ -744,8 +803,18 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             var lists = JSON.parse(data.body).d.results;
                             deferred.resolve(lists);
                         },
-                        error: function (error) {
-                            deferred.reject(error);
+                        error: function (data, errorCode, errorMessage) {
+                            if (data.body) {
+                                try {
+                                    var error = JSON.parse(data.body);
+                                    if (error && error.message) {
+                                        errorMessage = error.message.value;
+                                    }
+                                }
+                                catch (e) { }
+                            }
+                            self._app.$(self._app).trigger("app-error", [errorMessage]);
+                            deferred.reject(data, errorCode, errorMessage);
                         }
                     });
                     return deferred.promise();
@@ -766,8 +835,18 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                             var list = JSON.parse(data.body).d;
                             deferred.resolve(list);
                         },
-                        error: function (error) {
-                            deferred.reject(error);
+                        error: function (data, errorCode, errorMessage) {
+                            if (data.body) {
+                                try {
+                                    var error = JSON.parse(data.body);
+                                    if (error && error.error) {
+                                        errorMessage = error.error.message.value;
+                                    }
+                                }
+                                catch (e) { }
+                            }
+                            self._app.$(self._app).trigger("app-error", [errorMessage]);
+                            deferred.reject(data, errorCode, errorMessage);
                         }
                     });
                     return deferred.promise();
@@ -794,8 +873,18 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                         success: function (data) {
                             deferred.resolve();
                         },
-                        error: function (error) {
-                            deferred.reject(error);
+                        error: function (data, errorCode, errorMessage) {
+                            if (data.body) {
+                                try {
+                                    var error = JSON.parse(data.body);
+                                    if (error && error.error) {
+                                        errorMessage = error.error.message.value;
+                                    }
+                                }
+                                catch (e) { }
+                            }
+                            self._app.$(self._app).trigger("app-error", [errorMessage]);
+                            deferred.reject(data, errorCode, errorMessage);
                         }
                     });
                     return deferred.promise();

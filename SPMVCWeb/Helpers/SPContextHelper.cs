@@ -3,7 +3,6 @@ using Microsoft.SharePoint.Client;
 using SPMVCWeb.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Web;
 using System.Web.Configuration;
 
@@ -26,7 +25,7 @@ namespace SPMVCWeb.Helpers
                     string spHostUrlString = WebConfigurationManager.AppSettings.Get(SharePointContext.SPHostUrlKey);
                     if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
                     {
-                      
+
                     }
                 }
                 return SharePointContextProvider.Current.GetSharePointContext(httpContext, spHostUrl);
@@ -43,12 +42,8 @@ namespace SPMVCWeb.Helpers
                 {
                     using (clientContext)
                     {
-                        //User spUser = clientContext.Web.CurrentUser;
-                        //clientContext.Load(spUser);
                         Action result = action.Invoke(clientContext);
                         clientContext.ExecuteQuery();
-                        //ViewBag.User = new UserInformation(spUser);
-                        //ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
                         if (result != null)
                         {
                             result.Invoke();
@@ -67,6 +62,8 @@ namespace SPMVCWeb.Helpers
                     pageContextInfo.SiteServerRelativeUrl = site.ServerRelativeUrl;
                 if (site.IsPropertyAvailable("Url"))
                     pageContextInfo.SiteAbsoluteUrl = site.Url;
+                if (site.IsPropertyAvailable("CompatibilityLevel"))
+                    pageContextInfo.LayoutsUrl = GetLayoutsFolder(site.CompatibilityLevel);
             }
             if (web != null)
             {
@@ -101,12 +98,19 @@ namespace SPMVCWeb.Helpers
                 if (user.IsPropertyAvailable("LoginName"))
                     pageContextInfo.UserLoginName = user.LoginName;
 
-                if (web.IsPropertyAvailable("RegionalSettings"))
-                {
-                    pageContextInfo.RegionalInfo = GetSPRegionalInfo(web.RegionalSettings);
-                }
+                pageContextInfo.RegionalInfo = GetSPRegionalInfo(web.RegionalSettings);
             }
             return pageContextInfo;
+        }
+
+        public static string GetLayoutsFolder(int compatibilityLevel)
+        {
+            string layouts = "_layouts";
+            if (compatibilityLevel >= 15)
+            {
+                layouts = string.Concat(layouts, "/", compatibilityLevel);
+            }
+            return layouts;
         }
 
         public static SPRegionalInfo GetSPRegionalInfo(RegionalSettings regionalSettings)
@@ -227,6 +231,10 @@ namespace SPMVCWeb.Helpers
             if (regionalSettings.IsPropertyAvailable("WorkDays"))
             {
                 regionalInfo.WorkDays = regionalSettings.WorkDays;
+            }
+            if (regionalSettings.TimeZone.IsPropertyAvailable("Information"))
+            {
+                regionalInfo.TimeZoneBias = regionalSettings.TimeZone.Information.Bias;
             }
             return regionalInfo;
         }

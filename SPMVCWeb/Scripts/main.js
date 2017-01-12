@@ -51,9 +51,9 @@ require(["jquery", "angular", "app"/*, "angular-sanitize"*/], function ($, angul
         "angular": angular
     });
     if (window.renderSPChrome) {
-        app.ensureScript(app.scriptBase + "/MicrosoftAjax.js").then(function () {
-            app.ensureScript(app.scriptBase + "/SP.Runtime.js").then(function () {
-                app.ensureScript(app.scriptBase + "/SP.js").then(function () {
+        app.ensureScript("~splayouts/MicrosoftAjax.js").then(function () {
+            app.ensureScript("~splayouts/SP.Runtime.js").then(function () {
+                app.ensureScript("~splayouts/SP.js").then(function () {
                     //Execute the correct script based on the isDialog
                     //Load the SP.UI.Controls.js file to render the App Chrome
                     app.ensureScript(app.scriptBase + "/SP.UI.Controls.js").then(function () {

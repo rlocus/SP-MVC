@@ -94,5 +94,8 @@ namespace SPMVCWeb.Models
 
         [JsonProperty("workDayStart")]
         public short WorkDayStartHour { get; set; }
+
+        [JsonProperty("tzBias")]
+        public int TimeZoneBias { get; set; }
     }
 }

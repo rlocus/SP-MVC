@@ -54,11 +54,11 @@ class App {
         if ($pnp.util.stringIsNullOrEmpty(this.hostWebUrl)) {
             throw "SPHostUrl url parameter must be specified!";
         }
-        this.appWebUrl = (<any>window)._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty((<any>window)._spPageContextInfo.appWebUrl) ? (<any>window)._spPageContextInfo.appWebUrl: $pnp.util.getUrlParamByName("SPAppWebUrl");
+        this.appWebUrl = (<any>window)._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty((<any>window)._spPageContextInfo.appWebUrl) ? (<any>window)._spPageContextInfo.appWebUrl : $pnp.util.getUrlParamByName("SPAppWebUrl");
         if ($pnp.util.stringIsNullOrEmpty(this.appWebUrl)) {
             throw "SPAppWebUrl url parameter must be specified!";
         }
-        this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, "_layouts/15");
+        this.scriptBase = $pnp.util.combinePaths(this.hostWebUrl, (<any>window)._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty((<any>window)._spPageContextInfo.layoutsUrl) ? (<any>window)._spPageContextInfo.layoutsUrl : "_layouts/15");
         this.spApp = this.$angular.module(App.SharePointAppName, [
             //'ngSanitize',
             'officeuifabric.core',
@@ -75,12 +75,22 @@ class App {
                         "accept": "application/json;odata=verbose",
                         "content-Type": "application/json;odata=verbose"
                     },
-                    success: function (data) {
+                    success: (data) => {
                         var formDigestValue = JSON.parse(<string>data.body).d.GetContextWebInformation.FormDigestValue;
                         deferred.resolve(formDigestValue);
                     },
-                    error: function (error) {
-                        deferred.reject(error);
+                    error: (data, errorCode, errorMessage) => {
+                        if (data.body) {
+                            try {
+                                var error = JSON.parse(<string>data.body);
+                                if (error && error.error) {
+                                    errorMessage = error.error.message.value;
+                                }
+                            }
+                            catch (e) { }
+                        }
+                        self.$(self).trigger("app-error", [errorMessage]);
+                        deferred.reject(data, errorCode, errorMessage);
                     }
                 });
                 return deferred.promise();
@@ -115,7 +125,9 @@ class App {
 
     public ensureScript(url): JQueryXHR {
         if (url) {
-            url = url.toLowerCase().replace("~sphost", this.scriptBase);
+            url = url.toLowerCase().replace("~sphost", this.hostWebUrl)
+                .replace("~spapp", this.appWebUrl)
+                .replace("~splayouts", this.scriptBase);
             var scriptPromise = this._scriptPromises[url];
             if (!scriptPromise) {
                 scriptPromise = (<any>this.$).cachedScript(url);
@@ -139,10 +151,10 @@ class App {
         if (!self._initialized) {
             throw "App is not initialized!";
         }
-        self.ensureScript("~sphost/MicrosoftAjax.js").then(function () {
-            self.ensureScript("~sphost/SP.Runtime.js").then(function () {
-                self.ensureScript("~sphost/SP.RequestExecutor.js").then(function () {
-                    self.ensureScript("~sphost/SP.js").then(function () {
+        self.ensureScript("~splayouts/MicrosoftAjax.js").then(function () {
+            self.ensureScript("~splayouts/SP.Runtime.js").then(function () {
+                self.ensureScript("~splayouts/SP.RequestExecutor.js").then(function () {
+                    self.ensureScript("~splayouts/SP.js").then(function () {
                         if ($pnp.util.isArray(modules)) {
                             self.$.each(modules, (i: number, module: App.IModule) => {
                                 module.render();
@@ -354,15 +366,26 @@ module App.Module {
                                 "content-Type": "application/json;odata=verbose"
                             },
                             body: postBody,
-                            success: function (data) {
+                            success: (data) => {
                                 var result = JSON.parse(<string>data.body);
                                 deferred.resolve(result);
                             },
-                            error: function (error) {
-                                deferred.reject(error);
+                            error: (data, errorCode, errorMessage) => {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(<string>data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
                             }
                         });
                     } else {
+                        self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                         deferred.reject("List is not specified.");
                     }
                     break;
@@ -406,15 +429,26 @@ module App.Module {
                                 "accept": "application/json;odata=verbose",
                                 "content-Type": "application/json;odata=verbose"
                             },
-                            success: function (data) {
+                            success: (data) => {
                                 var result = JSON.parse(JSON.parse(<string>data.body).d.RenderListData);
                                 deferred.resolve({ ListData: result });
                             },
-                            error: function (error) {
-                                deferred.reject(error);
+                            error: (data, errorCode, errorMessage) => {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(<string>data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
                             }
                         });
                     } else {
+                        self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                         deferred.reject("List is not specified.");
                     }
                     break;
@@ -443,16 +477,27 @@ module App.Module {
                                 "accept": "application/json;odata=verbose",
                                 "content-Type": "application/json;odata=verbose"
                             },
-                            success: function (data) {
+                            success: (data)=> {
                                 var d = JSON.parse(<string>data.body).d;
                                 var listData = { Row: d.results, NextHref: null, PrevHref: null };
                                 deferred.resolve({ ListData: listData });
                             },
-                            error: function (error) {
-                                deferred.reject(error);
+                            error: (data, errorCode, errorMessage) => {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(<string>data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
                             }
                         });
                     } else {
+                        self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                         deferred.reject("List is not specified.");
                     }
                     break;
@@ -490,18 +535,29 @@ module App.Module {
                                 "accept": "application/json;odata=verbose",
                                 "content-Type": "application/json;odata=verbose"
                             },
-                            success: function (data) {
+                            success: (data)=> {
                                 var d = JSON.parse(<string>data.body).d;
                                 var listData = { Row: d.results, NextHref: null, PrevHref: null };
                                 listData.NextHref = self._app.getQueryParam(d["__next"], "$skiptoken");
                                 listData.PrevHref = self._app.getQueryParam(d["__prev"], "$skiptoken")
                                 deferred.resolve({ ListData: listData });
                             },
-                            error: function (error) {
-                                deferred.reject(error);
+                            error: (data, errorCode, errorMessage) => {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(<string>data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
                             }
                         });
                     } else {
+                        self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                         deferred.reject("List is not specified.");
                     }
                     break;
@@ -536,9 +592,12 @@ module App.Module {
                                 listData.NextHref = position.get_pagingInfo();
                             }
                             deferred.resolve({ ListData: listData });
-                        }, deferred.reject);
+                        }, (sender, args) => {
+                            self._app.$(self._app).trigger("app-error", [args.get_message(), args.get_stackTrace()]);
+                            deferred.reject(sender, args);
+                        });
                     } else {
-                        deferred.reject("List is not specified.");
+                        self._app.$(self._app).trigger("app-error", ["List is not specified."]);
                     }
                     break;
             }
@@ -802,12 +861,22 @@ module App.Module {
                     "accept": "application/json;odata=verbose",
                     "content-Type": "application/json;odata=verbose"
                 },
-                success: function (data) {
+                success: (data)=> {
                     var lists = JSON.parse(<string>data.body).d.results;
                     deferred.resolve(lists);
                 },
-                error: function (error) {
-                    deferred.reject(error);
+                error: (data, errorCode, errorMessage) => {
+                    if (data.body) {
+                        try {
+                            var error = JSON.parse(<string>data.body);
+                            if (error && error.message) {
+                                errorMessage = error.message.value;
+                            }
+                        }
+                        catch (e) { }
+                    }
+                    self._app.$(self._app).trigger("app-error", [errorMessage]);
+                    deferred.reject(data, errorCode, errorMessage);
                 }
             });
             return deferred.promise();
@@ -825,12 +894,22 @@ module App.Module {
                     "accept": "application/json;odata=verbose",
                     "content-Type": "application/json;odata=verbose"
                 },
-                success: function (data) {
+                success: (data) =>{
                     var list = JSON.parse(<string>data.body).d;
                     deferred.resolve(list);
                 },
-                error: function (error) {
-                    deferred.reject(error);
+                error: (data, errorCode, errorMessage) => {
+                    if (data.body) {
+                        try {
+                            var error = JSON.parse(<string>data.body);
+                            if (error && error.error) {
+                                errorMessage = error.error.message.value;
+                            }
+                        }
+                        catch (e) { }
+                    }
+                    self._app.$(self._app).trigger("app-error", [errorMessage]);
+                    deferred.reject(data, errorCode, errorMessage);
                 }
             });
             return deferred.promise();
@@ -856,11 +935,21 @@ module App.Module {
                     "X-HTTP-Method": "MERGE",
                     "X-RequestDigest": digestValue
                 },
-                success: function (data) {
+                success:  (data) =>{
                     deferred.resolve();
                 },
-                error: function (error) {
-                    deferred.reject(error);
+                error: (data, errorCode, errorMessage) => {
+                    if (data.body) {
+                        try {
+                            var error = JSON.parse(<string>data.body);
+                            if (error && error.error) {
+                                errorMessage = error.error.message.value;
+                            }
+                        }
+                        catch(e) {}
+                    }
+                    self._app.$(self._app).trigger("app-error", [errorMessage]);
+                    deferred.reject(data, errorCode, errorMessage);
                 }
             });
             return deferred.promise();

@@ -25,6 +25,7 @@ namespace SPMVCWeb.Controllers
                     Web web = clientContext.Web;
                     clientContext.Load(web);
                     clientContext.Load(web.RegionalSettings);
+                    clientContext.Load(web.RegionalSettings.TimeZone);
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
@@ -55,7 +56,6 @@ namespace SPMVCWeb.Controllers
                     clientContext.Load(site);
                     Web web = clientContext.Web;
                     clientContext.Load(web);
-                    clientContext.Load(web.RegionalSettings);
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
@@ -86,7 +86,6 @@ namespace SPMVCWeb.Controllers
                     clientContext.Load(site);
                     Web web = clientContext.Web;
                     clientContext.Load(web);
-                    clientContext.Load(web.RegionalSettings);
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
@@ -118,6 +117,7 @@ namespace SPMVCWeb.Controllers
                     Web web = clientContext.Web;
                     clientContext.Load(web);
                     clientContext.Load(web.RegionalSettings);
+                    clientContext.Load(web.RegionalSettings.TimeZone);
 
                     List list = clientContext.Web.Lists.GetById(listId);
                     View view;

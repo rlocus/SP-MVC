@@ -9,11 +9,14 @@
             var listsView = app.get_ListsView({
                 controllerName: "lists-controller"
             });
+            $(app).on("app-error", function (ev, message, stackTrace) {
+                alert(message);
+            });
             if (!window.renderSPChrome) {
                 app.render(listsView);
             } else {
                 $('body').on("chrome-loaded", function () {
-                    app.$('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
+                    $('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
                     app.render(listsView);
                 });
             }
