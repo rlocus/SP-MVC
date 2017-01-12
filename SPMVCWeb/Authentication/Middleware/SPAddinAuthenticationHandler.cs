@@ -120,7 +120,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
             var redirectUri = string.Format("{0}?{{StandardTokens}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString);
             //var redirectUri = string.Format("{0}?{{StandardTokens}}&{{{2}}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString, SharePointContext.SPAppWebUrlKey);
-            var tokenRequestUrl = TokenHelper.GetAppContextTokenRequestUrl(hostUrl.AbsoluteUri, WebUtility.UrlEncode(redirectUri));
+            var tokenRequestUrl = TokenHelper.GetAppContextTokenRequestUrl(hostUrl.GetLeftPart(UriPartial.Path), WebUtility.UrlEncode(redirectUri));
             return tokenRequestUrl;
         }
 
@@ -154,7 +154,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                 if (Response.StatusCode != 401)
                 {
                     ticket.Identity.AddClaim(new Claim(SPAddinClaimTypes.SPAddinAuthentication, "1"));
-                    ticket.Identity.AddClaim(new Claim(SPAddinClaimTypes.ClientId, Options.ClientId));
+                    ticket.Identity.AddClaim(new Claim(SPAddinClaimTypes.ClientId, Options.ClientId.ToString()));
                     Context.Authentication.SignIn(ticket.Properties, ticket.Identity);
                     if (string.IsNullOrEmpty(ticket.Properties.RedirectUri))
                     {

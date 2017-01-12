@@ -101,7 +101,7 @@ namespace SPMVCWeb
             returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?") + 1, StandardTokens + "&");
 
             // Constructs redirect url.
-            string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.AbsoluteUri, Uri.EscapeDataString(returnUrlString));
+            string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.GetLeftPart(UriPartial.Path), Uri.EscapeDataString(returnUrlString));
             redirectUrl = new Uri(redirectUrlString, UriKind.Absolute);
             return RedirectionStatus.ShouldRedirect;
         }

@@ -1,4 +1,5 @@
-﻿using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
+﻿using System;
+using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 
@@ -6,7 +7,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 {
 	public class SPAddInAuthenticationOptions : AuthenticationOptions
 	{
-		public string ClientId { get; set; }
+		public Guid ClientId { get; set; }
 
         public string SPHostUrl { get; set; }
 

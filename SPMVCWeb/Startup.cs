@@ -28,9 +28,10 @@ namespace SPMVCWeb
                 };
                 app.SetDefaultSignInAsAuthenticationType(cookieAuth.AuthenticationType);
                 app.UseCookieAuthentication(cookieAuth);
+                string clientId = ConfigurationManager.AppSettings["ClientId"];
                 app.UseSPAddinAuthentication(new SPAddInAuthenticationOptions
                 {
-                    ClientId = ConfigurationManager.AppSettings["ClientId"],
+                    ClientId = string.IsNullOrEmpty(clientId) ? Guid.Empty : new Guid(clientId),
                     SPHostUrl = ConfigurationManager.AppSettings["SPHostUrl"],
                     Provider = new SPAddinAuthenticationProvider()
                     {

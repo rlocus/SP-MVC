@@ -731,7 +731,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 HttpCookie spCacheKeyCookie = httpContext.Request.Cookies[SPCacheKeyKey];
                 string spCacheKey = spCacheKeyCookie != null ? spCacheKeyCookie.Value : null;
 
-                return spHostUrl.AbsoluteUri.TrimEnd('/') == spAcsContext.SPHostUrl.AbsoluteUri.TrimEnd('/') &&
+                return string.Equals(spHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), spAcsContext.SPHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), StringComparison.OrdinalIgnoreCase) &&
                        !string.IsNullOrEmpty(spAcsContext.CacheKey) &&
                        spCacheKey == spAcsContext.CacheKey &&
                        !string.IsNullOrEmpty(spAcsContext.ContextToken) &&
@@ -906,8 +906,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             {
                 //Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
                 WindowsIdentity logonUserIdentity = httpContext.Request.LogonUserIdentity;
-
-                return spHostUrl.AbsoluteUri.TrimEnd('/') == spHighTrustContext.SPHostUrl.AbsoluteUri.TrimEnd('/') &&
+                return string.Equals(spHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), spHighTrustContext.SPHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), StringComparison.OrdinalIgnoreCase) &&
                        logonUserIdentity != null &&
                        logonUserIdentity.IsAuthenticated &&
                        !logonUserIdentity.IsGuest &&

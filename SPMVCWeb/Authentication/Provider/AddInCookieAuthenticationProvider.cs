@@ -28,25 +28,24 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Provider
                     //throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPHostUrlKey));
                 }
 
-                try
-                {
-                    if (spHostUrl != null &&
-                        !spContext.SPHostUrl.AbsoluteUri.TrimEnd('/')
-                            .Equals(spHostUrl.AbsoluteUri.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
-                    {
-                        context.RejectIdentity();
-                    }
-                }
-                catch (Exception)
+                //try
+                //{
+                if (spHostUrl != null &&
+                    !string.Equals(spContext.SPHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'),
+                        spHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
                 {
                     context.RejectIdentity();
                 }
+                //}
+                //catch (Exception)
+                //{
+                //    context.RejectIdentity();
+                //}
 
                 string clientId = ConfigurationManager.AppSettings["ClientId"];
-
                 try
                 {
-                    if (!spContext.ClientId.Trim().Equals(clientId.Trim(), StringComparison.OrdinalIgnoreCase))
+                    if (spContext.ClientId != (string.IsNullOrEmpty(clientId) ? Guid.Empty : new Guid(clientId)))
                     {
                         context.RejectIdentity();
                     }
