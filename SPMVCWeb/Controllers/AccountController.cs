@@ -4,6 +4,7 @@ using Microsoft.Owin.Security;
 using System;
 using System.Configuration;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Web;
 using System.Web.Mvc;
 
@@ -33,14 +34,18 @@ namespace SPMVCWeb.Controllers
             return new ChallengeResult(SPAddinAuthenticationDefaults.AuthenticationType, spHostUrl.ToString(), returnUrl);
         }
 
-        [HttpPost]
-        public void SignOut()
+        [HttpGet]
+        public ActionResult Logout()
         {
             if (Request.IsAuthenticated)
             {
+                var spContext = SPContextProvider.Get(HttpContext.User as ClaimsPrincipal);
                 HttpContext.GetOwinContext()
                     .Authentication.SignOut(new AuthenticationProperties() { RedirectUri = "/" }, SPAddinAuthenticationDefaults.AuthenticationType);
+                if (spContext.SPAppWebUrl != null)
+                    return new RedirectResult(string.Format("{0}/_layouts/closeConnection.aspx?loginasanotheruser=true", spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path).TrimEnd('/')));
             }
+            return new RedirectResult(null);
         }
 
         public void EndSession()
@@ -50,18 +55,16 @@ namespace SPMVCWeb.Controllers
 
         private class ChallengeResult : HttpUnauthorizedResult
         {
-            public ChallengeResult(string provider, string spHostUrl, /*string spAppWebUrl,*/ string redirectUri)
+            public ChallengeResult(string provider, string spHostUrl, string redirectUri)
             {
                 LoginProvider = provider;
                 RedirectUri = redirectUri;
                 SPHostUrl = spHostUrl;
-                //SPAppWebUrl = spAppWebUrl;
             }
 
             private string LoginProvider { get; }
             private string RedirectUri { get; }
             private string SPHostUrl { get; }
-            //private string SPAppWebUrl { get; }
 
             public override void ExecuteResult(ControllerContext context)
             {
