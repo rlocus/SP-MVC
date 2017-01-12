@@ -11,7 +11,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     /// <summary>
     /// Encapsulates all the information from SharePoint.
     /// </summary>
-    public abstract class SharePointContext
+    public abstract class SharePointContext : ISPContext
     {
         public const string SPHostUrlKey = "SPHostUrl";
         public const string SPAppWebUrlKey = "SPAppWebUrl";
@@ -394,20 +394,25 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return CheckRedirectionStatus(new HttpContextWrapper(httpContext), out redirectUrl);
         }
 
+        public SharePointContext CreateSharePointContext(HttpRequestBase httpRequest)
+        {
+            // SPHostUrl
+            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpRequest);
+            return CreateSharePointContext(httpRequest, spHostUrl);
+        }
+
         /// <summary>
         /// Creates a SharePointContext instance with the specified HTTP request.
         /// </summary>
         /// <param name="httpRequest">The HTTP request.</param>
         /// <returns>The SharePointContext instance. Returns <c>null</c> if errors occur.</returns>
-        public SharePointContext CreateSharePointContext(HttpRequestBase httpRequest)
+        public SharePointContext CreateSharePointContext(HttpRequestBase httpRequest, Uri spHostUrl)
         {
             if (httpRequest == null)
             {
                 throw new ArgumentNullException("httpRequest");
             }
 
-            // SPHostUrl
-            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpRequest);
             if (spHostUrl == null)
             {
                 return null;
@@ -426,21 +431,21 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             string spLanguage = httpRequest.QueryString[SharePointContext.SPLanguageKey];
             if (string.IsNullOrEmpty(spLanguage))
             {
-                return null;
+                //return null;
             }
 
             // SPClientTag
             string spClientTag = httpRequest.QueryString[SharePointContext.SPClientTagKey];
             if (string.IsNullOrEmpty(spClientTag))
             {
-                return null;
+                //return null;
             }
 
             // SPProductNumber
             string spProductNumber = httpRequest.QueryString[SharePointContext.SPProductNumberKey];
             if (string.IsNullOrEmpty(spProductNumber))
             {
-                return null;
+                //return null;
             }
 
             return CreateSharePointContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, httpRequest);
@@ -463,31 +468,35 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <returns>The SharePointContext instance. Returns <c>null</c> if not found and a new instance can't be created.</returns>
         public SharePointContext GetSharePointContext(HttpContextBase httpContext)
         {
+            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+            return GetSharePointContext(httpContext, spHostUrl);
+        }
+
+        public SharePointContext GetSharePointContext(HttpContextBase httpContext, Uri spHostUrl)
+        {
             if (httpContext == null)
             {
                 throw new ArgumentNullException("httpContext");
             }
 
-            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
             if (spHostUrl == null)
             {
                 return null;
             }
 
             SharePointContext spContext = LoadSharePointContext(httpContext);
-
-            if (spContext == null || !ValidateSharePointContext(spContext, httpContext))
+            if (spContext == null || !ValidateSharePointContext(spContext, httpContext, spHostUrl))
             {
-                spContext = CreateSharePointContext(httpContext.Request);
+                spContext = CreateSharePointContext(httpContext.Request, spHostUrl);
 
                 if (spContext != null)
                 {
                     SaveSharePointContext(spContext, httpContext);
                 }
             }
-
             return spContext;
         }
+
 
         /// <summary>
         /// Gets a SharePointContext instance associated with the specified HTTP context.
@@ -517,7 +526,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <param name="spContext">The SharePointContext.</param>
         /// <param name="httpContext">The HTTP context.</param>
         /// <returns>True if the given SharePointContext can be used with the specified HTTP context.</returns>
-        protected abstract bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext);
+        protected abstract bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext, Uri spHostUrl);
 
         /// <summary>
         /// Loads the SharePointContext instance associated with the specified HTTP context.
@@ -711,18 +720,18 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return new SharePointAcsContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, contextTokenString, contextToken);
         }
 
-        protected override bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext)
+        protected override bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext, Uri spHostUrl)
         {
             SharePointAcsContext spAcsContext = spContext as SharePointAcsContext;
 
             if (spAcsContext != null)
             {
-                Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+                //Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
                 string contextToken = TokenHelper.GetContextTokenFromRequest(httpContext.Request);
                 HttpCookie spCacheKeyCookie = httpContext.Request.Cookies[SPCacheKeyKey];
                 string spCacheKey = spCacheKeyCookie != null ? spCacheKeyCookie.Value : null;
 
-                return spHostUrl == spAcsContext.SPHostUrl &&
+                return spHostUrl.AbsoluteUri.TrimEnd('/') == spAcsContext.SPHostUrl.AbsoluteUri.TrimEnd('/') &&
                        !string.IsNullOrEmpty(spAcsContext.CacheKey) &&
                        spCacheKey == spAcsContext.CacheKey &&
                        !string.IsNullOrEmpty(spAcsContext.ContextToken) &&
@@ -889,16 +898,16 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return new SharePointHighTrustContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, logonUserIdentity);
         }
 
-        protected override bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext)
+        protected override bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext, Uri spHostUrl)
         {
             SharePointHighTrustContext spHighTrustContext = spContext as SharePointHighTrustContext;
 
             if (spHighTrustContext != null)
             {
-                Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+                //Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
                 WindowsIdentity logonUserIdentity = httpContext.Request.LogonUserIdentity;
 
-                return spHostUrl == spHighTrustContext.SPHostUrl &&
+                return spHostUrl.AbsoluteUri.TrimEnd('/') == spHighTrustContext.SPHostUrl.AbsoluteUri.TrimEnd('/') &&
                        logonUserIdentity != null &&
                        logonUserIdentity.IsAuthenticated &&
                        !logonUserIdentity.IsGuest &&

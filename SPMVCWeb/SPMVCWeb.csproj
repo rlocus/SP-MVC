@@ -305,9 +305,11 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\SPContextHelper.cs" />
     <Compile Include="Models\FieldInformation.cs" />
     <Compile Include="Models\ListInformation.cs" />
     <Compile Include="Models\SPPageContextInfo.cs" />
+    <Compile Include="Models\SPRegionalInfo.cs" />
     <Compile Include="Models\UserInformation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Authentication\SharePointContext.cs" />

@@ -6,10 +6,7 @@
 {
     <script type="text/javascript">
         require(["jquery", "angular", "app"], function ($, angular, app) {
-            var pageContextInfoJson = $("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo)').text();
-            if (pageContextInfoJson) {
-                window._spPageContextInfo = JSON.parse(pageContextInfoJson);
-            } var listsView = app.get_ListsView({
+            var listsView = app.get_ListsView({
                 controllerName: "lists-controller"
             });
             if (!window.renderSPChrome) {

@@ -5,7 +5,7 @@ using System.Web.SessionState;
 
 namespace SPMVCWeb
 {
-    public class SessionRouteHandler : IRouteHandler
+    public sealed class SessionRouteHandler : IRouteHandler
     {
         IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)
         {

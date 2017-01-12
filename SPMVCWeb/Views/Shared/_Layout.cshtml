@@ -6,6 +6,10 @@
     <title>@ViewBag.Title</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/require")
+    @Scripts.Render("~/bundles/angular")
 </head>
 <body style="display: none">
     <div id="navbar_container" class="navbar navbar-inverse navbar-fixed-top">
@@ -26,15 +30,29 @@
                     <li>@Html.ActionLink("Contact", "Contact", "Home", null, null)</li>
                 </ul>
                 <div class="navbar-right">
-                    <uif-persona ng-cloak uif-style="square" uif-size="medium" uif-image-url="">
-                        <uif-persona-initials uif-color="blue">@ViewBag.User.Initials</uif-persona-initials>
-                        <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
-                    </uif-persona>
+                    @if (ViewBag.User != null)
+                    {
+                        <uif-persona ng-cloak uif-style="square" uif-size="medium" uif-image-url="">
+                            <uif-persona-initials uif-color="blue">@ViewBag.User.Initials</uif-persona-initials>
+                            <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
+                        </uif-persona>
+                    }
                 </div>
             </div>
         </div>
     </div>
     <div id="content" class="container body-content">
+        @if (ViewBag.PageContextInfo != null)
+        {
+            <script type="text/javascript">
+                require(["jquery"], function($) {
+                    var pageContextInfoJson = $("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo)').text();
+                    if (pageContextInfoJson) {
+                        window._spPageContextInfo = JSON.parse(pageContextInfoJson);
+                    }
+                });
+            </script>
+        }
         @RenderBody()
         <hr />
         <footer>
@@ -42,9 +60,6 @@
         </footer>
     </div>
 
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
-    @Scripts.Render("~/bundles/require")
     @Scripts.Render("~/bundles/main")
     @RenderSection("scripts", required: false)
 </body>

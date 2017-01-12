@@ -7,10 +7,6 @@
 {
     <script type="text/javascript">
         require(["jquery", "angular", "app"], function ($, angular, app) {
-            var pageContextInfoJson = $("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo)').text();
-            if (pageContextInfoJson) {
-                window._spPageContextInfo = JSON.parse(pageContextInfoJson);
-            }
             var listJson = app.$("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List)').text();
             var list = JSON.parse(listJson);
             var listView = app.get_ListView({

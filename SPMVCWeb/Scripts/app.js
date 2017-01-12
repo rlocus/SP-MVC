@@ -41,11 +41,11 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                     throw "Angular is not loaded!";
                 }
             }
-            this.hostWebUrl = $pnp.util.getUrlParamByName("SPHostUrl");
+            this.hostWebUrl = window._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty(window._spPageContextInfo.webAbsoluteUrl) ? window._spPageContextInfo.webAbsoluteUrl : $pnp.util.getUrlParamByName("SPHostUrl");
             if ($pnp.util.stringIsNullOrEmpty(this.hostWebUrl)) {
                 throw "SPHostUrl url parameter must be specified!";
             }
-            this.appWebUrl = $pnp.util.getUrlParamByName("SPAppWebUrl");
+            this.appWebUrl = window._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty(window._spPageContextInfo.appWebUrl) ? window._spPageContextInfo.appWebUrl : $pnp.util.getUrlParamByName("SPAppWebUrl");
             if ($pnp.util.stringIsNullOrEmpty(this.appWebUrl)) {
                 throw "SPAppWebUrl url parameter must be specified!";
             }

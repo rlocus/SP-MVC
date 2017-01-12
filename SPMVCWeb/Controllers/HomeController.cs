@@ -1,12 +1,9 @@
-﻿using AspNet.Owin.SharePoint.Addin.Authentication;
-using Microsoft.SharePoint.Client;
+﻿using Microsoft.SharePoint.Client;
+using SPMVCWeb.Helpers;
 using SPMVCWeb.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web.Configuration;
 using System.Web.Mvc;
-using Newtonsoft.Json;
 
 namespace SPMVCWeb.Controllers
 {
@@ -16,23 +13,61 @@ namespace SPMVCWeb.Controllers
         [SharePointContextFilter]
         public ActionResult Index()
         {
-            Site site = null;
-            Web web = null;
-            InitView((clientContext) =>
+            var spContext = SPContextHelper.GetSPContext(this.HttpContext);
+            if (spContext != null)
             {
-                site = clientContext.Site;
-                clientContext.Load(site);
-                web = clientContext.Web;
-                clientContext.Load(web);
-            });
-            ViewBag.PageContextInfo = getPageContextInfo(site, web);
+                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                {
+                    User spUser = clientContext.Web.CurrentUser;
+                    clientContext.Load(spUser);
+                    Site site = clientContext.Site;
+                    clientContext.Load(site);
+                    Web web = clientContext.Web;
+                    clientContext.Load(web);
+                    clientContext.Load(web.RegionalSettings);
+                    return () =>
+                    {
+                        ViewBag.User = new UserInformation(spUser);
+                        ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
+                        SPPageContextInfo pageContextInfo =  SPContextHelper.GetPageContextInfo(site, web);
+                        if (spContext.SPAppWebUrl != null)
+                        {
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                        }
+                        ViewBag.PageContextInfo = pageContextInfo;
+                    };
+                });
+            }
             return View();
         }
 
         [SharePointContextFilter]
         public ActionResult About()
         {
-            InitView();
+            var spContext = SPContextHelper.GetSPContext(this.HttpContext);
+            if (spContext != null)
+            {
+                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                {
+                    User spUser = clientContext.Web.CurrentUser;
+                    clientContext.Load(spUser);
+                    Site site = clientContext.Site;
+                    clientContext.Load(site);
+                    Web web = clientContext.Web;
+                    clientContext.Load(web);
+                    clientContext.Load(web.RegionalSettings);
+                    return () =>
+                    {
+                        ViewBag.User = new UserInformation(spUser);
+                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        if (spContext.SPAppWebUrl != null)
+                        {
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                        }
+                        ViewBag.PageContextInfo = pageContextInfo;
+                    };
+                });
+            }
             ViewBag.Message = "SP MVC application.";
             return View();
         }
@@ -40,7 +75,30 @@ namespace SPMVCWeb.Controllers
         [SharePointContextFilter]
         public ActionResult Contact()
         {
-            InitView();
+            var spContext = SPContextHelper.GetSPContext(this.HttpContext);
+            if (spContext != null)
+            {
+                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                {
+                    User spUser = clientContext.Web.CurrentUser;
+                    clientContext.Load(spUser);
+                    Site site = clientContext.Site;
+                    clientContext.Load(site);
+                    Web web = clientContext.Web;
+                    clientContext.Load(web);
+                    clientContext.Load(web.RegionalSettings);
+                    return () =>
+                    {
+                        ViewBag.User = new UserInformation(spUser);
+                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        if (spContext.SPAppWebUrl != null)
+                        {
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                        }
+                        ViewBag.PageContextInfo = pageContextInfo;
+                    };
+                });
+            }
             ViewBag.Message = "Contact.";
             return View();
         }
@@ -48,116 +106,49 @@ namespace SPMVCWeb.Controllers
         [SharePointContextFilter]
         public ActionResult List(Guid listId, Guid? viewId)
         {
-            List list = null;
-            View view = null;
-            InitView((clientContext) =>
+            var spContext = SPContextHelper.GetSPContext(this.HttpContext);
+            if (spContext != null)
             {
-                list = clientContext.Web.Lists.GetById(listId);
-                clientContext.Load(list);
-                clientContext.Load(list.RootFolder);
-                clientContext.Load(list.Fields, fields => fields.Where(f => !f.Hidden && f.Group != "_Hidden"));
-                if (viewId == null || default(Guid) == viewId)
+                SPContextHelper.RunWithContext(spContext, (clientContext) =>
                 {
-                    view = list.DefaultView;
-                }
-                else
-                {
-                    view = list.GetViewById(viewId.Value);
-                }
-                clientContext.Load(view);
-                clientContext.Load(view.ViewFields);
-            });
-            ViewBag.List = new ListInformation(list, view);
-            return View();
-        }
-
-        private ClientContext GetClientContext()
-        {
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
-            if (cookieAuthenticationEnabled)
-            {
-                var spContext = SPContextProvider.Get(User as System.Security.Claims.ClaimsPrincipal);
-                if (spContext != null)
-                {
-                    return spContext.CreateUserClientContextForSPHost();
-                }
-            }
-            else
-            {
-                var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext);
-                if (spContext != null)
-                {
-                    return spContext.CreateUserClientContextForSPHost();
-                }
-            }
-            return null;
-        }
-
-        private void InitView(Action<ClientContext> action = null)
-        {
-            User spUser = null;
-            ClientContext clientContext = GetClientContext();
-            if (clientContext != null)
-            {
-                using (clientContext)
-                {
-                    spUser = clientContext.Web.CurrentUser;
+                    User spUser = clientContext.Web.CurrentUser;
                     clientContext.Load(spUser);
-                    if (action != null)
-                    {
-                        action.Invoke(clientContext);
-                    }
-                    clientContext.ExecuteQuery();
-                    ViewBag.User = new UserInformation(spUser);
-                    ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
-                }
-            }
-        }
+                    Site site = clientContext.Site;
+                    clientContext.Load(site);
+                    Web web = clientContext.Web;
+                    clientContext.Load(web);
+                    clientContext.Load(web.RegionalSettings);
 
-        private SPPageContextInfo getPageContextInfo(Site site, Web web)
-        {
-            SPPageContextInfo pageContextInfo = new SPPageContextInfo();
-            if (site != null)
-            {
-                if (site.IsPropertyAvailable("SiteServerRelativeUrl"))
-                    pageContextInfo.SiteServerRelativeUrl = site.ServerRelativeUrl;
-                if (site.IsPropertyAvailable("Url"))
-                    pageContextInfo.SiteAbsoluteUrl = site.Url;
-            }
-            if (web != null)
-            {
-                if (web.IsPropertyAvailable("ServerRelativeUrl"))
-                    pageContextInfo.WebServerRelativeUrl = web.ServerRelativeUrl;
-                if (web.IsPropertyAvailable("Url"))
-                    pageContextInfo.WebAbsoluteUrl = web.Url;
-                if (web.IsPropertyAvailable("Language"))
-                    pageContextInfo.WebLanguage = web.Language;
-                if (web.IsPropertyAvailable("SiteLogoUrl"))
-                    pageContextInfo.WebLogoUrl = web.SiteLogoUrl;
-                if (web.IsPropertyAvailable("EffectiveBasePermissions"))
-                {
-                    var permissions = new List<int>();
-                    foreach (var pk in (PermissionKind[])Enum.GetValues(typeof(PermissionKind)))
+                    List list = clientContext.Web.Lists.GetById(listId);
+                    View view;
+                    clientContext.Load(list);
+                    clientContext.Load(list.RootFolder);
+                    clientContext.Load(list.Fields, fields => fields.Where(f => !f.Hidden && f.Group != "_Hidden"));
+                    if (viewId == null || default(Guid) == viewId)
                     {
-                        if (web.EffectiveBasePermissions.Has(pk) && pk != PermissionKind.EmptyMask)
+                        view = list.DefaultView;
+                    }
+                    else
+                    {
+                        view = list.GetViewById(viewId.Value);
+                    }
+                    clientContext.Load(view);
+                    clientContext.Load(view.ViewFields);
+
+                    return () =>
+                    {
+                        ViewBag.User = new UserInformation(spUser);
+                        ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
+                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        if (spContext.SPAppWebUrl != null)
                         {
-                            permissions.Add((int)pk);
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
                         }
-                    }
-                    pageContextInfo.WebPermMasks = JsonConvert.SerializeObject(permissions);
-                }
-                if (web.IsPropertyAvailable("Title"))
-                    pageContextInfo.WebTitle = web.Title;
-                if (web.IsPropertyAvailable("UIVersion"))
-                    pageContextInfo.WebUIVersion = web.UIVersion;
-
-                User user = web.CurrentUser;
-                if (user.IsPropertyAvailable("Id"))
-                    pageContextInfo.UserId = user.Id;
-                if (user.IsPropertyAvailable("LoginName"))
-                    pageContextInfo.UserLoginName = user.LoginName;
+                        ViewBag.PageContextInfo = pageContextInfo; ViewBag.List = new ListInformation(list, view);
+                    };
+                });
             }
-            return pageContextInfo;
+            return View();
         }
     }
 }

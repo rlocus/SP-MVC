@@ -46,9 +46,19 @@ namespace SPMVCWeb
             redirectUrl = null;
             bool contextTokenExpired = false;
 
+            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+            if (spHostUrl == null)
+            {
+                string spHostUrlString = WebConfigurationManager.AppSettings.Get(SharePointContext.SPHostUrlKey);
+                if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
+                {
+                    return RedirectionStatus.CanNotRedirect;
+                }
+            }
+
             try
             {
-                if (SharePointContextProvider.Current.GetSharePointContext(httpContext) != null)
+                if (SharePointContextProvider.Current.GetSharePointContext(httpContext, spHostUrl) != null)
                 {
                     return RedirectionStatus.Ok;
                 }
@@ -63,16 +73,6 @@ namespace SPMVCWeb
             if (!string.IsNullOrEmpty(httpContext.Request.QueryString[SPHasRedirectedToSharePointKey]) && !contextTokenExpired)
             {
                 return RedirectionStatus.CanNotRedirect;
-            }
-
-            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
-            if (spHostUrl == null)
-            {
-                string spHostUrlString = WebConfigurationManager.AppSettings.Get(SharePointContext.SPHostUrlKey);
-                if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
-                {
-                    return RedirectionStatus.CanNotRedirect;
-                }
             }
 
             if (StringComparer.OrdinalIgnoreCase.Equals(httpContext.Request.HttpMethod, "POST"))

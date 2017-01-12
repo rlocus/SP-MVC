@@ -28,14 +28,14 @@ namespace SPMVCWeb.Models
         [JsonProperty("webLanguage")]
         public uint WebLanguage { get; set; }
 
-        [JsonProperty("currentLanguage")]
-        public string CurrentLanguage { get; set; }
+        //[JsonProperty("currentLanguage")]
+        //public string CurrentLanguage { get; set; }
 
-        [JsonProperty("currentUICultureName")]
-        public string CurrentUICultureName { get; set; }
+        //[JsonProperty("currentUICultureName")]
+        //public string CurrentUICultureName { get; set; }
 
-        [JsonProperty("currentCultureName")]
-        public string CurrentCultureName { get; set; }
+        //[JsonProperty("currentCultureName")]
+        //public string CurrentCultureName { get; set; }
 
         [JsonProperty("userId")]
         public int UserId { get; set; }
@@ -44,9 +44,15 @@ namespace SPMVCWeb.Models
         public string UserLoginName { get; set; }
 
         [JsonProperty("webPermMasks")]
-        public string WebPermMasks { get; set; }
+        public int[] WebPermMasks { get; set; }
 
         [JsonProperty("webUIVersion")]
         public int WebUIVersion { get; set; }
+
+        [JsonProperty("appWebUrl")]
+        public string AppWebUrl { get; set; }
+
+        [JsonProperty("spRegionalSettings")]
+        public SPRegionalInfo RegionalInfo { get; set; }
     }
 }

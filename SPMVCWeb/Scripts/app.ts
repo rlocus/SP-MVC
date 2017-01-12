@@ -50,11 +50,11 @@ class App {
                 throw "Angular is not loaded!";
             }
         }
-        this.hostWebUrl = $pnp.util.getUrlParamByName("SPHostUrl");
+        this.hostWebUrl = (<any>window)._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty((<any>window)._spPageContextInfo.webAbsoluteUrl) ? (<any>window)._spPageContextInfo.webAbsoluteUrl : $pnp.util.getUrlParamByName("SPHostUrl");
         if ($pnp.util.stringIsNullOrEmpty(this.hostWebUrl)) {
             throw "SPHostUrl url parameter must be specified!";
         }
-        this.appWebUrl = $pnp.util.getUrlParamByName("SPAppWebUrl");
+        this.appWebUrl = (<any>window)._spPageContextInfo && !$pnp.util.stringIsNullOrEmpty((<any>window)._spPageContextInfo.appWebUrl) ? (<any>window)._spPageContextInfo.appWebUrl: $pnp.util.getUrlParamByName("SPAppWebUrl");
         if ($pnp.util.stringIsNullOrEmpty(this.appWebUrl)) {
             throw "SPAppWebUrl url parameter must be specified!";
         }

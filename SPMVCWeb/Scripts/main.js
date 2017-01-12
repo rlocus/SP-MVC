@@ -5,7 +5,7 @@ require.config({
         //"fetch": 'fetch',
         //"es6-promise": 'es6-promise.min',
         "pnp": 'pnp.min',
-        "angular": 'angular.min',
+        //"angular": 'angular.min',
         //"angular-sanitize": 'angular-sanitize.min',
         "ngOfficeUiFabric": 'ngOfficeUiFabric.min'
     },
@@ -27,6 +27,15 @@ if (typeof window.jQuery == "undefined") {
     if (typeof define === "function" && define.amd) {
         define('jquery', [], function () {
             return window.jQuery; /* window.jQuery.noConflict();*/
+        });
+    }
+}
+
+if (typeof window.angular == "undefined") {
+} else {
+    if (typeof define === "function" && define.amd) {
+        define('angular', [], function () {
+            return window.angular;
         });
     }
 }
