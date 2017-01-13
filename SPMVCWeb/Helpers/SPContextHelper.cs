@@ -3,13 +3,92 @@ using Microsoft.SharePoint.Client;
 using SPMVCWeb.Models;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens;
 using System.Web;
 using System.Web.Configuration;
 
 namespace SPMVCWeb.Helpers
 {
-    static class SPContextHelper
+    internal static class SPContextHelper
     {
+        public static RedirectionStatus CheckRedirectionStatus(HttpContextBase httpContext, out Uri redirectUrl)
+        {
+            return SPContextHelper.CheckRedirectionStatus(httpContext, null, out redirectUrl);
+        }
+
+        public static RedirectionStatus CheckRedirectionStatus(HttpContextBase httpContext, Uri requestUrl, out Uri redirectUrl)
+        {
+            if (httpContext == null)
+            {
+                throw new ArgumentNullException("httpContext");
+            }
+
+            redirectUrl = null;
+            bool contextTokenExpired = false;
+
+            Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+            if (spHostUrl == null)
+            {
+                string spHostUrlString = WebConfigurationManager.AppSettings.Get(SharePointContext.SPHostUrlKey);
+                if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
+                {
+                    return RedirectionStatus.CanNotRedirect;
+                }
+            }
+
+            try
+            {
+                if (SharePointContextProvider.Current.GetSharePointContext(httpContext, spHostUrl) != null)
+                {
+                    return RedirectionStatus.Ok;
+                }
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                contextTokenExpired = true;
+            }
+
+            const string SPHasRedirectedToSharePointKey = "SPHasRedirectedToSharePoint";
+
+            if (!string.IsNullOrEmpty(httpContext.Request.QueryString[SPHasRedirectedToSharePointKey]) && !contextTokenExpired)
+            {
+                return RedirectionStatus.CanNotRedirect;
+            }
+
+            if (StringComparer.OrdinalIgnoreCase.Equals(httpContext.Request.HttpMethod, "POST"))
+            {
+                return RedirectionStatus.CanNotRedirect;
+            }
+
+            if (requestUrl == null)
+            {
+                requestUrl = httpContext.Request.Url;
+            }
+            var queryNameValueCollection = HttpUtility.ParseQueryString(requestUrl.Query);
+            // Removes the values that are included in {StandardTokens}, as {StandardTokens} will be inserted at the beginning of the query string.
+            queryNameValueCollection.Remove(SharePointContext.SPHostUrlKey);
+            queryNameValueCollection.Remove(SharePointContext.SPAppWebUrlKey);
+            queryNameValueCollection.Remove(SharePointContext.SPLanguageKey);
+            queryNameValueCollection.Remove(SharePointContext.SPClientTagKey);
+            queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
+
+            // Adds SPHasRedirectedToSharePoint=1.
+            queryNameValueCollection.Add(SPHasRedirectedToSharePointKey, "1");
+
+            UriBuilder returnUrlBuilder = new UriBuilder(requestUrl);
+            returnUrlBuilder.Query = queryNameValueCollection.ToString();
+
+            // Inserts StandardTokens.
+            const string StandardTokens = "{StandardTokens}";
+            string returnUrlString = returnUrlBuilder.Uri.AbsoluteUri;
+            returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?") + 1, StandardTokens + "&");
+
+            // Constructs redirect url.
+            string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.GetLeftPart(UriPartial.Path), Uri.EscapeDataString(returnUrlString));
+            redirectUrl = new Uri(redirectUrlString, UriKind.Absolute);
+            return RedirectionStatus.ShouldRedirect;
+        }
+
         public static ISPContext GetSPContext(HttpContextBase httpContext)
         {
             var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));

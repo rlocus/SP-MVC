@@ -45,7 +45,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             }
             else
             {
-                identity.AddClaim(new Claim(SPAddinClaimTypes.SPHostUrl, spHostUrl.AbsoluteUri));
+                identity.AddClaim(new Claim(SPAddinClaimTypes.SPHostUrl, spHostUrl.GetLeftPart(UriPartial.Path)));
             }
             string spAppWebUrlString = TokenHelper.EnsureTrailingSlash(Request.Query.Get(SharePointContext.SPAppWebUrlKey));
             if (!Uri.TryCreate(spAppWebUrlString, UriKind.Absolute, out spAppWebUrl))
@@ -54,7 +54,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             }
             else
             {
-                identity.AddClaim(new Claim(SPAddinClaimTypes.SPAppWebUrl, spAppWebUrl.AbsoluteUri));
+                identity.AddClaim(new Claim(SPAddinClaimTypes.SPAppWebUrl, spAppWebUrl.GetLeftPart(UriPartial.Path)));
             }
             //}
             string accessToken = null;
@@ -193,13 +193,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             var properties = Options.StateDataFormat.Unprotect(Request.Query["state"]) ?? new AuthenticationProperties();
             if (spHostUrl != null)
             {
-                properties.Dictionary.Add(SharePointContext.SPHostUrlKey, spHostUrl.AbsoluteUri);
+                properties.Dictionary.Add(SharePointContext.SPHostUrlKey, spHostUrl.GetLeftPart(UriPartial.Path));
                 if (spAppWebUrl != null)
                 {
-                    properties.Dictionary.Add(SharePointContext.SPAppWebUrlKey, spAppWebUrl.AbsoluteUri);
+                    properties.Dictionary.Add(SharePointContext.SPAppWebUrlKey, spAppWebUrl.GetLeftPart(UriPartial.Path));
                 }
 
-                using (var clientContext = TokenHelper.GetClientContextWithAccessToken(spHostUrl.AbsoluteUri, accessToken))
+                using (var clientContext = TokenHelper.GetClientContextWithAccessToken(spHostUrl.GetLeftPart(UriPartial.Path), accessToken))
                 {
                     var user = clientContext.Web.CurrentUser;
                     clientContext.Load(user);

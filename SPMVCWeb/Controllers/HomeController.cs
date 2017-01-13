@@ -33,7 +33,7 @@ namespace SPMVCWeb.Controllers
                         SPPageContextInfo pageContextInfo =  SPContextHelper.GetPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
-                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
                         }
                         ViewBag.PageContextInfo = pageContextInfo;
                     };
@@ -62,7 +62,7 @@ namespace SPMVCWeb.Controllers
                         SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
-                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
                         }
                         ViewBag.PageContextInfo = pageContextInfo;
                     };
@@ -92,7 +92,7 @@ namespace SPMVCWeb.Controllers
                         SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
-                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
                         }
                         ViewBag.PageContextInfo = pageContextInfo;
                     };
@@ -142,7 +142,7 @@ namespace SPMVCWeb.Controllers
                         SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
-                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.AbsoluteUri;
+                            pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
                         }
                         ViewBag.PageContextInfo = pageContextInfo; ViewBag.List = new ListInformation(list, view);
                     };

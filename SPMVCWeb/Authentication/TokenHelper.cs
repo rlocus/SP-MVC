@@ -259,6 +259,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 oauth2Response =
                     client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
             }
+            catch (Microsoft.IdentityModel.SecurityTokenService.RequestFailedException ex)
+            {
+                throw new WebException(ex.Message, ex);
+            }
             catch (WebException wex)
             {
                 using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))

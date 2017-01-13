@@ -212,16 +212,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         }
 
         /// <summary>
-        /// Gets the database connection string from SharePoint for autohosted app.
-        /// This method is deprecated because the autohosted option is no longer available.
-        /// </summary>
-        [ObsoleteAttribute("This method is deprecated because the autohosted option is no longer available.", true)]
-        public string GetDatabaseConnectionString()
-        {
-            throw new NotSupportedException("This method is deprecated because the autohosted option is no longer available.");
-        }
-
-        /// <summary>
         /// Determines if the specified access token is valid.
         /// It considers an access token as not valid if it is null, or it has expired.
         /// </summary>
@@ -244,9 +234,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (spSiteUrl != null && !string.IsNullOrEmpty(accessToken))
             {
-                return TokenHelper.GetClientContextWithAccessToken(spSiteUrl.AbsoluteUri, accessToken);
+                return TokenHelper.GetClientContextWithAccessToken(spSiteUrl.GetLeftPart(UriPartial.Path), accessToken);
             }
-
             return null;
         }
     }
@@ -374,12 +363,9 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             const string StandardTokens = "{StandardTokens}";
             string returnUrlString = returnUrlBuilder.Uri.AbsoluteUri;
             returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?") + 1, StandardTokens + "&");
-
             // Constructs redirect url.
-            string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.AbsoluteUri, Uri.EscapeDataString(returnUrlString));
-
+            string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.GetLeftPart(UriPartial.Path), Uri.EscapeDataString(returnUrlString));
             redirectUrl = new Uri(redirectUrlString, UriKind.Absolute);
-
             return RedirectionStatus.ShouldRedirect;
         }
 
@@ -542,6 +528,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <param name="spContext">The SharePointContext instance to be saved, or <c>null</c>.</param>
         /// <param name="httpContext">The HTTP context.</param>
         protected abstract void SaveSharePointContext(SharePointContext spContext, HttpContextBase httpContext);
+
+        protected abstract void Remove(HttpContextBase httpContext);
+
+        public void ClearCache(HttpContextBase httpContext)
+        {
+            Remove(httpContext);
+        }
     }
 
     #region ACS
@@ -764,6 +757,17 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
             httpContext.Session[SPContextKey] = spAcsContext;
         }
+
+        protected override void Remove(HttpContextBase httpContext)
+        {
+            HttpCookie spCacheKeyCookie = httpContext.Request.Cookies[SPCacheKeyKey];
+            if (spCacheKeyCookie != null)
+            {
+                spCacheKeyCookie.Expires = DateTime.Now.AddDays(-1);
+            }
+            httpContext.Session.Remove(SPContextKey);
+            httpContext.Session.Abandon();
+        }
     }
 
     #endregion ACS
@@ -924,6 +928,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         protected override void SaveSharePointContext(SharePointContext spContext, HttpContextBase httpContext)
         {
             httpContext.Session[SPContextKey] = spContext as SharePointHighTrustContext;
+        }
+
+        protected override void Remove(HttpContextBase httpContext)
+        {
+            httpContext.Session.Remove(SPContextKey);
+            httpContext.Session.Abandon();
         }
     }
 

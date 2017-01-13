@@ -147,7 +147,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 Cache.Insert(accessToken, GetUserCacheKey(host.Authority));
             }
 
-            return TokenHelper.GetClientContextWithAccessToken(host.AbsoluteUri, accessToken.Value);
+            return TokenHelper.GetClientContextWithAccessToken(host.GetLeftPart(UriPartial.Path), accessToken.Value);
         }
 
         protected ClientContext GetAppOnlyClientContext(Uri host)
@@ -159,7 +159,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 Cache.Insert(accessToken, GetAppOnlyCacheKey(host.Authority));
             }
 
-            return TokenHelper.GetClientContextWithAccessToken(host.AbsoluteUri, accessToken.Value);
+            return TokenHelper.GetClientContextWithAccessToken(host.GetLeftPart(UriPartial.Path), accessToken.Value);
         }
 
         public ClientContext CreateUserClientContextForSPHost()
@@ -199,5 +199,14 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         //{
         //	return !string.IsNullOrEmpty(token?.Value) && token.ExpiredOn > DateTime.UtcNow;
         //}
+
+        public void ClearCache()
+        {
+            if (this.SPHostUrl != null)
+            {
+                Cache.Remove(GetAppOnlyCacheKey(this.SPHostUrl.GetLeftPart(UriPartial.Path)));
+                Cache.Remove(GetUserCacheKey(this.SPHostUrl.GetLeftPart(UriPartial.Path)));
+            }
+        }
     }
 }
