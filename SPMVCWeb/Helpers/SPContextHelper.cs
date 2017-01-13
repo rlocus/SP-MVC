@@ -132,6 +132,70 @@ namespace SPMVCWeb.Helpers
             }
         }
 
+        public static void RunWithAppOnlyClientContext(ISPContext spContext, Func<ClientContext, Action> action)
+        {
+            if (action == null) throw new ArgumentNullException("action");
+            if (spContext != null)
+            {
+                ClientContext clientContext = spContext.CreateAppOnlyClientContextForSPHost();
+                if (clientContext != null)
+                {
+                    using (clientContext)
+                    {
+                        Action result = action.Invoke(clientContext);
+                        clientContext.ExecuteQuery();
+                        if (result != null)
+                        {
+                            result.Invoke();
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void RunWithSPAppWebClientContext(ISPContext spContext, Func<ClientContext, Action> action)
+        {
+            if (action == null) throw new ArgumentNullException("action");
+            if (spContext != null)
+            {
+                ClientContext clientContext = spContext.CreateUserClientContextForSPAppWeb();
+                if (clientContext != null)
+                {
+                    using (clientContext)
+                    {
+                        Action result = action.Invoke(clientContext);
+                        clientContext.ExecuteQuery();
+                        if (result != null)
+                        {
+                            result.Invoke();
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void RunWithAppOnlySPAppWebClientContext(ISPContext spContext, Func<ClientContext, Action> action)
+        {
+            if (action == null) throw new ArgumentNullException("action");
+            if (spContext != null)
+            {
+                ClientContext clientContext = spContext.CreateAppOnlyClientContextForSPAppWeb();
+                if (clientContext != null)
+                {
+                    using (clientContext)
+                    {
+                        Action result = action.Invoke(clientContext);
+                        clientContext.ExecuteQuery();
+                        if (result != null)
+                        {
+                            result.Invoke();
+                        }
+                    }
+                }
+            }
+        }
+
+
         public static SPPageContextInfo GetPageContextInfo(Site site, Web web)
         {
             SPPageContextInfo pageContextInfo = new SPPageContextInfo();

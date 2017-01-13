@@ -7,14 +7,14 @@
      SharePointMinVersion="16.0.0.0"
 >
   <Properties>
-    <Title>SPMVC</Title>
+    <Title>SharePoint MVC</Title>
     <StartPage>~remoteAppUrl/?{StandardTokens}</StartPage>
   </Properties>
 
   <AppPrincipal>
-    <RemoteWebApplication ClientId="17bc6512-4d02-46cd-bf20-0895973a99ee" />
+    <RemoteWebApplication ClientId="7d5bcd2c-402d-49a1-933e-9f530ff3212b" />
   </AppPrincipal>
   <AppPermissionRequests>
-    <AppPermissionRequest Scope="http://sharepoint/content/sitecollection/web" Right="FullControl" />
+    <AppPermissionRequest Scope="http://sharepoint/content/sitecollection" Right="FullControl" />
   </AppPermissionRequests>
 </App>

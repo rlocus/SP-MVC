@@ -305,6 +305,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\LinkExtensions.cs" />
     <Compile Include="Helpers\SPContextHelper.cs" />
     <Compile Include="Models\FieldInformation.cs" />
     <Compile Include="Models\ListInformation.cs" />

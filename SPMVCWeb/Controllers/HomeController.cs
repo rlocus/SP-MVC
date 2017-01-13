@@ -1,4 +1,5 @@
 ﻿using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.UserProfiles;
 using SPMVCWeb.Helpers;
 using SPMVCWeb.Models;
 using System;
@@ -18,6 +19,11 @@ namespace SPMVCWeb.Controllers
             {
                 SPContextHelper.RunWithContext(spContext, (clientContext) =>
                 {
+                    //PeopleManager peopleManager = new PeopleManager(clientContext);
+                    //PersonProperties personProperties = peopleManager.GetMyProperties();
+                    //clientContext.Load(personProperties, p => p.AccountName, p => p.PictureUrl, p => p.UserUrl,
+                    //    p => p.DisplayName, p => p.Email);
+
                     User spUser = clientContext.Web.CurrentUser;
                     clientContext.Load(spUser);
                     Site site = clientContext.Site;
@@ -30,7 +36,7 @@ namespace SPMVCWeb.Controllers
                     {
                         ViewBag.User = new UserInformation(spUser);
                         ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
-                        SPPageContextInfo pageContextInfo =  SPContextHelper.GetPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);

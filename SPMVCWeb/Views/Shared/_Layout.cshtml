@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=9" />
+    <meta http-equiv="X-UA-Compatible" content="IE=9"/>
     <title>@ViewBag.Title</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/require")
@@ -12,6 +12,7 @@
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/angular")
 </head>
+@using SPMVCWeb.Helpers
 <body style="display: none">
     <div id="navbar_container" class="navbar navbar-inverse navbar-fixed-top">
         <div id="divSPChrome"></div>
@@ -26,9 +27,9 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home", null, null)</li>
-                    <li>@Html.ActionLink("About", "About", "Home", null, null)</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home", null, null)</li>
+                    <li>@Html.SPActionLink("Home", "Index", "Home", null, null)</li>
+                    <li>@Html.SPActionLink("About", "About", "Home", null, null)</li>
+                    <li>@Html.SPActionLink("Contact", "Contact", "Home", null, null)</li>
                 </ul>
                 <div class="navbar-right">
                     @if (ViewBag.User != null)
@@ -37,6 +38,7 @@
                             <uif-persona-initials uif-color="blue">@ViewBag.User.Initials</uif-persona-initials>
                             <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
                         </uif-persona>
+                        @Html.SPActionLink("LogOut", "Logout", "Account", null, null)
                     }
                 </div>
             </div>
