@@ -126,6 +126,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 
         public override async Task<bool> InvokeAsync()
         {
+            if (Response.StatusCode == 401)
+            {
+                return false;
+            }
             //if (Options.CallbackPath.HasValue && Options.CallbackPath == Request.Path)
             //{
             _logger.WriteInformation("Receiving contextual information");

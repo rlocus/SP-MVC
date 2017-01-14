@@ -14,13 +14,13 @@ namespace SPMVCWeb
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
             routes.MapRoute(
-                name: "Account LogIn",
+                name: "Log in",
                 url: "login",
                 defaults: new { controller = "Account", action= "Login" }
             );
 
             routes.MapRoute(
-               name: "Account LogOut",
+               name: "Log out",
                url: "logout",
                defaults: new { controller = "Account", action = "Logout" }
            );

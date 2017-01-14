@@ -111,12 +111,13 @@ namespace SPMVCWeb.Helpers
             }
         }
 
-        public static void RunWithContext(ISPContext spContext, Func<ClientContext, Action> action)
+        public static void ExecuteUserContextQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
+            where TContext : ClientContext
         {
             if (action == null) throw new ArgumentNullException("action");
             if (spContext != null)
             {
-                ClientContext clientContext = spContext.CreateUserClientContextForSPHost();
+                TContext clientContext = (TContext)spContext.CreateUserClientContextForSPHost();
                 if (clientContext != null)
                 {
                     using (clientContext)
@@ -132,12 +133,13 @@ namespace SPMVCWeb.Helpers
             }
         }
 
-        public static void RunWithAppOnlyClientContext(ISPContext spContext, Func<ClientContext, Action> action)
+        public static void ExecuteAppOnlyClientContextQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
+            where TContext : ClientContext
         {
             if (action == null) throw new ArgumentNullException("action");
             if (spContext != null)
             {
-                ClientContext clientContext = spContext.CreateAppOnlyClientContextForSPHost();
+                TContext clientContext = (TContext)spContext.CreateAppOnlyClientContextForSPHost();
                 if (clientContext != null)
                 {
                     using (clientContext)
@@ -153,12 +155,14 @@ namespace SPMVCWeb.Helpers
             }
         }
 
-        public static void RunWithSPAppWebClientContext(ISPContext spContext, Func<ClientContext, Action> action)
+
+        public static void ExecuteUserClientContextForSPAppWebQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
+              where TContext : ClientContext
         {
             if (action == null) throw new ArgumentNullException("action");
             if (spContext != null)
             {
-                ClientContext clientContext = spContext.CreateUserClientContextForSPAppWeb();
+                TContext clientContext = (TContext)spContext.CreateUserClientContextForSPAppWeb();
                 if (clientContext != null)
                 {
                     using (clientContext)
@@ -174,12 +178,14 @@ namespace SPMVCWeb.Helpers
             }
         }
 
-        public static void RunWithAppOnlySPAppWebClientContext(ISPContext spContext, Func<ClientContext, Action> action)
+
+        public static void ExecuteAppOnlyClientContextForSPAppWebQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
+            where TContext : ClientContext
         {
             if (action == null) throw new ArgumentNullException("action");
             if (spContext != null)
             {
-                ClientContext clientContext = spContext.CreateAppOnlyClientContextForSPAppWeb();
+                TContext clientContext = (TContext)spContext.CreateAppOnlyClientContextForSPAppWeb();
                 if (clientContext != null)
                 {
                     using (clientContext)
@@ -194,7 +200,6 @@ namespace SPMVCWeb.Helpers
                 }
             }
         }
-
 
         public static SPPageContextInfo GetPageContextInfo(Site site, Web web)
         {

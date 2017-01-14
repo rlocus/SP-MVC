@@ -10,8 +10,7 @@
 }
 
 .navbar .container {
-    max-height: 40px;
-    display: inline-block;
+   
 }
 
 /* Override the default bootstrap behavior where horizontal description lists 
@@ -56,9 +55,6 @@ textarea {
         opacity: 1;
     }
 
-.ms-Persona-primaryText {
-    color: #999999;
-}
 
 .sp-spinner {
     margin-top: 5px;
@@ -82,4 +78,18 @@ table.spitem-menu {
 
 .sp-navbar a:hover {
     text-decoration: none;
+}
+
+.my-account{
+    height:50px;
+    margin:0;
+    padding:0;
+}
+
+.my-account .ms-Persona-primaryText {
+    color: white;
+}
+
+.account-details .account-actions{
+    padding: 20px 5px;
 }

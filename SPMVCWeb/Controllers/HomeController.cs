@@ -17,7 +17,7 @@ namespace SPMVCWeb.Controllers
             var spContext = SPContextHelper.GetSPContext(this.HttpContext);
             if (spContext != null)
             {
-                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                SPContextHelper.ExecuteUserContextQuery<ClientContext>(spContext, (clientContext) =>
                 {
                     //PeopleManager peopleManager = new PeopleManager(clientContext);
                     //PersonProperties personProperties = peopleManager.GetMyProperties();
@@ -54,7 +54,7 @@ namespace SPMVCWeb.Controllers
             var spContext = SPContextHelper.GetSPContext(this.HttpContext);
             if (spContext != null)
             {
-                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                SPContextHelper.ExecuteUserContextQuery<ClientContext>(spContext, (clientContext) =>
                 {
                     User spUser = clientContext.Web.CurrentUser;
                     clientContext.Load(spUser);
@@ -84,7 +84,7 @@ namespace SPMVCWeb.Controllers
             var spContext = SPContextHelper.GetSPContext(this.HttpContext);
             if (spContext != null)
             {
-                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                SPContextHelper.ExecuteUserContextQuery<ClientContext>(spContext, (clientContext) =>
                 {
                     User spUser = clientContext.Web.CurrentUser;
                     clientContext.Load(spUser);
@@ -114,7 +114,7 @@ namespace SPMVCWeb.Controllers
             var spContext = SPContextHelper.GetSPContext(this.HttpContext);
             if (spContext != null)
             {
-                SPContextHelper.RunWithContext(spContext, (clientContext) =>
+                SPContextHelper.ExecuteUserContextQuery<ClientContext>(spContext, (clientContext) =>
                 {
                     User spUser = clientContext.Web.CurrentUser;
                     clientContext.Load(spUser);
@@ -140,7 +140,6 @@ namespace SPMVCWeb.Controllers
                     }
                     clientContext.Load(view);
                     clientContext.Load(view.ViewFields);
-
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);

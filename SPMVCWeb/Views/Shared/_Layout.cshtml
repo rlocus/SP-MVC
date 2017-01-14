@@ -34,11 +34,27 @@
                 <div class="navbar-right">
                     @if (ViewBag.User != null)
                     {
-                        <uif-persona ng-cloak uif-style="square" uif-size="medium" uif-image-url="">
-                            <uif-persona-initials uif-color="blue">@ViewBag.User.Initials</uif-persona-initials>
-                            <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
-                        </uif-persona>
-                        @Html.SPActionLink("LogOut", "Logout", "Account", null, null)
+                        <uif-button ng-cloak class="my-account" uif-type="primary" ng-click="account.isOpen = true">
+                            <uif-persona uif-style="square" uif-size="medium" uif-image-url="">
+                                <uif-persona-initials uif-color="lightBlue">@ViewBag.User.Initials</uif-persona-initials>
+                                <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
+                            </uif-persona>
+                        </uif-button>
+                        <uif-panel ng-cloak uif-type="small" uif-is-open="account.isOpen" uif-show-overlay="true" uif-show-close="true" uif-is-light-dismiss="true">
+                            <uif-panel-header>My Account</uif-panel-header>
+                            <uif-content>
+                                <div class="account-details">
+                                    <uif-persona uif-style="round" uif-size="large" uif-image-url="">
+                                        <uif-persona-initials uif-color="lightBlue">@ViewBag.User.Initials</uif-persona-initials>
+                                        <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
+                                        <uif-persona-secondary-text>@ViewBag.User.Email</uif-persona-secondary-text>
+                                    </uif-persona>
+                                    <div class="account-actions">
+                                        @Html.SPActionLink("Sign out", "Logout", "Account", null, null)
+                                    </div>
+                                </div>
+                            </uif-content>
+                        </uif-panel>
                     }
                 </div>
             </div>
