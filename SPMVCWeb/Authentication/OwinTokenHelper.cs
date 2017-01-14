@@ -11,12 +11,11 @@ using FormCollection = Microsoft.Owin.FormCollection;
 
 namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
-    internal static class AuthHelper
-	{
+    internal static class OwinTokenHelper
+    {
 		public static string GetS2SAccessToken(Uri applicationUri, string userId)
 		{
 			var realm = TokenHelper.GetRealmFromTargetUrl(applicationUri);
-
 			JsonWebTokenClaim[] claims = null;
 
 			if (userId != null)

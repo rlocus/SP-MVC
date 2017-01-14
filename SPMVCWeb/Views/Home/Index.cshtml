@@ -57,10 +57,10 @@
                 <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
                     <div class="animate-switch" ng-switch-when="true">
                         <div>
-                            <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required />
+                            <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required ></uif-textfield>
                         </div>
                         <div>
-                            <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description" />
+                            <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description" ></uif-textfield>
                         </div>
                         <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
                     </div>

@@ -21,7 +21,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected override AccessToken CreateAppOnlyAccessToken(Uri host)
         {
-            var s2sToken = AuthHelper.GetS2SAccessToken(host, null);
+            var s2sToken = OwinTokenHelper.GetS2SAccessToken(host, null);
 
             return new AccessToken
             {
@@ -32,7 +32,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected override AccessToken CreateUserAccessToken(Uri host)
         {
-            var s2sToken = AuthHelper.GetS2SAccessToken(host, _userId);
+            var s2sToken = OwinTokenHelper.GetS2SAccessToken(host, _userId);
 
             return new AccessToken
             {

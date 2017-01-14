@@ -84,6 +84,7 @@ table.spitem-menu {
     height:50px;
     margin:0;
     padding:0;
+    width: 100%;
 }
 
 .my-account .ms-Persona-primaryText {

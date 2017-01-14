@@ -60,15 +60,15 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             string accessToken = null;
             if (TokenHelper.IsHighTrustApp())
             {
-                var userSid = AuthHelper.GetWindowsUserSid(Context);
-                accessToken = AuthHelper.GetS2SAccessToken(spHostUrl, userSid);
+                var userSid = OwinTokenHelper.GetWindowsUserSid(Context);
+                accessToken = OwinTokenHelper.GetS2SAccessToken(spHostUrl, userSid);
                 identity.AddClaim(new Claim(SPAddinClaimTypes.ADUserId, userSid));
                 identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, userSid));
                 identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, TokenHelper.GetRealmFromTargetUrl(spHostUrl)));
             }
             else
             {
-                var contextTokenString = AuthHelper.GetContextTokenFromRequest(Request);
+                var contextTokenString = OwinTokenHelper.GetContextTokenFromRequest(Request);
                 if (!string.IsNullOrEmpty(contextTokenString) && spHostUrl != null)
                 {
                     var contextToken = TokenHelper.ReadAndValidateContextToken(contextTokenString, Request.Uri.Authority);
@@ -136,7 +136,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 
             if (TokenHelper.IsHighTrustApp())
             {
-                var logonUserIdentity = AuthHelper.GetHttpRequestIdentity(Context);
+                var logonUserIdentity = OwinTokenHelper.GetHttpRequestIdentity(Context);
                 // If not authenticated and we are using integrated windows auth, then force user to login
                 if (!logonUserIdentity.IsAuthenticated && logonUserIdentity is WindowsIdentity)
                 {
