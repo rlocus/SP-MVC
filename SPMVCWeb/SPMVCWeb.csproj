@@ -312,6 +312,7 @@
     <Compile Include="Models\FieldInformation.cs" />
     <Compile Include="Models\ListInformation.cs" />
     <Compile Include="Models\SPPageContextInfo.cs" />
+    <Compile Include="Models\SPPermissionInfo.cs" />
     <Compile Include="Models\SPRegionalInfo.cs" />
     <Compile Include="Models\UserInformation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -35,7 +35,7 @@
                     @if (ViewBag.User != null)
                     {
                         <uif-button ng-cloak class="my-account" uif-type="primary" ng-click="account.isOpen = true">
-                            <uif-persona uif-style="square" uif-size="medium" uif-image-url="">
+                            <uif-persona uif-style="square" uif-size="medium" uif-image-url='@ViewBag.User.ImageUrl.Replace("~splayouts", string.Concat(ViewBag.PageContextInfo.WebAbsoluteUrl.TrimEnd('/'), "/", ViewBag.PageContextInfo.LayoutsUrl))&size=S'>
                                 <uif-persona-initials uif-color="lightBlue">@ViewBag.User.Initials</uif-persona-initials>
                                 <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
                             </uif-persona>
@@ -44,10 +44,10 @@
                             <uif-panel-header>My Account</uif-panel-header>
                             <uif-content>
                                 <div class="account-details">
-                                    <uif-persona uif-style="round" uif-size="large" uif-image-url="">
+                                    <uif-persona uif-style="round" uif-size="large"  uif-image-url='@ViewBag.User.ImageUrl.Replace("~splayouts", string.Concat(ViewBag.PageContextInfo.WebAbsoluteUrl.TrimEnd('/'), "/", ViewBag.PageContextInfo.LayoutsUrl))&size=M'>
                                         <uif-persona-initials uif-color="lightBlue">@ViewBag.User.Initials</uif-persona-initials>
                                         <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
-                                        <uif-persona-secondary-text>@ViewBag.User.Email</uif-persona-secondary-text>
+                                        <uif-persona-secondary-text><uif-icon uif-type="mail"></uif-icon>@ViewBag.User.Email</uif-persona-secondary-text>
                                     </uif-persona>
                                     <div class="account-actions">
                                         @Html.SPActionLink("Sign out", "Logout", "Account", null, null)

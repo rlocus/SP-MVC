@@ -30,13 +30,13 @@ namespace SPMVCWeb.Controllers
                     clientContext.Load(site);
                     Web web = clientContext.Web;
                     clientContext.Load(web);
-                    clientContext.Load(web.RegionalSettings);
+                    clientContext.Load(web, w => w.EffectiveBasePermissions);
                     clientContext.Load(web.RegionalSettings.TimeZone);
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
                         ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
-                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
@@ -65,7 +65,7 @@ namespace SPMVCWeb.Controllers
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
-                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
@@ -95,7 +95,7 @@ namespace SPMVCWeb.Controllers
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
-                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
@@ -144,7 +144,7 @@ namespace SPMVCWeb.Controllers
                     {
                         ViewBag.User = new UserInformation(spUser);
                         ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
-                        SPPageContextInfo pageContextInfo = SPContextHelper.GetPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
