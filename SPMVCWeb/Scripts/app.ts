@@ -151,10 +151,10 @@ class App {
         if (!self._initialized) {
             throw "App is not initialized!";
         }
-        self.ensureScript("~splayouts/MicrosoftAjax.js").then(function () {
-            self.ensureScript("~splayouts/SP.Runtime.js").then(function () {
-                self.ensureScript("~splayouts/SP.RequestExecutor.js").then(function () {
-                    self.ensureScript("~splayouts/SP.js").then(function () {
+        self.ensureScript("~splayouts/MicrosoftAjax.js").then(() => {
+            self.ensureScript("~splayouts/SP.Runtime.js").then(() => {
+                self.ensureScript("~splayouts/SP.RequestExecutor.js").then(() => {
+                    self.ensureScript("~splayouts/SP.js").then(() => {
                         if ($pnp.util.isArray(modules)) {
                             self.$.each(modules, (i: number, module: App.IModule) => {
                                 module.render();
@@ -477,7 +477,7 @@ module App.Module {
                                 "accept": "application/json;odata=verbose",
                                 "content-Type": "application/json;odata=verbose"
                             },
-                            success: (data)=> {
+                            success: (data) => {
                                 var d = JSON.parse(<string>data.body).d;
                                 var listData = { Row: d.results, NextHref: null, PrevHref: null };
                                 deferred.resolve({ ListData: listData });
@@ -535,7 +535,7 @@ module App.Module {
                                 "accept": "application/json;odata=verbose",
                                 "content-Type": "application/json;odata=verbose"
                             },
-                            success: (data)=> {
+                            success: (data) => {
                                 var d = JSON.parse(<string>data.body).d;
                                 var listData = { Row: d.results, NextHref: null, PrevHref: null };
                                 listData.NextHref = self._app.getQueryParam(d["__next"], "$skiptoken");
@@ -714,8 +714,11 @@ module App.Module {
                             prevEnabled: false,
                             nextEnabled: false,
                             refresh: () => {
+                                if ((<any>$scope).loading) return;
                                 var token = self._options.appendRows === true ? null : factory.getToken(0);
                                 (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
+                                (<any>$scope).selection.pager.prevEnabled = false;
+                                (<any>$scope).selection.pager.nextEnabled = false;
                                 factory.getListItems(token).then(() => {
                                     //(<any>$scope).selection.commandBar.clearSelection();
                                     if ($pnp.util.stringIsNullOrEmpty(token) || !self._options.appendRows) {
@@ -733,14 +736,16 @@ module App.Module {
                                         allTokens.pop();
                                     }
                                     allTokens.push(factory.$nextToken);
-                                    //(<any>$scope).loading = false;
                                     deferred.resolve();
                                 }, deferred.reject);
                             },
                             next: (offset = 1) => {
+                                if ((<any>$scope).loading) return;
                                 if (!(<any>$scope).selection.pager.nextEnabled) return;
                                 (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
                                 var token = factory.getToken(offset);
+                                (<any>$scope).selection.pager.prevEnabled = false;
+                                (<any>$scope).selection.pager.nextEnabled = false;
                                 factory.getListItems(token).then(() => {
                                     //(<any>$scope).selection.commandBar.clearSelection();
                                     if ($pnp.util.stringIsNullOrEmpty(token) || !self._options.appendRows) {
@@ -756,15 +761,17 @@ module App.Module {
                                         allTokens = [];
                                     }
                                     allTokens.push(factory.$nextToken);
-                                    //(<any>$scope).loading = false;
                                     deferred.resolve();
                                 }, deferred.reject);
                             },
                             prev: (offset = 1) => {
+                                if ((<any>$scope).loading) return;
                                 if (!(<any>$scope).selection.pager.prevEnabled) return;
                                 (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
                                 offset = Math.min(-1, -offset);
                                 var token = self._options.appendRows === true ? null : factory.getToken(offset);
+                                (<any>$scope).selection.pager.prevEnabled = false;
+                                (<any>$scope).selection.pager.nextEnabled = false;
                                 factory.getListItems(token).then(() => {
                                     //(<any>$scope).selection.commandBar.clearSelection();
                                     if ($pnp.util.stringIsNullOrEmpty(token) || !self._options.appendRows) {
@@ -787,7 +794,6 @@ module App.Module {
                                         }
                                         allTokens.push(factory.$nextToken);
                                     }
-                                    //(<any>$scope).loading = false;
                                     deferred.resolve();
                                 }, deferred.reject);
                             },
@@ -806,10 +812,7 @@ module App.Module {
                         //    });
                         //}, self._options.delay);
                     }, false);
-
-                    if (typeof self._options.onload === "function") {
-                        self._options.onload($scope, factory);
-                    }
+                    self._app.$(self).trigger("model-render", [$scope, factory]);
                 }
             ]);
             return deferred.promise();
@@ -861,7 +864,7 @@ module App.Module {
                     "accept": "application/json;odata=verbose",
                     "content-Type": "application/json;odata=verbose"
                 },
-                success: (data)=> {
+                success: (data) => {
                     var lists = JSON.parse(<string>data.body).d.results;
                     deferred.resolve(lists);
                 },
@@ -894,7 +897,7 @@ module App.Module {
                     "accept": "application/json;odata=verbose",
                     "content-Type": "application/json;odata=verbose"
                 },
-                success: (data) =>{
+                success: (data) => {
                     var list = JSON.parse(<string>data.body).d;
                     deferred.resolve(list);
                 },
@@ -935,7 +938,7 @@ module App.Module {
                     "X-HTTP-Method": "MERGE",
                     "X-RequestDigest": digestValue
                 },
-                success:  (data) =>{
+                success: (data) => {
                     deferred.resolve();
                 },
                 error: (data, errorCode, errorMessage) => {
@@ -946,7 +949,7 @@ module App.Module {
                                 errorMessage = error.error.message.value;
                             }
                         }
-                        catch(e) {}
+                        catch (e) { }
                     }
                     self._app.$(self._app).trigger("app-error", [errorMessage]);
                     deferred.reject(data, errorCode, errorMessage);

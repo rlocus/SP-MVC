@@ -670,8 +670,12 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                     prevEnabled: false,
                                     nextEnabled: false,
                                     refresh: function () {
+                                        if ($scope.loading)
+                                            return;
                                         var token = self._options.appendRows === true ? null : factory.getToken(0);
                                         $scope.table.rows.splice(0, $scope.table.rows.length);
+                                        $scope.selection.pager.prevEnabled = false;
+                                        $scope.selection.pager.nextEnabled = false;
                                         factory.getListItems(token).then(function () {
                                             //(<any>$scope).selection.commandBar.clearSelection();
                                             if ($pnp.util.stringIsNullOrEmpty(token) || !self._options.appendRows) {
@@ -691,16 +695,19 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                                 allTokens.pop();
                                             }
                                             allTokens.push(factory.$nextToken);
-                                            //(<any>$scope).loading = false;
                                             deferred.resolve();
                                         }, deferred.reject);
                                     },
                                     next: function (offset) {
                                         if (offset === void 0) { offset = 1; }
+                                        if ($scope.loading)
+                                            return;
                                         if (!$scope.selection.pager.nextEnabled)
                                             return;
                                         $scope.table.rows.splice(0, $scope.table.rows.length);
                                         var token = factory.getToken(offset);
+                                        $scope.selection.pager.prevEnabled = false;
+                                        $scope.selection.pager.nextEnabled = false;
                                         factory.getListItems(token).then(function () {
                                             //(<any>$scope).selection.commandBar.clearSelection();
                                             if ($pnp.util.stringIsNullOrEmpty(token) || !self._options.appendRows) {
@@ -717,17 +724,20 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                                 allTokens = [];
                                             }
                                             allTokens.push(factory.$nextToken);
-                                            //(<any>$scope).loading = false;
                                             deferred.resolve();
                                         }, deferred.reject);
                                     },
                                     prev: function (offset) {
                                         if (offset === void 0) { offset = 1; }
+                                        if ($scope.loading)
+                                            return;
                                         if (!$scope.selection.pager.prevEnabled)
                                             return;
                                         $scope.table.rows.splice(0, $scope.table.rows.length);
                                         offset = Math.min(-1, -offset);
                                         var token = self._options.appendRows === true ? null : factory.getToken(offset);
+                                        $scope.selection.pager.prevEnabled = false;
+                                        $scope.selection.pager.nextEnabled = false;
                                         factory.getListItems(token).then(function () {
                                             //(<any>$scope).selection.commandBar.clearSelection();
                                             if ($pnp.util.stringIsNullOrEmpty(token) || !self._options.appendRows) {
@@ -751,7 +761,6 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                                 }
                                                 allTokens.push(factory.$nextToken);
                                             }
-                                            //(<any>$scope).loading = false;
                                             deferred.resolve();
                                         }, deferred.reject);
                                     },
@@ -769,9 +778,7 @@ define(["require", "exports", "pnp", "jquery"], function (require, exports, $pnp
                                 //    });
                                 //}, self._options.delay);
                             }, false);
-                            if (typeof self._options.onload === "function") {
-                                self._options.onload($scope, factory);
-                            }
+                            self._app.$(self).trigger("model-render", [$scope, factory]);
                         }
                     ]);
                     return deferred.promise();

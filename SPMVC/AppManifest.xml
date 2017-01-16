@@ -16,5 +16,6 @@
   </AppPrincipal>
   <AppPermissionRequests>
     <AppPermissionRequest Scope="http://sharepoint/content/sitecollection" Right="FullControl" />
+    <!--<AppPermissionRequest Scope="http://sharepoint/social/tenant" Right="Read" />-->
   </AppPermissionRequests>
 </App>

@@ -19,7 +19,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 			return new AccessToken
 			{
 				Value = oauthToken.AccessToken,
-				ExpiredOn = oauthToken.ExpiresOn.AddMinutes(-5)
+				ExpiresOn = oauthToken.ExpiresOn.AddMinutes(-5)
 			};
 		}
 
@@ -30,7 +30,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 			return new AccessToken
 			{
 				Value = oauthToken.AccessToken,
-				ExpiredOn = oauthToken.ExpiresOn.AddMinutes(-5)
+				ExpiresOn = oauthToken.ExpiresOn.AddMinutes(-5)
 			};
 		}
 	}

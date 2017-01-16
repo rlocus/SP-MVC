@@ -2,7 +2,6 @@
 using System.Linq;
 using Microsoft.SharePoint.Client;
 using System.Text.RegularExpressions;
-using SPMVCWeb.Helpers;
 
 namespace SPMVCWeb.Models
 {
@@ -17,7 +16,8 @@ namespace SPMVCWeb.Models
             Login = spUser.LoginName;
             IsSiteAdmin = spUser.IsSiteAdmin;
             Email = spUser.Email;
-            ImageUrl = $"~splayouts/userphoto.aspx?accountname={spUser.LoginName.Split('|').Last()}";
+            ImageUrl = //$"https:////outlook.office365.com/owa/service.svc/s/GetPersonaPhoto?email={spUser.LoginName.Split('|').Last()}";
+            $"~splayouts/userphoto.aspx?accountname={spUser.LoginName.Split('|').Last()}";
         }
 
         public int Id { get; private set; }

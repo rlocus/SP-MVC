@@ -259,17 +259,21 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 oauth2Response =
                     client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
             }
-            catch (Microsoft.IdentityModel.SecurityTokenService.RequestFailedException ex)
+            catch (Microsoft.IdentityModel.SecurityTokenService.RequestFailedException)
             {
-                throw new WebException(ex.Message, ex);
+                throw;
             }
             catch (WebException wex)
             {
-                using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
+                if (wex.Response != null)
                 {
-                    string responseText = sr.ReadToEnd();
-                    throw new WebException(wex.Message + " - " + responseText, wex);
+                    using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
+                    {
+                        string responseText = sr.ReadToEnd();
+                        throw new WebException(wex.Message + " - " + responseText, wex);
+                    }
                 }
+                throw;
             }
 
             return oauth2Response;

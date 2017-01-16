@@ -13,6 +13,10 @@
    
 }
 
+#navbar_container {
+    height: 40px;
+}
+
 /* Override the default bootstrap behavior where horizontal description lists 
    will truncate terms that are too long to fit in the left column 
 */
@@ -93,4 +97,17 @@ table.spitem-menu {
 
 .account-details .account-actions{
     padding: 20px 5px;
+}
+
+.ms-CommandBarItem.is-disabled .ms-CommandBarItem-icon,
+.ms-CommandBarItem.is-disabled .ms-CommandBarItem-commandText {
+  color: #A6A6A6;
+}
+
+.ms-CommandBarItem.is-disabled .ms-CommandBarItem-link {
+  cursor: default;
+}
+
+.ms-CommandBarItem.is-disabled:hover {
+  background-color: #EFF6FC;
 }

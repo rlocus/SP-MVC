@@ -26,7 +26,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return new AccessToken
             {
                 Value = s2sToken,
-                ExpiredOn = DateTime.UtcNow.Add(TokenHelper.HighTrustAccessTokenLifetime).AddMinutes(-5)
+                ExpiresOn = DateTime.UtcNow.Add(TokenHelper.HighTrustAccessTokenLifetime).AddMinutes(-5)
             };
         }
 
@@ -37,7 +37,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return new AccessToken
             {
                 Value = s2sToken,
-                ExpiredOn = DateTime.UtcNow.Add(TokenHelper.HighTrustAccessTokenLifetime).AddMinutes(-5)
+                ExpiresOn = DateTime.UtcNow.Add(TokenHelper.HighTrustAccessTokenLifetime).AddMinutes(-5)
             };
         }
     }

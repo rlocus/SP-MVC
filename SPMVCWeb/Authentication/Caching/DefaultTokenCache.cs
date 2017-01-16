@@ -4,11 +4,11 @@ using System.Collections.Generic;
 
 namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
 {
-    public class DefaultTokenCache : ITokenCache
+    public class TokenCache : ITokenCache
     {
         protected static CachingProvider _сachingProvider;
         
-        static DefaultTokenCache()
+        static TokenCache()
         {
             _сachingProvider = new CachingProvider();
         }
@@ -36,15 +36,15 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
 
         public bool IsAccessTokenValid(AccessToken token)
         {
-            return !string.IsNullOrEmpty(token?.Value) && token.ExpiredOn > DateTime.UtcNow;
+            return !string.IsNullOrEmpty(token?.Value) && token.ExpiresOn > DateTime.UtcNow;
         }
     }
 
-    public class TokenCache : ITokenCache
+    public class DefaultTokenCache : ITokenCache
     {
         protected static Dictionary<string, AccessToken> _tokens;
 
-        static TokenCache()
+        static DefaultTokenCache()
         {
             _tokens = new Dictionary<string, AccessToken>();
         }
@@ -80,7 +80,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
 
         public bool IsAccessTokenValid(AccessToken token)
         {
-            return !string.IsNullOrEmpty(token?.Value) && token.ExpiredOn > DateTime.UtcNow;
+            return !string.IsNullOrEmpty(token?.Value) && token.ExpiresOn > DateTime.UtcNow;
         }
     }
 
