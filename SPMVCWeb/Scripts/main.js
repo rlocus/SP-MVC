@@ -1,11 +1,12 @@
 require.config({
     "baseUrl": "/Scripts",
     "paths": {
-        "app": 'app',
+        "app": 'app.angular',
+        "app.module": 'app.module',
         //"fetch": 'fetch',
         //"es6-promise": 'es6-promise.min',
         "pnp": 'pnp.min',
-        //"angular": 'angular.min',
+        "angular": 'angular.min',
         //"angular-sanitize": 'angular-sanitize.min',
         "ngOfficeUiFabric": 'ngOfficeUiFabric.min'
     },
@@ -18,7 +19,7 @@ require.config({
         },
         //'angular-sanitize': ['angular'],
         ngOfficeUiFabric: ['angular'],
-        app: ['jquery', 'pnp', 'angular', /*'angular-sanitize',*/ 'ngOfficeUiFabric']
+        app: ['jquery', 'pnp', 'angular', /*'angular-sanitize',*/ 'ngOfficeUiFabric', 'app.module']
     }
 });
 

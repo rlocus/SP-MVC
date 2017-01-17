@@ -1,0 +1,26 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Unauthorized Access</title>
+    @Styles.Render("~/Content/css")
+
+</head>
+<body>
+    <div class="container">
+        <div class="jumbotron">
+            <h2>Unauthorized Access.</h2>
+            <p>
+                @ViewBag.Error
+                <br/>
+                Please try to @Html.ActionLink("Sign in", "Login", "Account", new {ReturnUrl = this.Request.Url}) or @Html.ActionLink("Sign out", "Logout", "Account", new {ReturnUrl = this.Request.Url})
+            </p>
+        </div>
+</body>
+</html>

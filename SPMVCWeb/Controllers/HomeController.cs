@@ -1,5 +1,4 @@
 ﻿using Microsoft.SharePoint.Client;
-using Microsoft.SharePoint.Client.UserProfiles;
 using SPMVCWeb.Helpers;
 using SPMVCWeb.Models;
 using System;

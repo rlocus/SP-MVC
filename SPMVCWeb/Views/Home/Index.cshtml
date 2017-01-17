@@ -1,24 +1,30 @@
 ﻿@{
     ViewBag.Title = "Site Content";
 }
-
 @section scripts
 {
     <script type="text/javascript">
         require(["jquery", "angular", "app"], function ($, angular, app) {
-            var listsView = app.get_ListsView({
-                controllerName: "lists-controller"
-            });
-            $(app).on("app-error", function (ev, message, stackTrace) {
-                alert(message);
-            });
-            if (!window.renderSPChrome) {
-                app.render(listsView);
+            if (app.is_initialized()) {
+                init();
             } else {
-                $('body').on("chrome-loaded", function () {
-                    $('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
-                    app.render(listsView);
+                $(app).on("app-init", init);
+            }
+            function init() {
+                var listsView = app.get_ListsView({
+                    controllerName: "lists-controller"
                 });
+                $(app).on("app-error", function (ev, message, stackTrace) {
+                    alert(message);
+                });
+                if (!window.renderSPChrome) {
+                    app.render([listsView]);
+                } else {
+                    $('body').on("chrome-loaded", function () {
+                        $('#lists_container .sp-navbar').css("top", $('#navbar_container').height());
+                        app.render([listsView]);
+                    });
+                }
             }
         });
     </script>
@@ -51,16 +57,16 @@
     </div>
     <div class="sp-panel">
         <h2>@ViewBag.Title</h2>
-        <uif-panel ng-cloak uif-type="small" uif-is-open="selection.settings.opened"  uif-is-light-dismiss="true" uif-show-overlay="true" uif-show-close="true">
+        <uif-panel ng-cloak uif-type="small" uif-is-open="selection.settings.opened" uif-is-light-dismiss="true" uif-show-overlay="true" uif-show-close="true">
             <uif-panel-header>List Settings</uif-panel-header>
             <uif-content>
                 <div class="animate-switch-container" ng-switch on="selection.settings.editMode">
                     <div class="animate-switch" ng-switch-when="true">
                         <div>
-                            <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required ></uif-textfield>
+                            <uif-textfield uif-label="Title" ng-model="selection.settings.data.Title" required></uif-textfield>
                         </div>
                         <div>
-                            <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description" ></uif-textfield>
+                            <uif-textfield uif-label="Description" uif-description="" uif-multiline="true" ng-model="selection.settings.data.Description"></uif-textfield>
                         </div>
                         <uif-button ng-click="selection.settings.onSave()">Save</uif-button>
                     </div>

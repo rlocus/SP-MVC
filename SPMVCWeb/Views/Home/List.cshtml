@@ -6,69 +6,77 @@
 @section scripts
 {
     <script type="text/javascript">
-        require(["jquery", "angular", "app"], function ($, angular, app) {
-            var listJson = app.$("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List)').text();
-            var list = JSON.parse(listJson);
-            var listView = app.get_ListView({
-                controllerName: "listview-controller",
-                listId: list.Id,
-                listTitle: list.Title,
-                listUrl: list.ListUrl,
-                viewId: list.ViewId,
-                viewXml: app.$("<div />").html(list.ViewXml).text(),
-                limit: list.RowLimit,
-                paged: list.Paged,
-                renderMethod: 1,
-                renderOptions: 0 | 1 | 2 /*| 4 | 8*/
-            });
+        require(["jquery", "angular", "app"], function($, angular, app) {
+            if (app.is_initialized()) {
+                init();
+            } else {
+                $(app).on("app-init", init);
+            }
 
-            $(listView).on("model-render", function (ev, $scope, factory) {
-                $scope.fields = list.Fields;
-                $scope.getFieldValue = function (listItem, field) {
-                    var value = listItem.$data[field.Name];
-                    switch (field.TypeKind) {
+            function init() {
+                var listJson = '@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List))';
+                var list = JSON.parse(listJson);
+                var listView = app.get_ListView({
+                    controllerName: "listview-controller",
+                    listId: list.Id,
+                    listTitle: list.Title,
+                    listUrl: list.ListUrl,
+                    viewId: list.ViewId,
+                    viewXml: app.$("<div />").html(list.ViewXml).text(),
+                    limit: list.RowLimit,
+                    paged: list.Paged,
+                    renderMethod: 1,
+                    renderOptions: 0 | 1 | 2 /*| 4 | 8*/
+                });
+
+                $(listView).on("model-render", function(ev, $scope, factory) {
+                    $scope.fields = list.Fields;
+                    $scope.getFieldValue = function(listItem, field) {
+                        var value = listItem.$data[field.Name];
+                        switch (field.TypeKind) {
                         case 12: //Computed
                             switch (field.Name) {
-                                case "DocIcon":
-                                    if (listItem.$data.FSObjType === "1") {
-                                        value = "<uif-icon uif-type=\"folder\"></uif-icon>";
-                                    } else {
-                                        value = "<uif-icon uif-type=\"document\"></uif-icon>";
-                                    }
-                                    break;
-                                case "LinkTitle":
-                                    value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
-                                    break;
-                                case "LinkFilename":
-                                    value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
-                                    break;
+                            case "DocIcon":
+                                if (listItem.$data.FSObjType === "1") {
+                                    value = "<uif-icon uif-type=\"folder\"></uif-icon>";
+                                } else {
+                                    value = "<uif-icon uif-type=\"document\"></uif-icon>";
+                                }
+                                break;
+                            case "LinkTitle":
+                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                                break;
+                            case "LinkFilename":
+                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
+                                break;
                             }
                             break;
-                    }
-                    if (field.ListItemMenuAllowed) {
-                        value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
-                            "<uif-contextual-menu ng-click=\"selection.openMenu(listItem)\" uif-is-open=\"listItem.$events.menuOpened\" uif-close-on-click=\"true\">" +
-                            "<uif-contextual-menu-item uif-text=\"'VIEW'\" ng-click=\"selection.commandBar.view(listItem)\"></uif-contextual-menu-item>" +
-                            "<uif-contextual-menu-item uif-text=\"'DELETE'\" ng-click=\"selection.commandBar.delete(listItem)\" disabled=\"{{listItem.$permissions.delete ? '' : 'disabled'}}\"></uif-contextual-menu-item>" +
-                            "</uif-contextual-menu></uif-pivot-ellipsis>");
-                    }
-                    return value;
-                };
-                $scope.prevText = "-" + list.RowLimit;
-                $scope.nextText = "+" + list.RowLimit;
-            });
-
-            $(app).on("app-error", function (ev, message, stackTrace) {
-                alert(message);
-            });
-
-            if (!window.renderSPChrome) {
-                app.render(listView);
-            } else {
-                $('body').on("chrome-loaded", function () {
-                    app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
-                    app.render(listView);
+                        }
+                        if (field.ListItemMenuAllowed) {
+                            value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
+                                "<uif-contextual-menu ng-click=\"selection.openMenu(listItem)\" uif-is-open=\"listItem.$events.menuOpened\" uif-close-on-click=\"true\">" +
+                                "<uif-contextual-menu-item uif-text=\"'VIEW'\" ng-click=\"selection.commandBar.view(listItem)\"></uif-contextual-menu-item>" +
+                                "<uif-contextual-menu-item uif-text=\"'DELETE'\" ng-click=\"selection.commandBar.delete(listItem)\" disabled=\"{{listItem.$permissions.delete ? '' : 'disabled'}}\"></uif-contextual-menu-item>" +
+                                "</uif-contextual-menu></uif-pivot-ellipsis>");
+                        }
+                        return value;
+                    };
+                    $scope.prevText = "-" + list.RowLimit;
+                    $scope.nextText = "+" + list.RowLimit;
                 });
+
+                $(app).on("app-error", function(ev, message, stackTrace) {
+                    alert(message);
+                });
+
+                if (!window.renderSPChrome) {
+                    app.render([listView]);
+                } else {
+                    $('body').on("chrome-loaded", function() {
+                        app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
+                        app.render([listView]);
+                    });
+                }
             }
         });
     </script>

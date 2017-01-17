@@ -113,6 +113,12 @@ namespace SPMVCWeb.Controllers
             return new RedirectResult(string.Format("/login?ReturnUrl={0}", HttpUtility.UrlEncode(returnUrl)));
         }
 
+        public ActionResult UnauthorizedAccess(Exception exception)
+        {
+            if (exception != null) ViewBag.Error = exception.Message;
+            return View();
+        }
+
         private class ChallengeResult : HttpUnauthorizedResult
         {
             public ChallengeResult(string provider, string spHostUrl, string redirectUri)

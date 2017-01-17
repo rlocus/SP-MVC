@@ -1,10 +1,11 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/ng-office-css")
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/require")
     @Scripts.Render("~/bundles/modernizr")
@@ -44,7 +45,7 @@
                             <uif-panel-header>My Account</uif-panel-header>
                             <uif-content>
                                 <div class="account-details">
-                                    <uif-persona uif-style="round" uif-size="large"  uif-image-url='@ViewBag.User.ImageUrl.Replace("~splayouts", string.Concat(ViewBag.PageContextInfo.WebAbsoluteUrl.TrimEnd('/'), "/", ViewBag.PageContextInfo.LayoutsUrl))&size=M'>
+                                    <uif-persona uif-style="round" uif-size="large" uif-image-url='@ViewBag.User.ImageUrl.Replace("~splayouts", string.Concat(ViewBag.PageContextInfo.WebAbsoluteUrl.TrimEnd('/'), "/", ViewBag.PageContextInfo.LayoutsUrl))&size=M'>
                                         <uif-persona-initials uif-color="lightBlue">@ViewBag.User.Initials</uif-persona-initials>
                                         <uif-persona-primary-text>@ViewBag.User.Name</uif-persona-primary-text>
                                         <uif-persona-secondary-text><uif-icon uif-type="mail"></uif-icon>@ViewBag.User.Email</uif-persona-secondary-text>
@@ -64,12 +65,10 @@
         @if (ViewBag.PageContextInfo != null)
         {
             <script type="text/javascript">
-                require(["jquery"], function($) {
-                    var pageContextInfoJson = $("<div />").html('@Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo)').text();
-                    if (pageContextInfoJson) {
-                        window._spPageContextInfo = JSON.parse(pageContextInfoJson);
-                    }
-                });
+                var pageContextInfoJson = '@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo))';
+                if (pageContextInfoJson) {
+                    window._spPageContextInfo = JSON.parse(pageContextInfoJson);
+                }
             </script>
         }
         @RenderBody()
@@ -79,6 +78,7 @@
         </footer>
     </div>
 
+    @*@Scripts.Render("~/bundles/ng-office")*@
     @Scripts.Render("~/bundles/main")
     @RenderSection("scripts", required: false)
 </body>

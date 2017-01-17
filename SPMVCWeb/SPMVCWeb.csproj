@@ -365,6 +365,8 @@
     <Content Include="Scripts\angular-touch.min.js" />
     <Content Include="Scripts\angular.js" />
     <Content Include="Scripts\angular.min.js" />
+    <Content Include="Scripts\app.angular.js" />
+    <Content Include="Scripts\app.module.js" />
     <Content Include="Scripts\FileAPI.flash.swf" />
     <Content Include="Scripts\FileAPI.js" />
     <Content Include="Scripts\FileAPI.min.js" />
@@ -1188,7 +1190,6 @@
     <Content Include="Scripts\pnp.js" />
     <Content Include="Scripts\pnp.min.js" />
     <Content Include="Scripts\require.js" />
-    <Content Include="Scripts\app.js" />
     <Content Include="Scripts\respond.js" />
     <Content Include="Scripts\respond.matchmedia.addListener.js" />
     <Content Include="Scripts\respond.matchmedia.addListener.min.js" />
@@ -1210,16 +1211,17 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Home\List.cshtml" />
     <Content Include="Scripts\version.json" />
+    <Content Include="Views\Account\UnauthorizedAccess.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\Account\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Project_Readme.html" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Scripts\app.ts" />
+    <TypeScriptCompile Include="Scripts\app.module.ts" />
+    <TypeScriptCompile Include="Scripts\app.angular.ts" />
     <TypeScriptCompile Include="Scripts\typings\angularjs\angular-animate.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\angularjs\angular-component-router.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\angularjs\angular-cookies.d.ts" />

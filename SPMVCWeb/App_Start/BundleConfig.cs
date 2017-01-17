@@ -30,21 +30,24 @@ namespace SPMVCWeb
             bundles.Add(new ScriptBundle("~/bundles/main").Include(
                     "~/Scripts/main.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/sp").Include(
-                    "~/Scripts/es6-promise.min.js",
-                    "~/Scripts/fetch.js",
+            bundles.Add(new ScriptBundle("~/bundles/ng-office").Include(
+                    //"~/Scripts/es6-promise.min.js",
+                    //"~/Scripts/fetch.js",
                     "~/Scripts/pnp.min.js",
-                    "~/Scripts/app.js"));
+                    "~/Scripts/ngOfficeUiFabric.min",
+                    "~/Scripts/app.module.js",
+                    "~/Scripts/app.angular.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/angular").Include(
                  "~/Scripts/angular.min.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
-                      "~/Content/fabric.min.css",
-                      "~/Content/fabric.components.min.css",
-                      "~/Content/angular-csp.css",
                       "~/Content/site.css"));
+            bundles.Add(new StyleBundle("~/Content/ng-office-css").Include(
+                    "~/Content/fabric.min.css",
+                    "~/Content/fabric.components.min.css",
+                    "~/Content/angular-csp.css"));
         }
     }
 }
