@@ -95,16 +95,16 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
             };
             App.prototype.get_ListView = function (options) {
                 var self = this;
-                if (!self.is_initialized()) {
-                    throw "App is not initialized!";
-                }
+                //if (!self.is_initialized()) {
+                //    throw "App is not initialized!";
+                //}
                 return new App.Module.ListView(self, options);
             };
             App.prototype.get_ListsView = function (options) {
                 var self = this;
-                if (!self.is_initialized()) {
-                    throw "App is not initialized!";
-                }
+                //if (!self.is_initialized()) {
+                //    throw "App is not initialized!";
+                //}
                 return new App.Module.ListsView(self, options);
             };
             App.SharePointAppName = "SharePointApp";

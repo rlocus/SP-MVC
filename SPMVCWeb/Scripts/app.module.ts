@@ -170,6 +170,11 @@ export namespace App {
 
     export module Module {
 
+        export interface IFilter {
+            field: string;
+            value: string
+        }
+
         export interface IListViewOptions extends IModuleOptions {
             listTitle: string;
             listId?: string;
@@ -185,13 +190,15 @@ export namespace App {
             rootFolder: string,
             //fields?: string[];
             appendRows: boolean;
-            renderMethod: RenderMethod,
-            renderOptions: number,
+            renderMethod: RenderMethod;
+            renderOptions: number;
+            filters: Array<IFilter>;
         }
 
         export enum RenderMethod {
             Default,
             RenderListDataAsStream,
+            RenderListFilterData,
             RenderListData,
             GetItems
         }
@@ -207,17 +214,6 @@ export namespace App {
                 this._app = app;
                 this._options = options;
             }
-
-            //private getEntity(listItem) {
-            //    var permMask = listItem["PermMask"];
-            //    var permissions = this._app.get_BasePermissions(permMask);
-            //    var $permissions = {
-            //        edit: permissions.has(SP.PermissionKind.editListItems),
-            //        delete: permissions.has(SP.PermissionKind.deleteListItems)
-            //    };
-            //    var $events = { menuOpened: false, isSelected: false };
-            //    return { $data: listItem, $events: $events, $permissions: $permissions };
-            //}
 
             private addToken(query: any, token: string) {
                 var self = this;
@@ -266,6 +262,15 @@ export namespace App {
                                 }
                                 if (!$pnp.util.stringIsNullOrEmpty(<any>self._options.sortAsc)) {
                                     query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
+                                }
+                                if (self._app.$.isArray(self._options.filters)) {
+                                    for (var i = 0; i < self._options.filters.length; i++) {
+                                        var filter = self._options.filters[i];
+                                        if (filter) {
+                                            query.query.add("FilterField" + (i + 1), filter.field);
+                                            query.query.add("FilterValue" + (i + 1), filter.value);
+                                        }
+                                    }
                                 }
                             }
                             //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
@@ -559,7 +564,7 @@ export namespace App {
                     throw "App must be specified for ListView!";
                 }
                 this._app = app;
-                this._options = this._app.$.extend(true, { delay: 1000 }, options);
+                this._options = $pnp.util.extend(options, { delay: 1000 });
             }
 
             public getLists() {
@@ -667,39 +672,6 @@ export namespace App {
                 });
                 return deferred.promise();
             }
-
-            //private getEntity(list) {
-            //    switch (list.BaseType) {
-            //        case 0:
-            //            list.Type = "List";
-            //            break;
-            //        case 1:
-            //            list.Type = "Document Library";
-            //            break;
-            //        case 2:
-            //            list.Type = "Unused";
-            //            break;
-            //        case 3:
-            //            list.Type = "Discussion Board";
-            //            break;
-            //        case 4:
-            //            list.Type = "Survey";
-            //            break;
-            //        case 5:
-            //            list.Type = "Issue";
-            //            break;
-            //        default:
-            //            list.Type = "None";
-            //            break;
-            //    }
-            //    var permissions = new SP.BasePermissions();
-            //    permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
-            //    var $permissions = {
-            //        manage: permissions.has(SP.PermissionKind.manageLists)
-            //    }
-            //    var $events = { menuOpened: false, isSelected: false };
-            //    return { $data: list, $events: $events, $permissions: $permissions };
-            //}
 
             public get_options() {
                 return this._options;

@@ -101,17 +101,17 @@ namespace Angular {
 
         public get_ListView(options: app.App.Module.IListViewOptions): App.Module.ListView {
             var self = this;
-            if (!self.is_initialized()) {
-                throw "App is not initialized!";
-            }
+            //if (!self.is_initialized()) {
+            //    throw "App is not initialized!";
+            //}
             return new App.Module.ListView(self, options);
         }
 
         public get_ListsView(options: app.App.Module.IListsViewOptions): App.Module.ListsView {
             var self = this;
-            if (!self.is_initialized()) {
-                throw "App is not initialized!";
-            }
+            //if (!self.is_initialized()) {
+            //    throw "App is not initialized!";
+            //}
             return new App.Module.ListsView(self, options);
         }
     }

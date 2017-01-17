@@ -142,8 +142,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             (function (RenderMethod) {
                 RenderMethod[RenderMethod["Default"] = 0] = "Default";
                 RenderMethod[RenderMethod["RenderListDataAsStream"] = 1] = "RenderListDataAsStream";
-                RenderMethod[RenderMethod["RenderListData"] = 2] = "RenderListData";
-                RenderMethod[RenderMethod["GetItems"] = 3] = "GetItems";
+                RenderMethod[RenderMethod["RenderListFilterData"] = 2] = "RenderListFilterData";
+                RenderMethod[RenderMethod["RenderListData"] = 3] = "RenderListData";
+                RenderMethod[RenderMethod["GetItems"] = 4] = "GetItems";
             })(Module.RenderMethod || (Module.RenderMethod = {}));
             var RenderMethod = Module.RenderMethod;
             var ListViewBase = (function () {
@@ -154,16 +155,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     this._app = app;
                     this._options = options;
                 }
-                //private getEntity(listItem) {
-                //    var permMask = listItem["PermMask"];
-                //    var permissions = this._app.get_BasePermissions(permMask);
-                //    var $permissions = {
-                //        edit: permissions.has(SP.PermissionKind.editListItems),
-                //        delete: permissions.has(SP.PermissionKind.deleteListItems)
-                //    };
-                //    var $events = { menuOpened: false, isSelected: false };
-                //    return { $data: listItem, $events: $events, $permissions: $permissions };
-                //}
                 ListViewBase.prototype.addToken = function (query, token) {
                     var self = this;
                     if (token) {
@@ -213,6 +204,15 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                     }
                                     if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
                                         query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
+                                    }
+                                    if (self._app.$.isArray(self._options.filters)) {
+                                        for (var i = 0; i < self._options.filters.length; i++) {
+                                            var filter = self._options.filters[i];
+                                            if (filter) {
+                                                query.query.add("FilterField" + (i + 1), filter.field);
+                                                query.query.add("FilterValue" + (i + 1), filter.value);
+                                            }
+                                        }
                                     }
                                 }
                                 //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
@@ -510,7 +510,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         throw "App must be specified for ListView!";
                     }
                     this._app = app;
-                    this._options = this._app.$.extend(true, { delay: 1000 }, options);
+                    this._options = $pnp.util.extend(options, { delay: 1000 });
                 }
                 ListsViewBase.prototype.getLists = function () {
                     var self = this;
@@ -614,38 +614,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     });
                     return deferred.promise();
                 };
-                //private getEntity(list) {
-                //    switch (list.BaseType) {
-                //        case 0:
-                //            list.Type = "List";
-                //            break;
-                //        case 1:
-                //            list.Type = "Document Library";
-                //            break;
-                //        case 2:
-                //            list.Type = "Unused";
-                //            break;
-                //        case 3:
-                //            list.Type = "Discussion Board";
-                //            break;
-                //        case 4:
-                //            list.Type = "Survey";
-                //            break;
-                //        case 5:
-                //            list.Type = "Issue";
-                //            break;
-                //        default:
-                //            list.Type = "None";
-                //            break;
-                //    }
-                //    var permissions = new SP.BasePermissions();
-                //    permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
-                //    var $permissions = {
-                //        manage: permissions.has(SP.PermissionKind.manageLists)
-                //    }
-                //    var $events = { menuOpened: false, isSelected: false };
-                //    return { $data: list, $events: $events, $permissions: $permissions };
-                //}
                 ListsViewBase.prototype.get_options = function () {
                     return this._options;
                 };
