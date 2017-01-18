@@ -185,7 +185,7 @@ export namespace App {
 
         export interface IFilter {
             field: string;
-            value: Array<string> | string;
+            value: Array<string> | Array<number> | string;
             operation: FilterOperation;
             lookupId: boolean;
             data: string
@@ -275,6 +275,36 @@ export namespace App {
                         }
                     }
                 }
+            }
+
+            private getFilterCAML(){
+               var self = this;
+               var viewXml = self._options.viewXml;
+                 if (self._app.$.isArray(self._options.filters && self._options.filters.length > 0)) {               
+               var camlBuilder: CamlBuilder.IFieldExpression;
+               if(viewXml){
+                  camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
+               }
+               else{
+                   camlBuilder = new CamlBuilder().View().Query().Where();
+               }
+                    for (var i = 0; i < self._options.filters.length; i++) {
+                        var filter = self._options.filters[i];
+                        if (filter) {
+                            var expression: CamlBuilder.IExpression;
+                          if (self._app.$.isArray(filter.value) && filter.value.length > 1) {
+                             expression = camlBuilder.TextField(filter.field).In(<string[]>filter.value);
+
+                               if (Boolean(filter.lookupId)) {
+                                 expression = camlBuilder.LookupField(filter.field).Id().In(<number[]>filter.value);
+                            }
+                          }
+                          else{
+                              expression = camlBuilder.TextField(filter.field).EqualTo(<string>filter.value);
+                          }
+                        }
+                    }
+                }            
             }
 
             private getList() {

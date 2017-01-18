@@ -212,6 +212,34 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         }
                     }
                 };
+                ListViewBase.prototype.getFilterCAML = function () {
+                    var self = this;
+                    var viewXml = self._options.viewXml;
+                    if (self._app.$.isArray(self._options.filters && self._options.filters.length > 0)) {
+                        var camlBuilder;
+                        if (viewXml) {
+                            camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
+                        }
+                        else {
+                            camlBuilder = new CamlBuilder().View().Query().Where();
+                        }
+                        for (var i = 0; i < self._options.filters.length; i++) {
+                            var filter = self._options.filters[i];
+                            if (filter) {
+                                var expression;
+                                if (self._app.$.isArray(filter.value) && filter.value.length > 1) {
+                                    expression = camlBuilder.TextField(filter.field).In(filter.value);
+                                    if (Boolean(filter.lookupId)) {
+                                        expression = camlBuilder.LookupField(filter.field).Id().In(filter.value);
+                                    }
+                                }
+                                else {
+                                    expression = camlBuilder.TextField(filter.field).EqualTo(filter.value);
+                                }
+                            }
+                        }
+                    }
+                };
                 ListViewBase.prototype.getList = function () {
                     var self = this;
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
