@@ -2,6 +2,7 @@
 /// <reference path="typings/sharepoint/SharePoint.d.ts" />
 /// <reference path="typings/sharepoint/pnp.d.ts" />
 /// <reference path="typings/microsoft-ajax/microsoft.ajax.d.ts" />
+/// <reference path="typings/camljs/index.d.ts" />
 define(["require", "exports", "pnp"], function (require, exports, $pnp) {
     "use strict";
     "use strict";
@@ -139,6 +140,18 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
         App.AppBase = AppBase;
         var Module;
         (function (Module) {
+            (function (FilterOperation) {
+                FilterOperation[FilterOperation["Eq"] = 0] = "Eq";
+                FilterOperation[FilterOperation["Neq"] = 1] = "Neq";
+                FilterOperation[FilterOperation["Gt"] = 2] = "Gt";
+                FilterOperation[FilterOperation["Lt"] = 3] = "Lt";
+                FilterOperation[FilterOperation["Geq"] = 4] = "Geq";
+                FilterOperation[FilterOperation["Leq"] = 5] = "Leq";
+                FilterOperation[FilterOperation["BeginsWith"] = 6] = "BeginsWith";
+                FilterOperation[FilterOperation["Contains"] = 7] = "Contains";
+                FilterOperation[FilterOperation["In"] = 8] = "In";
+            })(Module.FilterOperation || (Module.FilterOperation = {}));
+            var FilterOperation = Module.FilterOperation;
             (function (RenderMethod) {
                 RenderMethod[RenderMethod["Default"] = 0] = "Default";
                 RenderMethod[RenderMethod["RenderListDataAsStream"] = 1] = "RenderListDataAsStream";
@@ -167,330 +180,356 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var key = self._app.$(qParameter).get(0);
                             var value = self._app.$(qParameter).get(1);
                             if (key && value) {
-                                query.query.add(key, value);
+                                query.add(String(key), encodeURIComponent(String(value)));
                             }
                         }
                     }
                 };
-                ListViewBase.prototype.getListItems = function (token /*, prevItemId?: number, pageLastRow?: number*/) {
+                ListViewBase.prototype.addFilterQuery = function (query) {
+                    var self = this;
+                    if (self._app.$.isArray(self._options.filters)) {
+                        for (var i = 0; i < self._options.filters.length; i++) {
+                            var filter = self._options.filters[i];
+                            if (filter) {
+                                if (self._app.$.isArray(filter.value) && filter.value.length > 1) {
+                                    query.add("FilterFields" + (i + 1), encodeURIComponent(filter.field));
+                                    query.add("FilterValues" + (i + 1), encodeURIComponent(filter.value.join(";#")));
+                                }
+                                else {
+                                    query.add("FilterField" + (i + 1), encodeURIComponent(filter.field));
+                                    query.add("FilterValue" + (i + 1), encodeURIComponent(filter.value));
+                                }
+                                if (Boolean(filter.lookupId)) {
+                                    query.add("FilterLookupId" + (i + 1), String(1));
+                                }
+                                if (filter.operation != FilterOperation.Eq) {
+                                    query.add("FilterOp" + (i + 1), encodeURIComponent(FilterOperation[filter.operation]));
+                                }
+                                if (filter.data) {
+                                    query.add("FilterData" + (i + 1), encodeURIComponent(String(filter.data)));
+                                }
+                            }
+                        }
+                    }
+                };
+                ListViewBase.prototype.getList = function () {
+                    var self = this;
+                    if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                        return $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
+                    }
+                    else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                        return $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                    }
+                    else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                        return $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                    }
+                    throw "List is not specified.";
+                };
+                ListViewBase.prototype.renderListDataAsStream = function (token /*, prevItemId?: number, pageLastRow?: number*/) {
                     var self = this;
                     var deferred = self._app.$.Deferred();
-                    var url = null;
-                    switch (self._options.renderMethod) {
-                        case RenderMethod.RenderListDataAsStream:
-                            var query = null;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists;
-                                query.concat("/GetById(@list)");
-                                query.query.add("@list", "'" + self._options.listId + "'");
+                    try {
+                        var query = self.getList();
+                        query.concat("/RenderListDataAsStream");
+                        if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                            self.addToken(query.query, token);
+                        }
+                        else {
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
+                                query.query.add("View", encodeURIComponent(self._options.viewId));
                             }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                                query.query.add("SortField", encodeURIComponent(self._options.orderBy));
                             }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
+                                query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
                             }
-                            if (query) {
-                                query.concat("/RenderListDataAsStream");
-                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
-                                    self.addToken(query, token);
+                        }
+                        self.addFilterQuery(query.query);
+                        //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
+                        //    query.query.add("p_ID", prevItemId);
+                        //}
+                        //if (!$pnp.util.stringIsNullOrEmpty(<any>pageLastRow)) {
+                        //    query.query.add("PageLastRow", pageLastRow);
+                        //}
+                        var url = query.toUrlAndQuery();
+                        var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
+                            parameters.ViewXml = self._options.viewXml;
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
+                            parameters.FolderServerRelativeUrl = self._options.rootFolder;
+                        }
+                        var postBody = JSON.stringify({ "parameters": parameters });
+                        var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        executor.executeAsync({
+                            url: url,
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json;odata=verbose",
+                                "content-Type": "application/json;odata=verbose"
+                            },
+                            body: postBody,
+                            success: function (data) {
+                                var result = null;
+                                if (data.body) {
+                                    result = JSON.parse(data.body);
                                 }
-                                else {
-                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
-                                        query.query.add("View", self._options.viewId);
-                                    }
-                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                        query.query.add("SortField", self._options.orderBy);
-                                    }
-                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
-                                        query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
-                                    }
-                                    if (self._app.$.isArray(self._options.filters)) {
-                                        for (var i = 0; i < self._options.filters.length; i++) {
-                                            var filter = self._options.filters[i];
-                                            if (filter) {
-                                                query.query.add("FilterField" + (i + 1), filter.field);
-                                                query.query.add("FilterValue" + (i + 1), filter.value);
-                                            }
+                                deferred.resolve(result);
+                            },
+                            error: function (data, errorCode, errorMessage) {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
                                         }
                                     }
+                                    catch (e) { }
                                 }
-                                //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
-                                //    query.query.add("p_ID", prevItemId);
-                                //}
-                                //if (!$pnp.util.stringIsNullOrEmpty(<any>pageLastRow)) {
-                                //    query.query.add("PageLastRow", pageLastRow);
-                                //}
-                                url = query.toUrlAndQuery();
-                                var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                                    parameters.ViewXml = self._options.viewXml;
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
-                                    parameters.FolderServerRelativeUrl = self._options.rootFolder;
-                                }
-                                var postBody = JSON.stringify({ "parameters": parameters });
-                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                                executor.executeAsync({
-                                    url: url,
-                                    method: "POST",
-                                    headers: {
-                                        "accept": "application/json;odata=verbose",
-                                        "content-Type": "application/json;odata=verbose"
-                                    },
-                                    body: postBody,
-                                    success: function (data) {
-                                        var result = JSON.parse(data.body);
-                                        deferred.resolve(result);
-                                    },
-                                    error: function (data, errorCode, errorMessage) {
-                                        if (data.body) {
-                                            try {
-                                                var error = JSON.parse(data.body);
-                                                if (error && error.error) {
-                                                    errorMessage = error.error.message.value;
-                                                }
-                                            }
-                                            catch (e) { }
-                                        }
-                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
-                                        deferred.reject(data, errorCode, errorMessage);
-                                    }
-                                });
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
                             }
-                            else {
-                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
-                                deferred.reject("List is not specified.");
-                            }
-                            break;
-                        case RenderMethod.RenderListData:
-                            var query = null;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
-                            }
-                            if (query) {
-                                query.concat("/renderListData(@viewXml)");
-                                query.query.add("@viewXml", "'" + self._options.viewXml + "'");
-                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
-                                    self.addToken(query, token);
-                                }
-                                else {
-                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
-                                        query.query.add("View", self._options.viewId);
-                                    }
-                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                        query.query.add("SortField", self._options.orderBy);
-                                    }
-                                    if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
-                                        query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
-                                    }
-                                }
-                                //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
-                                //    query.query.add("p_ID", prevItemId);
-                                //}
-                                //if (!$pnp.util.stringIsNullOrEmpty(<any>pageLastRow)) {
-                                //    query.query.add("PageLastRow", pageLastRow);
-                                //}
-                                url = query.toUrlAndQuery();
-                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                                executor.executeAsync({
-                                    url: url,
-                                    method: "POST",
-                                    headers: {
-                                        "accept": "application/json;odata=verbose",
-                                        "content-Type": "application/json;odata=verbose"
-                                    },
-                                    success: function (data) {
-                                        var result = JSON.parse(JSON.parse(data.body).d.RenderListData);
-                                        deferred.resolve({ ListData: result });
-                                    },
-                                    error: function (data, errorCode, errorMessage) {
-                                        if (data.body) {
-                                            try {
-                                                var error = JSON.parse(data.body);
-                                                if (error && error.error) {
-                                                    errorMessage = error.error.message.value;
-                                                }
-                                            }
-                                            catch (e) { }
-                                        }
-                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
-                                        deferred.reject(data, errorCode, errorMessage);
-                                    }
-                                });
-                            }
-                            else {
-                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
-                                deferred.reject("List is not specified.");
-                            }
-                            break;
-                        case RenderMethod.GetItems:
-                            var query = null;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listId);
-                            }
-                            if (query) {
-                                query.concat("/GetItems");
-                                if ($pnp.util.isArray(self._options.expands)) {
-                                    query = query.expand(self._options.expands);
-                                }
-                                url = query.toUrlAndQuery();
-                                var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
-                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                                executor.executeAsync({
-                                    url: url,
-                                    method: "POST",
-                                    body: postBody,
-                                    headers: {
-                                        "accept": "application/json;odata=verbose",
-                                        "content-Type": "application/json;odata=verbose"
-                                    },
-                                    success: function (data) {
-                                        var d = JSON.parse(data.body).d;
-                                        var listData = { Row: d.results, NextHref: null, PrevHref: null };
-                                        deferred.resolve({ ListData: listData });
-                                    },
-                                    error: function (data, errorCode, errorMessage) {
-                                        if (data.body) {
-                                            try {
-                                                var error = JSON.parse(data.body);
-                                                if (error && error.error) {
-                                                    errorMessage = error.error.message.value;
-                                                }
-                                            }
-                                            catch (e) { }
-                                        }
-                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
-                                        deferred.reject(data, errorCode, errorMessage);
-                                    }
-                                });
-                            }
-                            else {
-                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
-                                deferred.reject("List is not specified.");
-                            }
-                            break;
-                        case RenderMethod.Default:
-                            var query = null;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(self._options.listId).items;
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).getList(self._options.listUrl).items;
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                query = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getByTitle(self._options.listTitle).items;
-                            }
-                            if (query) {
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
-                                    query = query.orderBy(self._options.orderBy, self._options.sortAsc);
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                                    query = query.filter(self._options.filter);
-                                }
-                                if (self._options.limit > 0) {
-                                    query = query.top(self._options.limit);
-                                }
-                                if ($pnp.util.isArray(self._options.expands)) {
-                                    query = query.expand(self._options.expands);
-                                }
-                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
-                                    query.query.add("$skiptoken", encodeURIComponent(token));
-                                }
-                                url = query.toUrlAndQuery();
-                                var executor = new SP.RequestExecutor(self._app.appWebUrl);
-                                executor.executeAsync({
-                                    url: url,
-                                    method: "GET",
-                                    headers: {
-                                        "accept": "application/json;odata=verbose",
-                                        "content-Type": "application/json;odata=verbose"
-                                    },
-                                    success: function (data) {
-                                        var d = JSON.parse(data.body).d;
-                                        var listData = { Row: d.results, NextHref: null, PrevHref: null };
-                                        listData.NextHref = self._app.getQueryParam(d["__next"], "$skiptoken");
-                                        listData.PrevHref = self._app.getQueryParam(d["__prev"], "$skiptoken");
-                                        deferred.resolve({ ListData: listData });
-                                    },
-                                    error: function (data, errorCode, errorMessage) {
-                                        if (data.body) {
-                                            try {
-                                                var error = JSON.parse(data.body);
-                                                if (error && error.error) {
-                                                    errorMessage = error.error.message.value;
-                                                }
-                                            }
-                                            catch (e) { }
-                                        }
-                                        self._app.$(self._app).trigger("app-error", [errorMessage]);
-                                        deferred.reject(data, errorCode, errorMessage);
-                                    }
-                                });
-                            }
-                            else {
-                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
-                                deferred.reject("List is not specified.");
-                            }
-                            break;
-                        default:
-                            var context = new SP.ClientContext(self._app.appWebUrl);
-                            var factory = new SP.ProxyWebRequestExecutorFactory(self._app.appWebUrl);
-                            context.set_webRequestExecutorFactory(factory);
-                            var appContextSite = new SP.AppContextSite(context, self._app.hostWebUrl);
-                            var web = appContextSite.get_web();
-                            var list = null;
-                            if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
-                                list = web.get_lists().getById(self._options.listId);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
-                                list = web.getList(self._options.listUrl);
-                            }
-                            else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
-                                list = web.get_lists().getByTitle(self._options.listTitle);
-                            }
-                            if (list) {
-                                var camlQuery = new SP.CamlQuery();
-                                camlQuery.set_viewXml(self._options.viewXml);
-                                if (!$pnp.util.stringIsNullOrEmpty(token)) {
-                                    var position = new SP.ListItemCollectionPosition();
-                                    position.set_pagingInfo(token);
-                                    camlQuery.set_listItemCollectionPosition(position);
-                                }
-                                var items = list.getItems(camlQuery);
-                                context.load(items);
-                                context.executeQueryAsync(function () {
-                                    var listData = { Row: self._app.$.map(items.get_data(), function (item) { return item.get_fieldValues(); }), NextHref: null, PrevHref: null };
-                                    var position = items.get_listItemCollectionPosition();
-                                    if (position) {
-                                        listData.NextHref = position.get_pagingInfo();
-                                    }
-                                    deferred.resolve({ ListData: listData });
-                                }, function (sender, args) {
-                                    self._app.$(self._app).trigger("app-error", [args.get_message(), args.get_stackTrace()]);
-                                    deferred.reject(sender, args);
-                                });
-                            }
-                            else {
-                                self._app.$(self._app).trigger("app-error", ["List is not specified."]);
-                            }
-                            break;
+                        });
+                    }
+                    catch (e) {
+                        self._app.$(self._app).trigger("app-error", [e]);
+                        deferred.reject(e);
                     }
                     return deferred.promise();
+                };
+                ListViewBase.prototype.renderListData = function (token) {
+                    var self = this;
+                    var deferred = self._app.$.Deferred();
+                    try {
+                        var query = self.getList();
+                        query.concat("/renderListData(@viewXml)");
+                        query.query.add("@viewXml", "'" + encodeURIComponent(self._options.viewXml) + "'");
+                        if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                            self.addToken(query.query, token);
+                        }
+                        else {
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.viewId)) {
+                                query.query.add("View", encodeURIComponent(self._options.viewId));
+                            }
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                                query.query.add("SortField", encodeURIComponent(self._options.orderBy));
+                            }
+                            if (!$pnp.util.stringIsNullOrEmpty(self._options.sortAsc)) {
+                                query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
+                            }
+                        }
+                        self.addFilterQuery(query.query);
+                        var url = query.toUrlAndQuery();
+                        var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        executor.executeAsync({
+                            url: url,
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json;odata=verbose",
+                                "content-Type": "application/json;odata=verbose"
+                            },
+                            success: function (data) {
+                                var result = null;
+                                if (data.body) {
+                                    result = JSON.parse(JSON.parse(data.body).d.RenderListData);
+                                }
+                                deferred.resolve({ ListData: result });
+                            },
+                            error: function (data, errorCode, errorMessage) {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
+                            }
+                        });
+                    }
+                    catch (e) {
+                        self._app.$(self._app).trigger("app-error", [e]);
+                        deferred.reject(e);
+                    }
+                    return deferred.promise();
+                };
+                ListViewBase.prototype.getItems = function () {
+                    var self = this;
+                    var deferred = self._app.$.Deferred();
+                    try {
+                        var query = self.getList();
+                        query.concat("/GetItems");
+                        if ($pnp.util.isArray(self._options.expands)) {
+                            query = query.expand(self._options.expands);
+                        }
+                        var url = query.toUrlAndQuery();
+                        var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
+                        var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        executor.executeAsync({
+                            url: url,
+                            method: "POST",
+                            body: postBody,
+                            headers: {
+                                "accept": "application/json;odata=verbose",
+                                "content-Type": "application/json;odata=verbose"
+                            },
+                            success: function (data) {
+                                var listData = null;
+                                if (data.body) {
+                                    var d = JSON.parse(data.body).d;
+                                    listData = { Row: d.results, NextHref: null, PrevHref: null };
+                                }
+                                deferred.resolve({ ListData: listData });
+                            },
+                            error: function (data, errorCode, errorMessage) {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
+                            }
+                        });
+                    }
+                    catch (e) {
+                        self._app.$(self._app).trigger("app-error", [e]);
+                        deferred.reject(e);
+                    }
+                    return deferred.promise();
+                };
+                ListViewBase.prototype.getItemsREST = function (token) {
+                    var self = this;
+                    var deferred = self._app.$.Deferred();
+                    try {
+                        var query = self.getList().items;
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
+                            query = query.orderBy(self._options.orderBy, self._options.sortAsc);
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
+                            query = query.filter(self._options.filter);
+                        }
+                        if (self._options.limit > 0) {
+                            query = query.top(self._options.limit);
+                        }
+                        if ($pnp.util.isArray(self._options.expands)) {
+                            query = query.expand(self._options.expands);
+                        }
+                        if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                            query.query.add("$skiptoken", encodeURIComponent(token));
+                        }
+                        var url = query.toUrlAndQuery();
+                        var executor = new SP.RequestExecutor(self._app.appWebUrl);
+                        executor.executeAsync({
+                            url: url,
+                            method: "GET",
+                            headers: {
+                                "accept": "application/json;odata=verbose",
+                                "content-Type": "application/json;odata=verbose"
+                            },
+                            success: function (data) {
+                                var listData = null;
+                                if (data.body) {
+                                    var d = JSON.parse(data.body).d;
+                                    listData = { Row: d.results, NextHref: null, PrevHref: null };
+                                    listData.NextHref = self._app.getQueryParam(d["__next"], "$skiptoken");
+                                }
+                                deferred.resolve({ ListData: listData });
+                            },
+                            error: function (data, errorCode, errorMessage) {
+                                if (data.body) {
+                                    try {
+                                        var error = JSON.parse(data.body);
+                                        if (error && error.error) {
+                                            errorMessage = error.error.message.value;
+                                        }
+                                    }
+                                    catch (e) { }
+                                }
+                                self._app.$(self._app).trigger("app-error", [errorMessage]);
+                                deferred.reject(data, errorCode, errorMessage);
+                            }
+                        });
+                    }
+                    catch (e) {
+                        self._app.$(self._app).trigger("app-error", [e]);
+                        deferred.reject(e);
+                    }
+                    return deferred.promise();
+                };
+                ListViewBase.prototype.getItemsCSOM = function (token) {
+                    var self = this;
+                    var deferred = self._app.$.Deferred();
+                    try {
+                        var context = new SP.ClientContext(self._app.appWebUrl);
+                        var factory = new SP.ProxyWebRequestExecutorFactory(self._app.appWebUrl);
+                        context.set_webRequestExecutorFactory(factory);
+                        var appContextSite = new SP.AppContextSite(context, self._app.hostWebUrl);
+                        var web = appContextSite.get_web();
+                        var list = null;
+                        if (!$pnp.util.stringIsNullOrEmpty(self._options.listId)) {
+                            list = web.get_lists().getById(self._options.listId);
+                        }
+                        else if (!$pnp.util.stringIsNullOrEmpty(self._options.listUrl)) {
+                            list = web.getList(self._options.listUrl);
+                        }
+                        else if (!$pnp.util.stringIsNullOrEmpty(self._options.listTitle)) {
+                            list = web.get_lists().getByTitle(self._options.listTitle);
+                        }
+                        else {
+                            throw "List is not specified.";
+                        }
+                        var camlQuery = new SP.CamlQuery();
+                        camlQuery.set_viewXml(self._options.viewXml);
+                        if (!$pnp.util.stringIsNullOrEmpty(token)) {
+                            var position = new SP.ListItemCollectionPosition();
+                            position.set_pagingInfo(token);
+                            camlQuery.set_listItemCollectionPosition(position);
+                        }
+                        var items = list.getItems(camlQuery);
+                        context.load(items);
+                        context.executeQueryAsync(function () {
+                            var listData = { Row: self._app.$.map(items.get_data(), function (item) { return item.get_fieldValues(); }), NextHref: null, PrevHref: null };
+                            var position = items.get_listItemCollectionPosition();
+                            if (position) {
+                                listData.NextHref = position.get_pagingInfo();
+                            }
+                            deferred.resolve({ ListData: listData });
+                        }, function (sender, args) {
+                            self._app.$(self._app).trigger("app-error", [args.get_message(), args.get_stackTrace()]);
+                            deferred.reject(sender, args);
+                        });
+                    }
+                    catch (e) {
+                        self._app.$(self._app).trigger("app-error", [e]);
+                        deferred.reject(e);
+                    }
+                    return deferred.promise();
+                };
+                ListViewBase.prototype.getListItems = function (token) {
+                    var self = this;
+                    switch (self._options.renderMethod) {
+                        case RenderMethod.RenderListDataAsStream:
+                            return self.renderListDataAsStream(token);
+                        case RenderMethod.RenderListData:
+                            return self.renderListData(token);
+                        case RenderMethod.GetItems:
+                            return self.getItems();
+                        case RenderMethod.Default:
+                            return self.getItemsREST(token);
+                        default:
+                            return self.getItemsCSOM(token);
+                    }
                 };
                 ListViewBase.prototype.get_app = function () {
                     return this._app;

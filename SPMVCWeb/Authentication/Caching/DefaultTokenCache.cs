@@ -7,7 +7,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
     public class TokenCache : ITokenCache
     {
         protected static CachingProvider _сachingProvider;
-        
+
         static TokenCache()
         {
             _сachingProvider = new CachingProvider();
@@ -70,12 +70,22 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
 
         public AccessToken Get(string key)
         {
-            if (_tokens.ContainsKey(key) && IsAccessTokenValid(_tokens[key]))
+            lock (((IDictionary)_tokens).SyncRoot)
             {
-                return _tokens[key];
+                if (_tokens.ContainsKey(key))
+                {
+                    var token = _tokens[key];
+                    if (IsAccessTokenValid(token))
+                    {
+                        return token;
+                    }
+                    else
+                    {
+                        _tokens.Remove(key);
+                    }
+                }
+                return null;
             }
-            Remove(key);
-            return null;
         }
 
         public bool IsAccessTokenValid(AccessToken token)

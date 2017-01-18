@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using AspNet.Owin.SharePoint.Addin.Authentication.Provider;
@@ -10,6 +9,10 @@ using Microsoft.Owin.Security.Infrastructure;
 using Microsoft.SharePoint.Client;
 using System.Web;
 using System.Linq;
+using Microsoft.IdentityModel.Claims;
+using Claim = System.Security.Claims.Claim;
+using ClaimsIdentity = System.Security.Claims.ClaimsIdentity;
+using ClaimTypes = System.Security.Claims.ClaimTypes;
 
 namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
 {
@@ -27,13 +30,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             Uri spHostUrl;
             Uri spAppWebUrl;
             ClaimsIdentity identity = new ClaimsIdentity(Options.SignInAsAuthenticationType);
-
             //if (Context.Authentication.User.Identity.IsAuthenticated &&
             //    Context.Authentication.User.Identity.AuthenticationType == Options.SignInAsAuthenticationType)
             //{
-
+            //    identity = (ClaimsIdentity)Context.Authentication.User.Identity;
             //}
-
             string spHostUrlString = TokenHelper.EnsureTrailingSlash(Request.Query.Get(SharePointContext.SPHostUrlKey));
             if (string.IsNullOrEmpty(spHostUrlString))
             {
@@ -57,11 +58,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                 identity.AddClaim(new Claim(SPAddinClaimTypes.SPAppWebUrl, spAppWebUrl.GetLeftPart(UriPartial.Path)));
             }
             //}
-            string accessToken = null;
+            string accessTokenString = null;
             if (TokenHelper.IsHighTrustApp())
             {
                 var userSid = OwinTokenHelper.GetWindowsUserSid(Context);
-                accessToken = OwinTokenHelper.GetS2SAccessToken(spHostUrl, userSid);
+                accessTokenString = OwinTokenHelper.GetS2SAccessToken(spHostUrl, userSid);
                 identity.AddClaim(new Claim(SPAddinClaimTypes.ADUserId, userSid));
                 identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, userSid));
                 identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, TokenHelper.GetRealmFromTargetUrl(spHostUrl)));
@@ -78,11 +79,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                         identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, contextToken.Realm));
                         identity.AddClaim(new Claim(SPAddinClaimTypes.TargetPrincipalName, contextToken.TargetPrincipalName));
                         identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, contextToken.CacheKey));
-                        accessToken = TokenHelper.GetAccessToken(contextToken.RefreshToken, contextToken.TargetPrincipalName, spHostUrl.Authority, contextToken.Realm).AccessToken;
+                        var accessToken = TokenHelper.GetAccessToken(contextToken.RefreshToken, contextToken.TargetPrincipalName, spHostUrl.Authority, contextToken.Realm);
+                        accessTokenString = accessToken.AccessToken;
                     }
                 }
             }
-            return await CreateTicket(accessToken, identity, spHostUrl, spAppWebUrl);
+            return await CreateTicket(accessTokenString, identity, spHostUrl, spAppWebUrl);
         }
 
         protected override Task ApplyResponseChallengeAsync()
@@ -155,6 +157,16 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             var ticket = await AuthenticateAsync();
             if (ticket != null)
             {
+                if (Request.User.Identity.IsAuthenticated)
+                {
+                    var identity = Request.User.Identity as ClaimsIdentity;
+                    if (identity != null)
+                    {
+                        var spContext = SPContextProvider.Get(identity);
+                        spContext.ClearCache();
+                    }
+                }
+
                 if (Response.StatusCode != 401)
                 {
                     ticket.Identity.AddClaim(new Claim(SPAddinClaimTypes.SPAddinAuthentication, "1"));

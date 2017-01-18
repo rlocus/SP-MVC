@@ -19,9 +19,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     }
     public abstract class SPContext : ISPContext
     {
-        public static ITokenCache Cache;
+        protected static readonly ITokenCache Cache;
 
         protected readonly ClaimsIdentity _claimsIdentity;
+
+        protected static readonly TimeSpan AccessTokenLifetimeTolerance = TimeSpan.FromMinutes(5.0);
 
         public Guid ClientId
         {
@@ -146,7 +148,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 accessToken = CreateUserAccessToken(host);
                 Cache.Insert(accessToken, GetUserCacheKey(host.Authority));
             }
-
             return TokenHelper.GetClientContextWithAccessToken(host.GetLeftPart(UriPartial.Path), accessToken.Value);
         }
 
@@ -204,8 +205,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (this.SPHostUrl != null)
             {
-                Cache.Remove(GetAppOnlyCacheKey(this.SPHostUrl.GetLeftPart(UriPartial.Path)));
-                Cache.Remove(GetUserCacheKey(this.SPHostUrl.GetLeftPart(UriPartial.Path)));
+                Cache.Remove(GetAppOnlyCacheKey(this.SPHostUrl.Authority));
+                Cache.Remove(GetUserCacheKey(this.SPHostUrl.Authority));
             }
         }
     }

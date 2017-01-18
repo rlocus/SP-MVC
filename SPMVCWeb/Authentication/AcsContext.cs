@@ -16,22 +16,35 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         protected override AccessToken CreateUserAccessToken(Uri host)
 		{
 			var oauthToken = TokenHelper.GetAccessToken(RefreshToken, TargetPrincipalName, host.Authority, Realm);
-			return new AccessToken
+            DateTime expiresOn = oauthToken.ExpiresOn;
+            if ((expiresOn - oauthToken.NotBefore) > AccessTokenLifetimeTolerance)
+            {
+                // Make the access token get renewed a bit earlier than the time when it expires
+                // so that the calls to SharePoint with it will have enough time to complete successfully.
+                expiresOn -= AccessTokenLifetimeTolerance;
+            }
+            return new AccessToken
 			{
 				Value = oauthToken.AccessToken,
-				ExpiresOn = oauthToken.ExpiresOn.AddMinutes(-5)
-			};
+				ExpiresOn = expiresOn
+            };
 		}
 
 		protected override AccessToken CreateAppOnlyAccessToken(Uri host)
 		{
 			var oauthToken = TokenHelper.GetAppOnlyAccessToken(TokenHelper.SharePointPrincipal, host.Authority, Realm);
-
-			return new AccessToken
+            DateTime expiresOn = oauthToken.ExpiresOn;
+            if ((expiresOn - oauthToken.NotBefore) > AccessTokenLifetimeTolerance)
+            {
+                // Make the access token get renewed a bit earlier than the time when it expires
+                // so that the calls to SharePoint with it will have enough time to complete successfully.
+                expiresOn -= AccessTokenLifetimeTolerance;
+            }
+            return new AccessToken
 			{
 				Value = oauthToken.AccessToken,
-				ExpiresOn = oauthToken.ExpiresOn.AddMinutes(-5)
-			};
+				ExpiresOn = expiresOn
+            };
 		}
 	}
 }
