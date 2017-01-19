@@ -44,7 +44,7 @@
                                 }
                                 break;
                             case "LinkTitle":
-                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (listItem.$data["Title"] ? listItem.$data["Title"] : listItem.$data["LinkTitle"]) + "</a>";
                                 break;
                             case "LinkFilename":
                                 value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
