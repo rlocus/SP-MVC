@@ -28,6 +28,7 @@ namespace SPMVCWeb
                       "~/Scripts/require.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/main").Include(
+                    "~/Scripts/camljs.js",
                     "~/Scripts/main.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/ng-office").Include(

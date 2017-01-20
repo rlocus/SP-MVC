@@ -1,7 +1,6 @@
 /// <reference path="typings/jquery/jquery.d.ts" />
 /// <reference path="typings/sharepoint/SharePoint.d.ts" />
 /// <reference path="typings/sharepoint/pnp.d.ts" />
-/// <reference path="typings/microsoft-ajax/microsoft.ajax.d.ts" />
 /// <reference path="typings/camljs/index.d.ts" />
 define(["require", "exports", "pnp"], function (require, exports, $pnp) {
     "use strict";
@@ -152,6 +151,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 FilterOperation[FilterOperation["In"] = 8] = "In";
             })(Module.FilterOperation || (Module.FilterOperation = {}));
             var FilterOperation = Module.FilterOperation;
+            (function (FilterClause) {
+                FilterClause[FilterClause["And"] = 0] = "And";
+                FilterClause[FilterClause["Or"] = 1] = "Or";
+            })(Module.FilterClause || (Module.FilterClause = {}));
+            var FilterClause = Module.FilterClause;
             (function (RenderMethod) {
                 RenderMethod[RenderMethod["Default"] = 0] = "Default";
                 RenderMethod[RenderMethod["RenderListDataAsStream"] = 1] = "RenderListDataAsStream";
@@ -212,33 +216,424 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         }
                     }
                 };
-                ListViewBase.prototype.getFilterCAML = function () {
+                ListViewBase.prototype.getFilterLookupValueExpression = function (field, value, operation, fieldType) {
+                    var fieldExpression = CamlBuilder.Expression();
+                    var expression;
+                    var numberFieldExpression;
+                    switch (fieldType) {
+                        case SP.FieldType.lookup:
+                        default:
+                            numberFieldExpression = fieldExpression.LookupField(field).Id();
+                            break;
+                        case SP.FieldType.user:
+                            numberFieldExpression = fieldExpression.UserField(field).Id();
+                            break;
+                    }
+                    switch (operation) {
+                        case FilterOperation.Gt:
+                            expression = numberFieldExpression.GreaterThan(value);
+                            break;
+                        case FilterOperation.Geq:
+                            expression = numberFieldExpression.GreaterThanOrEqualTo(value);
+                            break;
+                        case FilterOperation.Eq:
+                        default:
+                            if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                expression = numberFieldExpression.IsNull();
+                            }
+                            else {
+                                expression = numberFieldExpression.EqualTo(value);
+                            }
+                            break;
+                        case FilterOperation.Lt:
+                            expression = numberFieldExpression.LessThan(value);
+                            break;
+                        case FilterOperation.Leq:
+                            expression = numberFieldExpression.LessThanOrEqualTo(value);
+                            break;
+                    }
+                    return expression;
+                };
+                ListViewBase.prototype.getFilterValueExpression = function (field, value, operation, lookupId, fieldType) {
                     var self = this;
-                    var viewXml = self._options.viewXml;
-                    if (self._app.$.isArray(self._options.filters && self._options.filters.length > 0)) {
-                        var camlBuilder;
-                        if (viewXml) {
-                            camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
-                        }
-                        else {
-                            camlBuilder = new CamlBuilder().View().Query().Where();
-                        }
-                        for (var i = 0; i < self._options.filters.length; i++) {
-                            var filter = self._options.filters[i];
-                            if (filter) {
-                                var expression;
-                                if (self._app.$.isArray(filter.value) && filter.value.length > 1) {
-                                    expression = camlBuilder.TextField(filter.field).In(filter.value);
-                                    if (Boolean(filter.lookupId)) {
-                                        expression = camlBuilder.LookupField(filter.field).Id().In(filter.value);
-                                    }
+                    var expression;
+                    if (Boolean(lookupId)) {
+                        expression = self.getFilterLookupValueExpression(field, value, operation, fieldType);
+                    }
+                    else {
+                        var fieldExpression = CamlBuilder.Expression();
+                        switch (fieldType) {
+                            case SP.FieldType.text:
+                            default:
+                                var textFieldExpression = fieldExpression.TextField(field);
+                                switch (operation) {
+                                    case FilterOperation.BeginsWith:
+                                        expression = textFieldExpression.BeginsWith(value);
+                                        break;
+                                    case FilterOperation.Contains:
+                                        expression = textFieldExpression.Contains(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = textFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = textFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Neq:
+                                        expression = textFieldExpression.NotEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.lookup:
+                                var lookupFieldExpression = fieldExpression.LookupField(field);
+                                switch (operation) {
+                                    case FilterOperation.BeginsWith:
+                                        expression = lookupFieldExpression.ValueAsText()
+                                            .BeginsWith(value);
+                                        break;
+                                    case FilterOperation.Contains:
+                                        expression = lookupFieldExpression.ValueAsText()
+                                            .Contains(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = lookupFieldExpression.ValueAsText().IsNull();
+                                        }
+                                        else {
+                                            expression = lookupFieldExpression.ValueAsText()
+                                                .EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Neq:
+                                        expression = lookupFieldExpression.ValueAsText()
+                                            .NotEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.dateTime:
+                                var dateFieldExpression = fieldExpression.DateField(field);
+                                switch (operation) {
+                                    case FilterOperation.Gt:
+                                        expression = dateFieldExpression.GreaterThan(value);
+                                        break;
+                                    case FilterOperation.Geq:
+                                        expression = dateFieldExpression.GreaterThanOrEqualTo(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = dateFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = dateFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Lt:
+                                        expression = dateFieldExpression.LessThan(value);
+                                        break;
+                                    case FilterOperation.Leq:
+                                        expression = dateFieldExpression.LessThanOrEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case 101:
+                                var dateTimeFieldExpression = fieldExpression.DateTimeField(field);
+                                switch (operation) {
+                                    case FilterOperation.Gt:
+                                        expression = dateTimeFieldExpression.GreaterThan(value);
+                                        break;
+                                    case FilterOperation.Geq:
+                                        expression = dateTimeFieldExpression
+                                            .GreaterThanOrEqualTo(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = dateTimeFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = dateTimeFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Lt:
+                                        expression = dateTimeFieldExpression.LessThan(value);
+                                        break;
+                                    case FilterOperation.Leq:
+                                        expression = dateTimeFieldExpression
+                                            .LessThanOrEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.counter:
+                                var counterFieldExpression = fieldExpression.CounterField(field);
+                                switch (operation) {
+                                    case FilterOperation.Gt:
+                                        expression = counterFieldExpression.GreaterThan(value);
+                                        break;
+                                    case FilterOperation.Geq:
+                                        expression = counterFieldExpression
+                                            .GreaterThanOrEqualTo(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = counterFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = counterFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Lt:
+                                        expression = counterFieldExpression.LessThan(value);
+                                        break;
+                                    case FilterOperation.Leq:
+                                        expression = counterFieldExpression.LessThanOrEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.integer:
+                                var integerFieldExpression = fieldExpression.IntegerField(field);
+                                switch (operation) {
+                                    case FilterOperation.Gt:
+                                        expression = integerFieldExpression.GreaterThan(value);
+                                        break;
+                                    case FilterOperation.Geq:
+                                        expression = integerFieldExpression
+                                            .GreaterThanOrEqualTo(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = integerFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = integerFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Lt:
+                                        expression = integerFieldExpression.LessThan(value);
+                                        break;
+                                    case FilterOperation.Leq:
+                                        expression = integerFieldExpression.LessThanOrEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.modStat:
+                                var modStatFieldExpression = fieldExpression.ModStatField(field)
+                                    .ValueAsText();
+                                switch (operation) {
+                                    case FilterOperation.BeginsWith:
+                                        expression = modStatFieldExpression.BeginsWith(value);
+                                        break;
+                                    case FilterOperation.Contains:
+                                        expression = modStatFieldExpression.Contains(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = modStatFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = modStatFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Neq:
+                                        expression = modStatFieldExpression.NotEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.number:
+                                var numberFieldExpression = fieldExpression.NumberField(field);
+                                switch (operation) {
+                                    case FilterOperation.Gt:
+                                        expression = numberFieldExpression.GreaterThan(value);
+                                        break;
+                                    case FilterOperation.Geq:
+                                        expression = numberFieldExpression
+                                            .GreaterThanOrEqualTo(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = numberFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = numberFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Lt:
+                                        expression = numberFieldExpression.LessThan(value);
+                                        break;
+                                    case FilterOperation.Leq:
+                                        expression = numberFieldExpression.LessThanOrEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.URL:
+                                var urlFieldExpression = fieldExpression.UrlField(field);
+                                switch (operation) {
+                                    case FilterOperation.BeginsWith:
+                                        expression = urlFieldExpression.BeginsWith(value);
+                                        break;
+                                    case FilterOperation.Contains:
+                                        expression = urlFieldExpression.Contains(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = urlFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = urlFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Neq:
+                                        expression = urlFieldExpression.NotEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.user:
+                                var userFieldExpression = fieldExpression.UserField(field).ValueAsText();
+                                switch (operation) {
+                                    case FilterOperation.BeginsWith:
+                                        expression = userFieldExpression.BeginsWith(value);
+                                        break;
+                                    case FilterOperation.Contains:
+                                        expression = userFieldExpression.Contains(value);
+                                        break;
+                                    case FilterOperation.Eq:
+                                    default:
+                                        if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                            expression = userFieldExpression.IsNull();
+                                        }
+                                        else {
+                                            expression = userFieldExpression.EqualTo(value);
+                                        }
+                                        break;
+                                    case FilterOperation.Neq:
+                                        expression = userFieldExpression.NotEqualTo(value);
+                                        break;
+                                }
+                                break;
+                            case SP.FieldType.boolean:
+                                var booleanFieldExpression = fieldExpression.BooleanField(field);
+                                if ($pnp.util.stringIsNullOrEmpty(value)) {
+                                    expression = booleanFieldExpression.IsNull();
                                 }
                                 else {
-                                    expression = camlBuilder.TextField(filter.field).EqualTo(filter.value);
+                                    if (Boolean(value) === true) {
+                                        expression = booleanFieldExpression.IsTrue();
+                                    }
+                                    else {
+                                        expression = booleanFieldExpression.IsFalse();
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    return expression;
+                };
+                ListViewBase.prototype.getFilterMultiValueExpression = function (filter) {
+                    var self = this;
+                    var fieldExpression = CamlBuilder.Expression();
+                    var expression;
+                    if (self._app.$.isArray(filter.value)) {
+                        if (filter.value.length === 1) {
+                            expression = self.getFilterValueExpression(filter.field, filter.value[0], filter.operation, filter.lookupId, filter.fieldType);
+                        }
+                        else if (filter.value.length > 1) {
+                            if (Boolean(filter.lookupId)) {
+                                switch (filter.fieldType) {
+                                    case SP.FieldType.lookup:
+                                    default:
+                                        expression = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id()
+                                            .In(filter.value);
+                                        break;
+                                    case SP.FieldType.user:
+                                        expression = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id()
+                                            .In(filter.value);
+                                        break;
+                                }
+                            }
+                            else {
+                                switch (filter.fieldType) {
+                                    case SP.FieldType.lookup:
+                                        expression = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat()
+                                            .ValueAsText().In(filter.value);
+                                        break;
+                                    case SP.FieldType.text:
+                                    default:
+                                        expression = fieldExpression.TextField(filter.field).In(filter.value);
+                                        break;
+                                    case SP.FieldType.dateTime:
+                                        expression = fieldExpression.DateField(filter.field).In(filter.value);
+                                        break;
+                                    case 101:
+                                        expression = fieldExpression.DateTimeField(filter.field).In(filter.value);
+                                        break;
+                                    case SP.FieldType.counter:
+                                        expression = fieldExpression.CounterField(filter.field).In(filter.value);
+                                        break;
+                                    case SP.FieldType.integer:
+                                        expression = fieldExpression.IntegerField(filter.field).In(filter.value);
+                                        break;
+                                    case SP.FieldType.modStat:
+                                        expression = fieldExpression.ModStatField(filter.field).ValueAsText()
+                                            .In(filter.value);
+                                        break;
+                                    case SP.FieldType.number:
+                                        expression = fieldExpression.NumberField(filter.field).In(filter.value);
+                                        break;
+                                    case SP.FieldType.URL:
+                                        expression = fieldExpression.UrlField(filter.field).In(filter.value);
+                                        break;
+                                    case SP.FieldType.user:
+                                        expression = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat()
+                                            .ValueAsText().In(filter.value);
+                                        break;
                                 }
                             }
                         }
                     }
+                    else {
+                        expression = self.getFilterValueExpression(filter.field, filter.value, filter.operation, filter.lookupId, filter.fieldType);
+                    }
+                    return expression;
+                };
+                ListViewBase.prototype.getFilterCAML = function (replace, clause) {
+                    var self = this;
+                    var viewXml = self._options.viewXml;
+                    if (self._app.$.isArray(self._options.filters) && self._options.filters.length > 0) {
+                        var camlBuilder;
+                        if (viewXml) {
+                            camlBuilder = Boolean(replace) ? CamlBuilder.FromXml(viewXml).ReplaceWhere() :
+                                (clause == FilterClause.Or ? CamlBuilder.FromXml(viewXml).ModifyWhere().AppendOr() : CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd());
+                        }
+                        else {
+                            camlBuilder = new CamlBuilder().View().Query().Where();
+                        }
+                        var expressions = new Array();
+                        for (var i = 0; i < self._options.filters.length; i++) {
+                            var filter = self._options.filters[i];
+                            if (filter) {
+                                var expression = self.getFilterMultiValueExpression(filter);
+                                if (expression) {
+                                    expressions.push(expression);
+                                }
+                            }
+                        }
+                        if (clause == FilterClause.Or) {
+                            viewXml = camlBuilder.Any(expressions).ToString();
+                        }
+                        else {
+                            viewXml = camlBuilder.All(expressions).ToString();
+                        }
+                    }
+                    return viewXml;
                 };
                 ListViewBase.prototype.getList = function () {
                     var self = this;
@@ -273,7 +668,8 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 query.query.add("SortDir", self._options.sortAsc ? "Asc" : "Desc");
                             }
                         }
-                        self.addFilterQuery(query.query);
+                        //self.addFilterQuery(query.query);
+                        var viewXml = self.getFilterCAML(true);
                         //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
                         //    query.query.add("p_ID", prevItemId);
                         //}
@@ -282,8 +678,8 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         //}
                         var url = query.toUrlAndQuery();
                         var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
-                        if (!$pnp.util.stringIsNullOrEmpty(self._options.viewXml)) {
-                            parameters.ViewXml = self._options.viewXml;
+                        if (!$pnp.util.stringIsNullOrEmpty(viewXml)) {
+                            parameters.ViewXml = viewXml;
                         }
                         if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
                         }
