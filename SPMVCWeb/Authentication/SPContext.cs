@@ -142,24 +142,25 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected ClientContext GetUserClientContext(Uri host)
         {
-            var accessToken = Cache.Get(GetUserCacheKey(host.Authority));
-            if (accessToken == null)
+            string cacheKey = GetUserCacheKey(host.Authority);
+            AccessToken accessToken = Cache.Get(cacheKey);
+            if (accessToken == null || !accessToken.IsValid())
             {
                 accessToken = CreateUserAccessToken(host);
-                Cache.Insert(accessToken, GetUserCacheKey(host.Authority));
+                Cache.Insert(accessToken, cacheKey);
             }
             return TokenHelper.GetClientContextWithAccessToken(host.GetLeftPart(UriPartial.Path), accessToken.Value);
         }
 
         protected ClientContext GetAppOnlyClientContext(Uri host)
         {
-            var accessToken = Cache.Get(GetAppOnlyCacheKey(host.Authority));
-            if (accessToken == null)
+            string cacheKey = GetAppOnlyCacheKey(host.Authority);
+            AccessToken accessToken = Cache.Get(cacheKey);
+            if (accessToken == null || !accessToken.IsValid())
             {
                 accessToken = CreateAppOnlyAccessToken(host);
-                Cache.Insert(accessToken, GetAppOnlyCacheKey(host.Authority));
+                Cache.Insert(accessToken, cacheKey);
             }
-
             return TokenHelper.GetClientContextWithAccessToken(host.GetLeftPart(UriPartial.Path), accessToken.Value);
         }
 
@@ -183,6 +184,26 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return GetAppOnlyClientContext(SPAppWebUrl);
         }
 
+        public AccessToken CreateUserAccessTokenForSPHost()
+        {
+            return CreateUserAccessToken(SPHostUrl);
+        }
+
+        public AccessToken CreateUserAccessTokenSPAppWeb()
+        {
+            return CreateUserAccessToken(SPAppWebUrl);
+        }
+
+        public AccessToken CreateAppOnlyAccessTokenForSPHost()
+        {
+            return CreateAppOnlyAccessToken(SPHostUrl);
+        }
+
+        public AccessToken CreateAppOnlyAccessTokenSPAppWeb()
+        {
+            return CreateAppOnlyAccessToken(SPAppWebUrl);
+        }
+
         protected abstract AccessToken CreateAppOnlyAccessToken(Uri host);
         protected abstract AccessToken CreateUserAccessToken(Uri host);
 
@@ -194,20 +215,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         protected string GetAppOnlyCacheKey(string host)
         {
             return $"{Realm}_{host}";
-        }
-
-        //protected bool IsAccessTokenValid(AccessToken token)
-        //{
-        //	return !string.IsNullOrEmpty(token?.Value) && token.ExpiredOn > DateTime.UtcNow;
-        //}
-
-        public void ClearCache()
-        {
-            if (this.SPHostUrl != null)
-            {
-                Cache.Remove(GetAppOnlyCacheKey(this.SPHostUrl.Authority));
-                Cache.Remove(GetUserCacheKey(this.SPHostUrl.Authority));
-            }
         }
     }
 }

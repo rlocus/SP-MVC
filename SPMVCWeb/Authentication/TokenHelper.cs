@@ -431,7 +431,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         public static ClientContext GetClientContextWithAccessToken(string targetUrl, string accessToken)
         {
             ClientContext clientContext = new ClientContext(targetUrl);
-
             clientContext.AuthenticationMode = ClientAuthenticationMode.Anonymous;
             clientContext.FormDigestHandlingEnabled = false;
             clientContext.ExecutingWebRequest +=
@@ -756,7 +755,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return handler;
         }
 
-        private static string GetS2SAccessTokenWithClaims(
+        public static string GetS2SAccessTokenWithClaims(
             string targetApplicationHostName,
             string targetRealm,
             IEnumerable<JsonWebTokenClaim> claims)

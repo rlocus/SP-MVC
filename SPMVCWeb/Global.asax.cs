@@ -21,9 +21,9 @@ namespace SPMVCWeb
         protected void Application_Error()
         {
             var exception = Server.GetLastError();
-            Server.ClearError();
-            if (exception is UnauthorizedAccessException || exception is Microsoft.SharePoint.Client.ServerUnauthorizedAccessException || (exception is WebException && ((WebException)exception).Status == WebExceptionStatus.ProtocolError))
+            if (exception is UnauthorizedAccessException || exception is Microsoft.IdentityModel.SecurityTokenService.RequestFailedException || exception is Microsoft.SharePoint.Client.ServerUnauthorizedAccessException || (exception is WebException && ((WebException)exception).Status == WebExceptionStatus.ProtocolError))
             {
+                Server.ClearError();
                 var routeData = new RouteData();
                 routeData.Values.Add("controller", "Account");
                 routeData.Values.Add("action", "UnauthorizedAccess");

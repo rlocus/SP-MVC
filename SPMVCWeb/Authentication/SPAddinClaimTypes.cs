@@ -12,5 +12,5 @@
 		public const string ShortHandUrl = "spaddin:shorthandurl";
 		public const string ADUserId = "spaddin:aduserid";
 		public const string SPAddinAuthentication = "spaddin:authentication";
-	}
+    }
 }

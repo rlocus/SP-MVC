@@ -26,21 +26,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
         public AccessToken Get(string key)
         {
             var token = (AccessToken)_сachingProvider.GetItem(key);
-            if (token != null)
-            {
-                if (IsAccessTokenValid(token))
-                {
-                    return token;
-                }
-                _сachingProvider.RemoveItem(key);
-            }
-
-            return null;
-        }
-
-        public bool IsAccessTokenValid(AccessToken token)
-        {
-            return !string.IsNullOrEmpty(token?.Value) && token.ExpiresOn > DateTime.UtcNow;
+            return token;
         }
     }
 
@@ -78,21 +64,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
             {
                 if (_tokens.ContainsKey(key))
                 {
-                    var token = _tokens[key];
-                    if (IsAccessTokenValid(token))
-                    {
-                        return token;
-                    }
-                    _tokens.Remove(key);
+                    return _tokens[key];
                 }
                 return null;
             }
         }
-
-        public bool IsAccessTokenValid(AccessToken token)
-        {
-            return !string.IsNullOrEmpty(token?.Value) && token.ExpiresOn > DateTime.UtcNow;
-        }
     }
-
 }

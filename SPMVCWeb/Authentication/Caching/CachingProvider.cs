@@ -18,6 +18,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Caching
         {
             lock (padLock)
             {
+                if (_cache.Contains(key))
+                {
+                    _cache.Remove(key);
+                }
                 CacheItem item = new CacheItem(key, value);
                 CacheItemPolicy policy = new CacheItemPolicy();
                 policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(DEFAULT_CACHE_LIFETIME_MINUTES);

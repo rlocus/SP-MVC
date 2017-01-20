@@ -10,6 +10,7 @@ using Microsoft.SharePoint.Client;
 using System.Web;
 using System.Linq;
 using Microsoft.IdentityModel.Claims;
+using Microsoft.IdentityModel.S2S.Protocols.OAuth2;
 using Claim = System.Security.Claims.Claim;
 using ClaimsIdentity = System.Security.Claims.ClaimsIdentity;
 using ClaimTypes = System.Security.Claims.ClaimTypes;
@@ -29,7 +30,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
         {
             Uri spHostUrl;
             Uri spAppWebUrl;
+            AccessToken accessToken = null;
             ClaimsIdentity identity = new ClaimsIdentity(Options.SignInAsAuthenticationType);
+            identity.AddClaim(new Claim(SPAddinClaimTypes.SPAddinAuthentication, "1"));
+            identity.AddClaim(new Claim(SPAddinClaimTypes.ClientId, Options.ClientId.ToString()));
+
             //if (Context.Authentication.User.Identity.IsAuthenticated &&
             //    Context.Authentication.User.Identity.AuthenticationType == Options.SignInAsAuthenticationType)
             //{
@@ -58,19 +63,29 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                 identity.AddClaim(new Claim(SPAddinClaimTypes.SPAppWebUrl, spAppWebUrl.GetLeftPart(UriPartial.Path)));
             }
             //}
-            string accessTokenString = null;
+            //string accessTokenString = null;
             if (TokenHelper.IsHighTrustApp())
             {
-                var userSid = OwinTokenHelper.GetWindowsUserSid(Context);
-                accessTokenString = OwinTokenHelper.GetS2SAccessToken(spHostUrl, userSid);
+                string userSid = OwinTokenHelper.GetWindowsUserSid(Context);
+                //accessTokenString = OwinTokenHelper.GetS2SAccessToken(spHostUrl, userSid);
                 identity.AddClaim(new Claim(SPAddinClaimTypes.ADUserId, userSid));
                 identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, userSid));
                 identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, TokenHelper.GetRealmFromTargetUrl(spHostUrl)));
+
+                var spContext = new HighTrustContext(identity);
+                try
+                {
+                    accessToken = spContext.CreateUserAccessTokenForSPHost();
+                }
+                catch (Microsoft.IdentityModel.SecurityTokenService.RequestFailedException)
+                {
+                    accessToken = null;
+                }
             }
             else
             {
                 var contextTokenString = OwinTokenHelper.GetContextTokenFromRequest(Request);
-                if (!string.IsNullOrEmpty(contextTokenString) && spHostUrl != null)
+                if (!string.IsNullOrEmpty(contextTokenString))
                 {
                     var contextToken = TokenHelper.ReadAndValidateContextToken(contextTokenString, Request.Uri.Authority);
                     if (contextToken != null)
@@ -79,12 +94,21 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                         identity.AddClaim(new Claim(SPAddinClaimTypes.Realm, contextToken.Realm));
                         identity.AddClaim(new Claim(SPAddinClaimTypes.TargetPrincipalName, contextToken.TargetPrincipalName));
                         identity.AddClaim(new Claim(SPAddinClaimTypes.CacheKey, contextToken.CacheKey));
-                        var accessToken = TokenHelper.GetAccessToken(contextToken.RefreshToken, contextToken.TargetPrincipalName, spHostUrl.Authority, contextToken.Realm);
-                        accessTokenString = accessToken.AccessToken;
+                        //OAuth2AccessTokenResponse accessToken = TokenHelper.GetAccessToken(contextToken.RefreshToken, contextToken.TargetPrincipalName, spHostUrl.Authority, contextToken.Realm);
+                        //accessTokenString = accessToken.AccessToken;
+                        var spContext = new AcsContext(identity);
+                        try
+                        {
+                            accessToken = spContext.CreateUserAccessTokenForSPHost();
+                        }
+                        catch (Microsoft.IdentityModel.SecurityTokenService.RequestFailedException)
+                        {
+                            accessToken = null;
+                        }
                     }
                 }
             }
-            return await CreateTicket(accessTokenString, identity, spHostUrl, spAppWebUrl);
+            return await CreateTicket(accessToken, identity, spHostUrl);
         }
 
         protected override Task ApplyResponseChallengeAsync()
@@ -159,18 +183,15 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             {
                 if (Request.User.Identity.IsAuthenticated)
                 {
-                    var identity = Request.User.Identity as ClaimsIdentity;
-                    if (identity != null)
-                    {
-                        var spContext = SPContextProvider.Get(identity);
-                        spContext.ClearCache();
-                    }
+                    //var identity = Request.User.Identity as ClaimsIdentity;
+                    //if (identity != null)
+                    //{
+                    //    var spContext = SPContextProvider.Get(identity);
+                    //}
                 }
 
                 if (Response.StatusCode != 401)
                 {
-                    ticket.Identity.AddClaim(new Claim(SPAddinClaimTypes.SPAddinAuthentication, "1"));
-                    ticket.Identity.AddClaim(new Claim(SPAddinClaimTypes.ClientId, Options.ClientId.ToString()));
                     Context.Authentication.SignIn(ticket.Properties, ticket.Identity);
                     if (string.IsNullOrEmpty(ticket.Properties.RedirectUri))
                     {
@@ -200,22 +221,16 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             return false;
         }
 
-        private async Task<AuthenticationTicket> CreateTicket(string accessToken, ClaimsIdentity identity, Uri spHostUrl, Uri spAppWebUrl)
+        private async Task<AuthenticationTicket> CreateTicket(AccessToken accessToken, ClaimsIdentity identity, Uri spHostUrl)
         {
-            if (string.IsNullOrEmpty(accessToken))
+            if (accessToken == null || !accessToken.IsValid())
             {
                 return null;
             }
             var properties = Options.StateDataFormat.Unprotect(Request.Query["state"]) ?? new AuthenticationProperties();
             if (spHostUrl != null)
             {
-                properties.Dictionary.Add(SharePointContext.SPHostUrlKey, spHostUrl.GetLeftPart(UriPartial.Path));
-                if (spAppWebUrl != null)
-                {
-                    properties.Dictionary.Add(SharePointContext.SPAppWebUrlKey, spAppWebUrl.GetLeftPart(UriPartial.Path));
-                }
-
-                using (var clientContext = TokenHelper.GetClientContextWithAccessToken(spHostUrl.GetLeftPart(UriPartial.Path), accessToken))
+                using (var clientContext = TokenHelper.GetClientContextWithAccessToken(spHostUrl.GetLeftPart(UriPartial.Path), accessToken.Value))
                 {
                     var user = clientContext.Web.CurrentUser;
                     clientContext.Load(user);
@@ -225,6 +240,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.LoginName, null, Options.AuthenticationType));
                         identity.AddClaim(new Claim(ClaimTypes.Name, user.Title));
                         identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
+                        identity.AddClaim(new Claim(ClaimTypes.Sid, user.Id.ToString()));
                         await Options.Provider.Authenticated(new SPAddinAuthenticatedContext(Context, user, identity));
                         return new AuthenticationTicket(identity, properties);
                     }

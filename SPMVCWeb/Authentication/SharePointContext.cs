@@ -530,11 +530,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         protected abstract void SaveSharePointContext(SharePointContext spContext, HttpContextBase httpContext);
 
         protected abstract void Remove(HttpContextBase httpContext);
-
-        public void ClearCache(HttpContextBase httpContext)
-        {
-            Remove(httpContext);
-        }
     }
 
     #region ACS
@@ -898,7 +893,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             {
                 return null;
             }
-
             return new SharePointHighTrustContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, logonUserIdentity);
         }
 
@@ -908,7 +902,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
             if (spHighTrustContext != null)
             {
-                //Uri spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+                if (spHostUrl == null)
+                {
+                    spHostUrl = SharePointContext.GetSPHostUrl(httpContext.Request);
+                }
                 WindowsIdentity logonUserIdentity = httpContext.Request.LogonUserIdentity;
                 return string.Equals(spHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), spHighTrustContext.SPHostUrl.GetLeftPart(UriPartial.Path).TrimEnd('/'), StringComparison.OrdinalIgnoreCase) &&
                        logonUserIdentity != null &&

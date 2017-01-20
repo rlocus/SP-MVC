@@ -30,7 +30,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             };
 		}
 
-		protected override AccessToken CreateAppOnlyAccessToken(Uri host)
+        protected override AccessToken CreateAppOnlyAccessToken(Uri host)
 		{
 			var oauthToken = TokenHelper.GetAppOnlyAccessToken(TokenHelper.SharePointPrincipal, host.Authority, Realm);
             DateTime expiresOn = oauthToken.ExpiresOn;

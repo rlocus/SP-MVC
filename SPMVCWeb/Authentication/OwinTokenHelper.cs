@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
@@ -17,7 +16,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 		{
 			var realm = TokenHelper.GetRealmFromTargetUrl(applicationUri);
 			JsonWebTokenClaim[] claims = null;
-
 			if (userId != null)
 			{
 				claims = new[]
@@ -26,8 +24,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 					new JsonWebTokenClaim("nii", "urn:office:idp:activedirectory")
 				};
 			}
-
-			return GetS2SAccessTokenWithClaims(applicationUri.Authority, realm, claims);
+			return TokenHelper.GetS2SAccessTokenWithClaims(applicationUri.Authority, realm, claims);
 		}
 
 		public static string GetContextTokenFromRequest(IOwinRequest request)
@@ -64,7 +61,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 			}
 
 			var httpRequest = ((System.Web.HttpContextBase)context.Environment["System.Web.HttpContextBase"]).Request;
-			
 			return httpRequest.LogonUserIdentity.FindFirst(c => c.Type == ClaimTypes.PrimarySid).Value;
 		}
 
@@ -72,13 +68,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 		{
 			var httpRequest = ((System.Web.HttpContextBase)context.Environment["System.Web.HttpContextBase"]).Request;
 			return httpRequest.LogonUserIdentity;
-		}
-
-		private static string GetS2SAccessTokenWithClaims(string targetApplicationHostName, string targetRealm, IEnumerable<JsonWebTokenClaim> claims)
-		{
-			var method = typeof(TokenHelper).GetMethod(nameof(GetS2SAccessTokenWithClaims), BindingFlags.Static | BindingFlags.NonPublic);
-
-			return (string)method.Invoke(null, new object[] { targetApplicationHostName, targetRealm, claims });
 		}
 
 		private static readonly Action<string, string, object> AppendItemCallback = (name, value, state) =>

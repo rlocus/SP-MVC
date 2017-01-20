@@ -6,7 +6,7 @@
 @section scripts
 {
     <script type="text/javascript">
-        require(["jquery", "angular", "app"], function($, angular, app) {
+        require(["jquery", "angular", "app"], function ($, angular, app) {
             if (app.is_initialized()) {
                 init();
             } else {
@@ -29,28 +29,58 @@
                     renderOptions: 0 | 1 | 2 /*| 4 | 8*/
                 });
 
-                $(listView).on("model-render", function(ev, $scope, factory) {
+                $(listView).on("model-render", function (ev, $scope, factory) {
                     $scope.fields = list.Fields;
-                    $scope.getFieldValue = function(listItem, field) {
+                    $scope.getFieldValue = function (listItem, field) {
                         var value = listItem.$data[field.Name];
                         switch (field.TypeKind) {
-                        case 12: //Computed
-                            switch (field.Name) {
-                            case "DocIcon":
-                                if (listItem.$data.FSObjType === "1") {
-                                    value = "<uif-icon uif-type=\"folder\"></uif-icon>";
-                                } else {
-                                    value = "<uif-icon uif-type=\"document\"></uif-icon>";
+                            case SP.FieldType.computed:
+                                switch (field.Name) {
+                                    case "DocIcon":
+                                        if (listItem.$data.FSObjType === "1") {
+                                            value = "<uif-icon uif-type=\"folder\"></uif-icon>";
+                                        } else {
+                                            value = "<uif-icon uif-type=\"document\"></uif-icon>";
+                                        }
+                                        break;
+                                    case "LinkTitle":
+                                    case "LinkTitleNoMenu":
+                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                                        break;
+                                    case "LinkFilename":
+                                    case "LinkFilenameNoMenu":
+                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
+                                        break;
+                                    case "FileSizeDisplay":
+                                        value = listItem.$data["File_x0020_Size"];
+                                        if (value) {
+                                            var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                                            var bytes = Number(value);
+                                            if (bytes === 0 || isNaN(bytes)) {
+                                                value = '0 B';
+                                            } else {
+                                                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                                                value = Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                                            }
+                                        }
+                                        break;
+                                    case "ImageSize":
+                                        if (listItem.$data["ImageWidth"] && listItem.$data["ImageHeight"])
+                                            value = [listItem.$data["ImageWidth"], listItem.$data["ImageHeight"]].join(" x ");
+                                        break;
                                 }
                                 break;
-                            case "LinkTitle":
-                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                            case SP.FieldType.user:
+                                if (value) {
+                                    if ($.isArray(value)) {
+                                        value = $.map(value, function (item) {
+                                            return "<a>" + item.title + "</a>";
+                                        }).join('<br />');
+                                    } else {
+                                        value = value.title;
+                                    }
+                                }
                                 break;
-                            case "LinkFilename":
-                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
-                                break;
-                            }
-                            break;
                         }
                         if (field.ListItemMenuAllowed) {
                             value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
@@ -65,14 +95,14 @@
                     $scope.nextText = "+" + list.RowLimit;
                 });
 
-                $(app).on("app-error", function(ev, message, stackTrace) {
+                $(app).on("app-error", function (ev, message, stackTrace) {
                     alert(message);
                 });
 
                 if (!window.renderSPChrome) {
                     app.render([listView]);
                 } else {
-                    $('body').on("chrome-loaded", function() {
+                    $('body').on("chrome-loaded", function () {
                         app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
                         app.render([listView]);
                     });
@@ -101,7 +131,7 @@
                     <uif-icon uif-type="refresh"></uif-icon>
                     <span>{{selection.pager.first}} - {{selection.pager.last}}</span>
                 </uif-command-bar-item>
-                <uif-command-bar-item ng-click="selection.pager.next()"  ng-show="selection.pager.first > 0" ng-class="{'is-disabled': !selection.pager.nextEnabled}">
+                <uif-command-bar-item ng-click="selection.pager.next()" ng-show="selection.pager.first > 0" ng-class="{'is-disabled': !selection.pager.nextEnabled}">
                     <span>{{nextText}}</span>
                     <uif-icon uif-type="caretRight"></uif-icon>
                 </uif-command-bar-item>

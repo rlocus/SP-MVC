@@ -82,7 +82,6 @@ namespace SPMVCWeb.Controllers
                 if (Request.IsAuthenticated)
                 {
                     SPContext spContext = SPContextProvider.Get(HttpContext.User as ClaimsPrincipal);
-                    spContext.ClearCache();
                     HttpContext.GetOwinContext().Authentication.SignOut(SPAddinAuthenticationDefaults.AuthenticationType);
                     if (spContext.SPAppWebUrl != null)
                     {
@@ -102,7 +101,6 @@ namespace SPMVCWeb.Controllers
                 if (spContext != null)
                 {
                     Uri appWebUrl = spContext.SPAppWebUrl;
-                    SharePointContextProvider.Current.ClearCache(HttpContext);
                     if (appWebUrl != null)
                     {
                         return new RedirectResult(string.Format("{0}/_layouts/closeConnection.aspx?loginasanotheruser=true",
