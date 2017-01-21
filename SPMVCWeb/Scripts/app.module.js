@@ -26,32 +26,32 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
         })(Caml.FilterClause || (Caml.FilterClause = {}));
         var FilterClause = Caml.FilterClause;
         var Builder = (function () {
-            function Builder(viewXml, clause) {
-                if (viewXml) {
-                    this._viewXml = viewXml;
-                    this._clause = clause;
-                    switch (clause) {
-                        case FilterClause.And:
-                            this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
-                            this._lastClause = FilterClause.And;
-                            break;
-                        case FilterClause.Or:
-                            this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendOr();
-                            this._lastClause = FilterClause.Or;
-                            break;
-                        default:
-                            this._camlBuilder = CamlBuilder.FromXml(viewXml).ReplaceWhere();
-                            this._lastClause = FilterClause.None;
-                            break;
-                    }
-                }
-                else {
-                    this._camlBuilder = new CamlBuilder().View().Query().Where();
-                }
+            function Builder(viewXml, replace) {
+                this._expression == null;
+                this._viewXml = viewXml;
+                this._replace = replace;
+                /*       switch (clause) {
+                           case FilterClause.And:
+                               this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
+                               this._lastClause = FilterClause.And;
+                               break;
+                           case FilterClause.Or:
+                               this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendOr();
+                               this._lastClause = FilterClause.Or;
+                               break;
+                           default:
+                               this._camlBuilder = CamlBuilder.FromXml(viewXml).ReplaceWhere();
+                               this._lastClause = FilterClause.None;
+                               break;
+                       }
+                   }
+                   else {
+                       this._camlBuilder = new CamlBuilder().View().Query().Where();
+                   }*/
             }
-            Builder.prototype.getFilterLookupValueExpression = function (field, value, operation, fieldType) {
+            Builder.prototype.getFilterLookupCondition = function (field, value, operation, fieldType) {
                 var fieldExpression = CamlBuilder.Expression();
-                var expression;
+                var condition;
                 var numberFieldExpression;
                 switch (fieldType) {
                     case SP.FieldType.lookup:
@@ -64,42 +64,42 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 }
                 switch (operation) {
                     case FilterOperation.Gt:
-                        expression = numberFieldExpression.GreaterThan(value);
+                        condition = numberFieldExpression.GreaterThan(value);
                         break;
                     case FilterOperation.Geq:
-                        expression = numberFieldExpression.GreaterThanOrEqualTo(value);
+                        condition = numberFieldExpression.GreaterThanOrEqualTo(value);
                         break;
                     case FilterOperation.Neq:
                         if ($pnp.util.stringIsNullOrEmpty(value)) {
-                            expression = numberFieldExpression.IsNotNull();
+                            condition = numberFieldExpression.IsNotNull();
                         }
                         else {
-                            expression = numberFieldExpression.NotEqualTo(value);
+                            condition = numberFieldExpression.NotEqualTo(value);
                         }
                         break;
                     case FilterOperation.Eq:
                     default:
                         if ($pnp.util.stringIsNullOrEmpty(value)) {
-                            expression = numberFieldExpression.IsNull();
+                            condition = numberFieldExpression.IsNull();
                         }
                         else {
-                            expression = numberFieldExpression.EqualTo(value);
+                            condition = numberFieldExpression.EqualTo(value);
                         }
                         break;
                     case FilterOperation.Lt:
-                        expression = numberFieldExpression.LessThan(value);
+                        condition = numberFieldExpression.LessThan(value);
                         break;
                     case FilterOperation.Leq:
-                        expression = numberFieldExpression.LessThanOrEqualTo(value);
+                        condition = numberFieldExpression.LessThanOrEqualTo(value);
                         break;
                 }
-                return expression;
+                return condition;
             };
-            Builder.prototype.getFilterValueExpression = function (field, value, operation, isLookupId, fieldType) {
+            Builder.prototype.getFilterCondition = function (field, value, operation, isLookupId, fieldType) {
                 var self = this;
-                var expression;
+                var condition;
                 if (Boolean(isLookupId)) {
-                    expression = self.getFilterLookupValueExpression(field, value, operation, fieldType);
+                    condition = self.getFilterLookupCondition(field, value, operation, fieldType);
                 }
                 else {
                     var fieldExpression = CamlBuilder.Expression();
@@ -109,26 +109,26 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var textFieldExpression = fieldExpression.TextField(field);
                             switch (operation) {
                                 case FilterOperation.BeginsWith:
-                                    expression = textFieldExpression.BeginsWith(value);
+                                    condition = textFieldExpression.BeginsWith(value);
                                     break;
                                 case FilterOperation.Contains:
-                                    expression = textFieldExpression.Contains(value);
+                                    condition = textFieldExpression.Contains(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = textFieldExpression.IsNotNull();
+                                        condition = textFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = textFieldExpression.NotEqualTo(value);
+                                        condition = textFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = textFieldExpression.IsNull();
+                                        condition = textFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = textFieldExpression.EqualTo(value);
+                                        condition = textFieldExpression.EqualTo(value);
                                     }
                                     break;
                             }
@@ -137,26 +137,26 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var lookupFieldExpression = fieldExpression.LookupField(field);
                             switch (operation) {
                                 case FilterOperation.BeginsWith:
-                                    expression = lookupFieldExpression.ValueAsText().BeginsWith(value);
+                                    condition = lookupFieldExpression.ValueAsText().BeginsWith(value);
                                     break;
                                 case FilterOperation.Contains:
-                                    expression = lookupFieldExpression.ValueAsText().Contains(value);
+                                    condition = lookupFieldExpression.ValueAsText().Contains(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = lookupFieldExpression.ValueAsText().IsNotNull();
+                                        condition = lookupFieldExpression.ValueAsText().IsNotNull();
                                     }
                                     else {
-                                        expression = lookupFieldExpression.ValueAsText().NotEqualTo(value);
+                                        condition = lookupFieldExpression.ValueAsText().NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = lookupFieldExpression.ValueAsText().IsNull();
+                                        condition = lookupFieldExpression.ValueAsText().IsNull();
                                     }
                                     else {
-                                        expression = lookupFieldExpression.ValueAsText()
+                                        condition = lookupFieldExpression.ValueAsText()
                                             .EqualTo(value);
                                     }
                                     break;
@@ -166,33 +166,33 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var dateFieldExpression = fieldExpression.DateField(field);
                             switch (operation) {
                                 case FilterOperation.Gt:
-                                    expression = dateFieldExpression.GreaterThan(value);
+                                    condition = dateFieldExpression.GreaterThan(value);
                                     break;
                                 case FilterOperation.Geq:
-                                    expression = dateFieldExpression.GreaterThanOrEqualTo(value);
+                                    condition = dateFieldExpression.GreaterThanOrEqualTo(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = dateFieldExpression.IsNotNull();
+                                        condition = dateFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = dateFieldExpression.NotEqualTo(value);
+                                        condition = dateFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = dateFieldExpression.IsNull();
+                                        condition = dateFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = dateFieldExpression.EqualTo(value);
+                                        condition = dateFieldExpression.EqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Lt:
-                                    expression = dateFieldExpression.LessThan(value);
+                                    condition = dateFieldExpression.LessThan(value);
                                     break;
                                 case FilterOperation.Leq:
-                                    expression = dateFieldExpression.LessThanOrEqualTo(value);
+                                    condition = dateFieldExpression.LessThanOrEqualTo(value);
                                     break;
                             }
                             break;
@@ -200,34 +200,34 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var dateTimeFieldExpression = fieldExpression.DateTimeField(field);
                             switch (operation) {
                                 case FilterOperation.Gt:
-                                    expression = dateTimeFieldExpression.GreaterThan(value);
+                                    condition = dateTimeFieldExpression.GreaterThan(value);
                                     break;
                                 case FilterOperation.Geq:
-                                    expression = dateTimeFieldExpression
+                                    condition = dateTimeFieldExpression
                                         .GreaterThanOrEqualTo(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = dateTimeFieldExpression.IsNotNull();
+                                        condition = dateTimeFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = dateTimeFieldExpression.NotEqualTo(value);
+                                        condition = dateTimeFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = dateTimeFieldExpression.IsNull();
+                                        condition = dateTimeFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = dateTimeFieldExpression.EqualTo(value);
+                                        condition = dateTimeFieldExpression.EqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Lt:
-                                    expression = dateTimeFieldExpression.LessThan(value);
+                                    condition = dateTimeFieldExpression.LessThan(value);
                                     break;
                                 case FilterOperation.Leq:
-                                    expression = dateTimeFieldExpression.LessThanOrEqualTo(value);
+                                    condition = dateTimeFieldExpression.LessThanOrEqualTo(value);
                                     break;
                             }
                             break;
@@ -235,34 +235,34 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var counterFieldExpression = fieldExpression.CounterField(field);
                             switch (operation) {
                                 case FilterOperation.Gt:
-                                    expression = counterFieldExpression.GreaterThan(value);
+                                    condition = counterFieldExpression.GreaterThan(value);
                                     break;
                                 case FilterOperation.Geq:
-                                    expression = counterFieldExpression
+                                    condition = counterFieldExpression
                                         .GreaterThanOrEqualTo(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = counterFieldExpression.IsNotNull();
+                                        condition = counterFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = counterFieldExpression.NotEqualTo(value);
+                                        condition = counterFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = counterFieldExpression.IsNull();
+                                        condition = counterFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = counterFieldExpression.EqualTo(value);
+                                        condition = counterFieldExpression.EqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Lt:
-                                    expression = counterFieldExpression.LessThan(value);
+                                    condition = counterFieldExpression.LessThan(value);
                                     break;
                                 case FilterOperation.Leq:
-                                    expression = counterFieldExpression.LessThanOrEqualTo(value);
+                                    condition = counterFieldExpression.LessThanOrEqualTo(value);
                                     break;
                             }
                             break;
@@ -270,34 +270,33 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var integerFieldExpression = fieldExpression.IntegerField(field);
                             switch (operation) {
                                 case FilterOperation.Gt:
-                                    expression = integerFieldExpression.GreaterThan(value);
+                                    condition = integerFieldExpression.GreaterThan(value);
                                     break;
                                 case FilterOperation.Geq:
-                                    expression = integerFieldExpression
-                                        .GreaterThanOrEqualTo(value);
+                                    condition = integerFieldExpression.GreaterThanOrEqualTo(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = integerFieldExpression.IsNotNull();
+                                        condition = integerFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = integerFieldExpression.NotEqualTo(value);
+                                        condition = integerFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = integerFieldExpression.IsNull();
+                                        condition = integerFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = integerFieldExpression.EqualTo(value);
+                                        condition = integerFieldExpression.EqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Lt:
-                                    expression = integerFieldExpression.LessThan(value);
+                                    condition = integerFieldExpression.LessThan(value);
                                     break;
                                 case FilterOperation.Leq:
-                                    expression = integerFieldExpression.LessThanOrEqualTo(value);
+                                    condition = integerFieldExpression.LessThanOrEqualTo(value);
                                     break;
                             }
                             break;
@@ -305,26 +304,26 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var modStatFieldExpression = fieldExpression.ModStatField(field).ValueAsText();
                             switch (operation) {
                                 case FilterOperation.BeginsWith:
-                                    expression = modStatFieldExpression.BeginsWith(value);
+                                    condition = modStatFieldExpression.BeginsWith(value);
                                     break;
                                 case FilterOperation.Contains:
-                                    expression = modStatFieldExpression.Contains(value);
+                                    condition = modStatFieldExpression.Contains(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = modStatFieldExpression.IsNotNull();
+                                        condition = modStatFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = modStatFieldExpression.NotEqualTo(value);
+                                        condition = modStatFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = modStatFieldExpression.IsNull();
+                                        condition = modStatFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = modStatFieldExpression.EqualTo(value);
+                                        condition = modStatFieldExpression.EqualTo(value);
                                     }
                                     break;
                             }
@@ -333,33 +332,33 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var numberFieldExpression = fieldExpression.NumberField(field);
                             switch (operation) {
                                 case FilterOperation.Gt:
-                                    expression = numberFieldExpression.GreaterThan(value);
+                                    condition = numberFieldExpression.GreaterThan(value);
                                     break;
                                 case FilterOperation.Geq:
-                                    expression = numberFieldExpression.GreaterThanOrEqualTo(value);
+                                    condition = numberFieldExpression.GreaterThanOrEqualTo(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = numberFieldExpression.IsNotNull();
+                                        condition = numberFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = numberFieldExpression.NotEqualTo(value);
+                                        condition = numberFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = numberFieldExpression.IsNull();
+                                        condition = numberFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = numberFieldExpression.EqualTo(value);
+                                        condition = numberFieldExpression.EqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Lt:
-                                    expression = numberFieldExpression.LessThan(value);
+                                    condition = numberFieldExpression.LessThan(value);
                                     break;
                                 case FilterOperation.Leq:
-                                    expression = numberFieldExpression.LessThanOrEqualTo(value);
+                                    condition = numberFieldExpression.LessThanOrEqualTo(value);
                                     break;
                             }
                             break;
@@ -367,26 +366,26 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var urlFieldExpression = fieldExpression.UrlField(field);
                             switch (operation) {
                                 case FilterOperation.BeginsWith:
-                                    expression = urlFieldExpression.BeginsWith(value);
+                                    condition = urlFieldExpression.BeginsWith(value);
                                     break;
                                 case FilterOperation.Contains:
-                                    expression = urlFieldExpression.Contains(value);
+                                    condition = urlFieldExpression.Contains(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = urlFieldExpression.IsNotNull();
+                                        condition = urlFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = urlFieldExpression.NotEqualTo(value);
+                                        condition = urlFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = urlFieldExpression.IsNull();
+                                        condition = urlFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = urlFieldExpression.EqualTo(value);
+                                        condition = urlFieldExpression.EqualTo(value);
                                     }
                                     break;
                             }
@@ -395,26 +394,26 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var userFieldExpression = fieldExpression.UserField(field).ValueAsText();
                             switch (operation) {
                                 case FilterOperation.BeginsWith:
-                                    expression = userFieldExpression.BeginsWith(value);
+                                    condition = userFieldExpression.BeginsWith(value);
                                     break;
                                 case FilterOperation.Contains:
-                                    expression = userFieldExpression.Contains(value);
+                                    condition = userFieldExpression.Contains(value);
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = userFieldExpression.IsNotNull();
+                                        condition = userFieldExpression.IsNotNull();
                                     }
                                     else {
-                                        expression = userFieldExpression.NotEqualTo(value);
+                                        condition = userFieldExpression.NotEqualTo(value);
                                     }
                                     break;
                                 case FilterOperation.Eq:
                                 default:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = userFieldExpression.IsNull();
+                                        condition = userFieldExpression.IsNull();
                                     }
                                     else {
-                                        expression = userFieldExpression.EqualTo(value);
+                                        condition = userFieldExpression.EqualTo(value);
                                     }
                                     break;
                             }
@@ -423,43 +422,43 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             var booleanFieldExpression = fieldExpression.BooleanField(field);
                             if ($pnp.util.stringIsNullOrEmpty(value)) {
                                 if (operation == FilterOperation.Neq) {
-                                    expression = booleanFieldExpression.IsNotNull();
+                                    condition = booleanFieldExpression.IsNotNull();
                                 }
                                 else {
-                                    expression = booleanFieldExpression.IsNull();
+                                    condition = booleanFieldExpression.IsNull();
                                 }
                             }
                             else {
                                 if (Boolean(value) === true) {
-                                    expression = booleanFieldExpression.IsTrue();
+                                    condition = booleanFieldExpression.IsTrue();
                                 }
                                 else {
-                                    expression = booleanFieldExpression.IsFalse();
+                                    condition = booleanFieldExpression.IsFalse();
                                 }
                             }
                             break;
                     }
                 }
-                return expression;
+                return condition;
             };
-            Builder.prototype.getFilterMultiValueExpression = function (filter) {
+            Builder.prototype.getFilterMultiCondition = function (filter) {
                 var self = this;
                 var fieldExpression = CamlBuilder.Expression();
-                var expression;
+                var condition;
                 if ($pnp.util.isArray(filter.value)) {
                     if (filter.value.length === 1) {
-                        expression = self.getFilterValueExpression(filter.field, filter.value[0], filter.operation, filter.lookupId, filter.fieldType);
+                        condition = self.getFilterCondition(filter.field, filter.value[0], filter.operation, filter.lookupId, filter.fieldType);
                     }
                     else if (filter.value.length > 1) {
                         if (Boolean(filter.lookupId)) {
                             switch (filter.fieldType) {
                                 case SP.FieldType.lookup:
                                 default:
-                                    expression = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id()
+                                    condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id()
                                         .In(filter.value);
                                     break;
                                 case SP.FieldType.user:
-                                    expression = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id()
+                                    condition = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id()
                                         .In(filter.value);
                                     break;
                             }
@@ -467,36 +466,36 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         else {
                             switch (filter.fieldType) {
                                 case SP.FieldType.lookup:
-                                    expression = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat()
+                                    condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat()
                                         .ValueAsText().In(filter.value);
                                     break;
                                 case SP.FieldType.text:
                                 default:
-                                    expression = fieldExpression.TextField(filter.field).In(filter.value);
+                                    condition = fieldExpression.TextField(filter.field).In(filter.value);
                                     break;
                                 case SP.FieldType.dateTime:
-                                    expression = fieldExpression.DateField(filter.field).In(filter.value);
+                                    condition = fieldExpression.DateField(filter.field).In(filter.value);
                                     break;
                                 case 101:
-                                    expression = fieldExpression.DateTimeField(filter.field).In(filter.value);
+                                    condition = fieldExpression.DateTimeField(filter.field).In(filter.value);
                                     break;
                                 case SP.FieldType.counter:
-                                    expression = fieldExpression.CounterField(filter.field).In(filter.value);
+                                    condition = fieldExpression.CounterField(filter.field).In(filter.value);
                                     break;
                                 case SP.FieldType.integer:
-                                    expression = fieldExpression.IntegerField(filter.field).In(filter.value);
+                                    condition = fieldExpression.IntegerField(filter.field).In(filter.value);
                                     break;
                                 case SP.FieldType.modStat:
-                                    expression = fieldExpression.ModStatField(filter.field).ValueAsText().In(filter.value);
+                                    condition = fieldExpression.ModStatField(filter.field).ValueAsText().In(filter.value);
                                     break;
                                 case SP.FieldType.number:
-                                    expression = fieldExpression.NumberField(filter.field).In(filter.value);
+                                    condition = fieldExpression.NumberField(filter.field).In(filter.value);
                                     break;
                                 case SP.FieldType.URL:
-                                    expression = fieldExpression.UrlField(filter.field).In(filter.value);
+                                    condition = fieldExpression.UrlField(filter.field).In(filter.value);
                                     break;
                                 case SP.FieldType.user:
-                                    expression = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat()
+                                    condition = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat()
                                         .ValueAsText().In(filter.value);
                                     break;
                             }
@@ -504,84 +503,99 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     }
                 }
                 else {
-                    expression = self.getFilterValueExpression(filter.field, filter.value, filter.operation, filter.lookupId, filter.fieldType);
+                    condition = self.getFilterCondition(filter.field, filter.value, filter.operation, filter.lookupId, filter.fieldType);
                 }
-                return expression;
+                return condition;
             };
-            Builder.prototype.getExpressions = function (filters) {
-                var expressions = new Array();
+            Builder.prototype.getAndFieldExpression = function () {
+                if (this._expression) {
+                    return this._expression.And();
+                }
+                if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                    return new CamlBuilder().View().Query().Where();
+                }
+                if (this._replace) {
+                    return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
+                }
+                return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendAnd();
+            };
+            Builder.prototype.getOrFieldExpression = function () {
+                if (this._expression) {
+                    return this._expression.Or();
+                }
+                if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                    return new CamlBuilder().View().Query().Where();
+                }
+                if (this._replace) {
+                    return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
+                }
+                return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendOr();
+            };
+            Builder.prototype.getConditions = function (filters) {
+                var conditions = new Array();
                 if (filters) {
                     for (var i in filters) {
                         if (filters.hasOwnProperty(i)) {
                             var filter = filters[i];
                             if (filter) {
-                                var expression = this.getFilterMultiValueExpression(filter);
-                                if (expression) {
-                                    expressions.push(expression);
+                                var condition = this.getFilterMultiCondition(filter);
+                                if (condition) {
+                                    conditions.push(condition);
                                 }
                             }
                         }
                     }
                 }
-                return expressions;
+                return conditions;
             };
-            Builder.prototype.Append = function (clause) {
+            Builder.prototype.appendOr = function () {
                 var filters = [];
-                for (var _i = 1; _i < arguments.length; _i++) {
-                    filters[_i - 1] = arguments[_i];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    filters[_i - 0] = arguments[_i];
                 }
-                if (!clause) {
-                    clause = this._lastClause;
-                }
-                switch (clause) {
-                    case FilterClause.None:
-                    default:
-                    case FilterClause.And:
-                        this.AppendAnd.apply(this, [FilterClause.And].concat(filters));
-                        break;
-                    case FilterClause.Or:
-                        this.AppendOr.apply(this, [FilterClause.Or].concat(filters));
-                        break;
+                var conditions = this.getConditions(filters);
+                if (conditions.length > 0) {
+                    this._expression = this.getOrFieldExpression().Any(conditions);
                 }
                 return this;
             };
-            Builder.prototype.AppendAnd = function (clause) {
+            Builder.prototype.appendAnd = function () {
                 var filters = [];
-                for (var _i = 1; _i < arguments.length; _i++) {
-                    filters[_i - 1] = arguments[_i];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    filters[_i - 0] = arguments[_i];
                 }
-                if (!clause) {
-                    clause = this._lastClause;
-                }
-                var expressions = this.getExpressions(filters);
-                if (expressions.length > 0) {
-                    this._lastClause = FilterClause.And;
-                    this._expression = this._expression ? (clause == FilterClause.Or ? this._expression.And().Any(expressions) : this._expression.And().All(expressions))
-                        : (clause == FilterClause.Or ? this._camlBuilder.Any(expressions) : this._camlBuilder.All(expressions));
+                var conditions = this.getConditions(filters);
+                if (conditions.length > 0) {
+                    this._expression = this.getAndFieldExpression().All(conditions);
                 }
                 return this;
             };
-            Builder.prototype.AppendOr = function (clause) {
+            Builder.prototype.appendOrAll = function () {
                 var filters = [];
-                for (var _i = 1; _i < arguments.length; _i++) {
-                    filters[_i - 1] = arguments[_i];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    filters[_i - 0] = arguments[_i];
                 }
-                if (!clause) {
-                    clause = this._lastClause;
-                }
-                var expressions = this.getExpressions(filters);
-                if (expressions.length > 0) {
-                    this._lastClause = FilterClause.Or;
-                    this._expression = this._expression ? (clause == FilterClause.And ? this._expression.Or().All(expressions) : this._expression.Or().Any(expressions))
-                        : (clause == FilterClause.And ? this._camlBuilder.All(expressions) : this._camlBuilder.Any(expressions));
+                var conditions = this.getConditions(filters);
+                if (conditions.length > 0) {
+                    this._expression = this.getOrFieldExpression().All(conditions);
                 }
                 return this;
             };
-            Builder.prototype.Clear = function () {
+            Builder.prototype.appendAndAny = function () {
+                var filters = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    filters[_i - 0] = arguments[_i];
+                }
+                var conditions = this.getConditions(filters);
+                if (conditions.length > 0) {
+                    this._expression = this.getAndFieldExpression().Any(conditions);
+                }
+                return this;
+            };
+            Builder.prototype.clear = function () {
                 this._expression = null;
-                this._lastClause = this._clause;
             };
-            Builder.prototype.ToString = function () {
+            Builder.prototype.toString = function () {
                 if (this._expression) {
                     this._viewXml = this._expression.ToString();
                 }
@@ -759,7 +773,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         renderMethod: null,
                         renderOptions: null,
                         queryStringFilters: null,
-                        queryBuilder: new Caml.Builder(options.viewXml, Caml.FilterClause.And)
+                        queryBuilder: new Caml.Builder(options.viewXml, false)
                     }, options);
                 }
                 ListViewBase.prototype.addToken = function (query, token) {
@@ -844,7 +858,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         self.addFilterQuery(query.query);
                         var viewXml = self._options.viewXml;
                         if (self._options.queryBuilder) {
-                            viewXml = self._options.queryBuilder.ToString();
+                            viewXml = self._options.queryBuilder.toString();
                         }
                         //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
                         //    query.query.add("p_ID", prevItemId);
@@ -906,7 +920,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     try {
                         var query = self.getList();
                         query.concat("/renderListData(@viewXml)");
-                        query.query.add("@viewXml", "'" + encodeURIComponent(self._options.viewXml) + "'");
+                        var viewXml = self._options.viewXml;
+                        if (self._options.queryBuilder) {
+                            viewXml = self._options.queryBuilder.toString();
+                        }
+                        query.query.add("@viewXml", "'" + encodeURIComponent(viewXml) + "'");
                         if (!$pnp.util.stringIsNullOrEmpty(token)) {
                             self.addToken(query.query, token);
                         }
@@ -969,7 +987,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             query = query.expand(self._options.expands);
                         }
                         var url = query.toUrlAndQuery();
-                        var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": self._options.viewXml } });
+                        var viewXml = self._options.viewXml;
+                        if (self._options.queryBuilder) {
+                            viewXml = self._options.queryBuilder.toString();
+                        }
+                        var postBody = JSON.stringify({ "query": { "__metadata": { "type": "SP.CamlQuery" }, "ViewXml": viewXml } });
                         var executor = new SP.RequestExecutor(self._app.appWebUrl);
                         executor.executeAsync({
                             url: url,
@@ -1090,7 +1112,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             throw "List is not specified.";
                         }
                         var camlQuery = new SP.CamlQuery();
-                        camlQuery.set_viewXml(self._options.viewXml);
+                        var viewXml = self._options.viewXml;
+                        if (self._options.queryBuilder) {
+                            viewXml = self._options.queryBuilder.toString();
+                        }
+                        camlQuery.set_viewXml(viewXml);
                         if (!$pnp.util.stringIsNullOrEmpty(token)) {
                             var position = new SP.ListItemCollectionPosition();
                             position.set_pagingInfo(token);

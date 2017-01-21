@@ -11,7 +11,7 @@ namespace SPMVCWeb.Helpers
     {
         public static RedirectionStatus CheckRedirectionStatus(HttpContextBase httpContext, out Uri redirectUrl)
         {
-            return SPContextHelper.CheckRedirectionStatus(httpContext, null, out redirectUrl);
+            return CheckRedirectionStatus(httpContext, null, out redirectUrl);
         }
 
         public static RedirectionStatus CheckRedirectionStatus(HttpContextBase httpContext, Uri requestUrl, out Uri redirectUrl)
@@ -75,8 +75,7 @@ namespace SPMVCWeb.Helpers
                 // Adds SPHasRedirectedToSharePoint=1.
                 queryNameValueCollection.Add(spHasRedirectedToSharePointKey, "1");
 
-                UriBuilder returnUrlBuilder = new UriBuilder(requestUrl);
-                returnUrlBuilder.Query = queryNameValueCollection.ToString();
+                UriBuilder returnUrlBuilder = new UriBuilder(requestUrl) {Query = queryNameValueCollection.ToString()};
 
                 // Inserts StandardTokens.
                 const string standardTokens = "{StandardTokens}";
@@ -179,10 +178,7 @@ namespace SPMVCWeb.Helpers
                 {
                     Action result = action.Invoke(clientContext);
                     clientContext.ExecuteQuery();
-                    if (result != null)
-                    {
-                        result.Invoke();
-                    }
+                    result?.Invoke();
                 }
             }
         }
