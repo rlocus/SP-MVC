@@ -11,8 +11,8 @@ namespace SPMVCWeb.Models
     {
         public ListInformation(List list, View view)
         {
-            if (list == null) throw new ArgumentNullException("list");
-            if (view == null) throw new ArgumentNullException("view");
+            if (list == null) throw new ArgumentNullException(nameof(list));
+            if (view == null) throw new ArgumentNullException(nameof(view));
             Id = list.Id;
             Title = list.Title;
             ListTemplate = list.BaseTemplate;

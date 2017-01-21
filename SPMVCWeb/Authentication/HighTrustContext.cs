@@ -21,24 +21,24 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected override AccessToken CreateAppOnlyAccessToken(Uri host)
         {
-            var s2sToken = OwinTokenHelper.GetS2SAccessToken(host, null);
+            var token = OwinTokenHelper.GetS2SAccessToken(host, null);
             DateTime expiresOn = DateTime.UtcNow.Add(TokenHelper.HighTrustAccessTokenLifetime);
             expiresOn -= AccessTokenLifetimeTolerance;
             return new AccessToken
             {
-                Value = s2sToken,
+                Value = token,
                 ExpiresOn = expiresOn
             };
         }
 
         protected override AccessToken CreateUserAccessToken(Uri host)
         {
-            var s2sToken = OwinTokenHelper.GetS2SAccessToken(host, _userId);
+            var token = OwinTokenHelper.GetS2SAccessToken(host, _userId);
             DateTime expiresOn = DateTime.UtcNow.Add(TokenHelper.HighTrustAccessTokenLifetime);
             expiresOn -= AccessTokenLifetimeTolerance;
             return new AccessToken
             {
-                Value = s2sToken,
+                Value = token,
                 ExpiresOn = expiresOn
             };
         }

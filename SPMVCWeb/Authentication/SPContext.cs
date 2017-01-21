@@ -21,7 +21,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     {
         protected static readonly ITokenCache Cache;
 
-        protected readonly ClaimsIdentity _claimsIdentity;
+        protected readonly ClaimsIdentity ClaimsIdentity;
 
         protected static readonly TimeSpan AccessTokenLifetimeTolerance = TimeSpan.FromMinutes(5.0);
 
@@ -29,12 +29,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.ClientId))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.ClientId))
                 {
                     return Guid.Empty;
                     //throw new Exception("Unable to find Client Id under current user's claims");
                 }
-                string clientId = _claimsIdentity.FindFirst(SPAddinClaimTypes.ClientId).Value;
+                string clientId = ClaimsIdentity.FindFirst(SPAddinClaimTypes.ClientId).Value;
                 return string.IsNullOrEmpty(clientId) ? Guid.Empty : new Guid(clientId);
             }
         }
@@ -43,13 +43,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.RefreshToken))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.RefreshToken))
                 {
                     return null;
                     //throw new Exception("Unable to find Refresh Token under current user's claims");
                 }
 
-                return _claimsIdentity.FindFirst(SPAddinClaimTypes.RefreshToken).Value;
+                return ClaimsIdentity.FindFirst(SPAddinClaimTypes.RefreshToken).Value;
             }
         }
 
@@ -57,13 +57,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.CacheKey))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.CacheKey))
                 {
                     //throw new Exception("Unable to find User Hash Key under current user's claims");
                     return null;
                 }
 
-                return _claimsIdentity.FindFirst(SPAddinClaimTypes.CacheKey).Value;
+                return ClaimsIdentity.FindFirst(SPAddinClaimTypes.CacheKey).Value;
             }
         }
 
@@ -71,13 +71,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.Realm))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.Realm))
                 {
                     return null;
                     //throw new Exception("Unable to find Realm under current user's claims");
                 }
 
-                return _claimsIdentity.FindFirst(SPAddinClaimTypes.Realm).Value;
+                return ClaimsIdentity.FindFirst(SPAddinClaimTypes.Realm).Value;
             }
         }
 
@@ -85,13 +85,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.TargetPrincipalName))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.TargetPrincipalName))
                 {
                     return null;
                     //throw new Exception("Unable to find TargetPrincipalName under current user's claims");
                 }
 
-                return _claimsIdentity.FindFirst(SPAddinClaimTypes.TargetPrincipalName).Value;
+                return ClaimsIdentity.FindFirst(SPAddinClaimTypes.TargetPrincipalName).Value;
             }
         }
 
@@ -99,13 +99,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.SPHostUrl))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.SPHostUrl))
                 {
                     return null;
                     //throw new Exception("Unable to find SPHostUrl under current user's claims");
                 }
 
-                return new Uri(_claimsIdentity.FindFirst(SPAddinClaimTypes.SPHostUrl).Value);
+                return new Uri(ClaimsIdentity.FindFirst(SPAddinClaimTypes.SPHostUrl).Value);
             }
         }
 
@@ -113,13 +113,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                if (!_claimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.SPAppWebUrl))
+                if (!ClaimsIdentity.HasClaim(c => c.Type == SPAddinClaimTypes.SPAppWebUrl))
                 {
                     return null;
                     //throw new Exception("Unable to find SPAppWebUrl under current user's claims");
                 }
 
-                return new Uri(_claimsIdentity.FindFirst(SPAddinClaimTypes.SPAppWebUrl).Value);
+                return new Uri(ClaimsIdentity.FindFirst(SPAddinClaimTypes.SPAppWebUrl).Value);
             }
         }
 
@@ -130,14 +130,14 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected SPContext(ClaimsPrincipal claimsPrincipal)
         {
-            if (claimsPrincipal == null) throw new ArgumentNullException("claimsPrincipal");
-            _claimsIdentity = (ClaimsIdentity)claimsPrincipal.Identity;
+            if (claimsPrincipal == null) throw new ArgumentNullException(nameof(claimsPrincipal));
+            ClaimsIdentity = (ClaimsIdentity)claimsPrincipal.Identity;
         }
 
         protected SPContext(ClaimsIdentity claimsIdentity)
         {
-            if (claimsIdentity == null) throw new ArgumentNullException("claimsIdentity");
-            _claimsIdentity = claimsIdentity;
+            if (claimsIdentity == null) throw new ArgumentNullException(nameof(claimsIdentity));
+            ClaimsIdentity = claimsIdentity;
         }
 
         protected ClientContext GetUserClientContext(Uri host)

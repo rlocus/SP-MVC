@@ -61,7 +61,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 			}
 
 			var httpRequest = ((System.Web.HttpContextBase)context.Environment["System.Web.HttpContextBase"]).Request;
-			return httpRequest.LogonUserIdentity.FindFirst(c => c.Type == ClaimTypes.PrimarySid).Value;
+		    return httpRequest.LogonUserIdentity?.FindFirst(c => c.Type == ClaimTypes.PrimarySid).Value;
 		}
 
 		public static IIdentity GetHttpRequestIdentity(IOwinContext context)

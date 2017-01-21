@@ -9,8 +9,6 @@ using Microsoft.Owin.Security.Infrastructure;
 using Microsoft.SharePoint.Client;
 using System.Web;
 using System.Linq;
-using Microsoft.IdentityModel.Claims;
-using Microsoft.IdentityModel.S2S.Protocols.OAuth2;
 using Claim = System.Security.Claims.Claim;
 using ClaimsIdentity = System.Security.Claims.ClaimsIdentity;
 using ClaimTypes = System.Security.Claims.ClaimTypes;
@@ -47,7 +45,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             }
             if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
             {
-                throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPHostUrlKey));
+                throw new Exception($"Unable to determine {SharePointContext.SPHostUrlKey}.");
             }
             else
             {
@@ -126,7 +124,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                 GenerateCorrelationId(state);
                 string stateString = Options.StateDataFormat.Protect(state);
                 string redirectUri = GetAppContextTokenRequestUrl(hostUrl, stateString);
-                _logger.WriteInformation(string.Format("Redirecting to SharePoint AppRedirect: {0}", redirectUri));
+                _logger.WriteInformation($"Redirecting to SharePoint AppRedirect: {redirectUri}");
                 Response.Redirect(redirectUri);
             }
             return Task.FromResult<object>(null);
@@ -144,7 +142,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             queryNameValueCollection.Remove(SharePointContext.SPLanguageKey);
             queryNameValueCollection.Remove(SharePointContext.SPClientTagKey);
             queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
-            var redirectUri = string.Format("{0}?{{StandardTokens}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString);
+            var redirectUri = $"{uriBuilder.Uri.GetLeftPart(UriPartial.Path)}?{{StandardTokens}}&state={stateString}";
             //var redirectUri = string.Format("{0}?{{StandardTokens}}&{{{2}}}&state={1}", uriBuilder.Uri.GetLeftPart(UriPartial.Path), stateString, SharePointContext.SPAppWebUrlKey);
             var tokenRequestUrl = TokenHelper.GetAppContextTokenRequestUrl(hostUrl.GetLeftPart(UriPartial.Path), WebUtility.UrlEncode(redirectUri));
             return tokenRequestUrl;
@@ -211,7 +209,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
                         query[SharePointContext.SPAppWebUrlKey] =
                             ticket.Properties.Dictionary[SharePointContext.SPAppWebUrlKey];
                     }
-                    Response.Redirect(string.Format("{0}?{1}", url, query));
+                    Response.Redirect($"{url}?{query}");
                 }
                 // Prevent further processing by the owin pipeline.
                 return true;

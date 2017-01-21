@@ -16,7 +16,7 @@ namespace SPMVCWeb
     {
         public void Configuration(IAppBuilder app)
         {
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            var cookieAuthenticationEnabled = !string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) && Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
             if (cookieAuthenticationEnabled)
             {
                 var cookieAuth = new CookieAuthenticationOptions
@@ -35,10 +35,7 @@ namespace SPMVCWeb
                     SPHostUrl = ConfigurationManager.AppSettings["SPHostUrl"],
                     Provider = new SPAddinAuthenticationProvider()
                     {
-                        OnAuthenticated = (context) =>
-                        {
-                            return Task.FromResult<object>(null);
-                        }
+                        OnAuthenticated = (context) => Task.FromResult<object>(null)
                     }
                 });
             }

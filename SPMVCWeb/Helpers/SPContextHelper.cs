@@ -1,8 +1,6 @@
 ﻿using AspNet.Owin.SharePoint.Addin.Authentication;
 using Microsoft.SharePoint.Client;
-using SPMVCWeb.Models;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens;
 using System.Web;
 using System.Web.Configuration;
@@ -20,7 +18,7 @@ namespace SPMVCWeb.Helpers
         {
             if (httpContext == null)
             {
-                throw new ArgumentNullException("httpContext");
+                throw new ArgumentNullException(nameof(httpContext));
             }
 
             redirectUrl = null;
@@ -48,9 +46,9 @@ namespace SPMVCWeb.Helpers
                 contextTokenExpired = true;
             }
 
-            const string SPHasRedirectedToSharePointKey = "SPHasRedirectedToSharePoint";
+            const string spHasRedirectedToSharePointKey = "SPHasRedirectedToSharePoint";
 
-            if (!string.IsNullOrEmpty(httpContext.Request.QueryString[SPHasRedirectedToSharePointKey]) && !contextTokenExpired)
+            if (!string.IsNullOrEmpty(httpContext.Request.QueryString[spHasRedirectedToSharePointKey]) && !contextTokenExpired)
             {
                 return RedirectionStatus.CanNotRedirect;
             }
@@ -64,34 +62,37 @@ namespace SPMVCWeb.Helpers
             {
                 requestUrl = httpContext.Request.Url;
             }
-            var queryNameValueCollection = HttpUtility.ParseQueryString(requestUrl.Query);
-            // Removes the values that are included in {StandardTokens}, as {StandardTokens} will be inserted at the beginning of the query string.
-            queryNameValueCollection.Remove(SharePointContext.SPHostUrlKey);
-            queryNameValueCollection.Remove(SharePointContext.SPAppWebUrlKey);
-            queryNameValueCollection.Remove(SharePointContext.SPLanguageKey);
-            queryNameValueCollection.Remove(SharePointContext.SPClientTagKey);
-            queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
+            if (requestUrl != null)
+            {
+                var queryNameValueCollection = HttpUtility.ParseQueryString(requestUrl.Query);
+                // Removes the values that are included in {StandardTokens}, as {StandardTokens} will be inserted at the beginning of the query string.
+                queryNameValueCollection.Remove(SharePointContext.SPHostUrlKey);
+                queryNameValueCollection.Remove(SharePointContext.SPAppWebUrlKey);
+                queryNameValueCollection.Remove(SharePointContext.SPLanguageKey);
+                queryNameValueCollection.Remove(SharePointContext.SPClientTagKey);
+                queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
 
-            // Adds SPHasRedirectedToSharePoint=1.
-            queryNameValueCollection.Add(SPHasRedirectedToSharePointKey, "1");
+                // Adds SPHasRedirectedToSharePoint=1.
+                queryNameValueCollection.Add(spHasRedirectedToSharePointKey, "1");
 
-            UriBuilder returnUrlBuilder = new UriBuilder(requestUrl);
-            returnUrlBuilder.Query = queryNameValueCollection.ToString();
+                UriBuilder returnUrlBuilder = new UriBuilder(requestUrl);
+                returnUrlBuilder.Query = queryNameValueCollection.ToString();
 
-            // Inserts StandardTokens.
-            const string StandardTokens = "{StandardTokens}";
-            string returnUrlString = returnUrlBuilder.Uri.AbsoluteUri;
-            returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?") + 1, StandardTokens + "&");
+                // Inserts StandardTokens.
+                const string standardTokens = "{StandardTokens}";
+                string returnUrlString = returnUrlBuilder.Uri.AbsoluteUri;
+                returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?", StringComparison.Ordinal) + 1, standardTokens + "&");
 
-            // Constructs redirect url.
-            string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.GetLeftPart(UriPartial.Path), Uri.EscapeDataString(returnUrlString));
-            redirectUrl = new Uri(redirectUrlString, UriKind.Absolute);
+                // Constructs redirect url.
+                string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.GetLeftPart(UriPartial.Path), Uri.EscapeDataString(returnUrlString));
+                redirectUrl = new Uri(redirectUrlString, UriKind.Absolute);
+            }
             return RedirectionStatus.ShouldRedirect;
         }
 
         public static ISPContext GetSPContext(HttpContextBase httpContext)
         {
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            var cookieAuthenticationEnabled = !string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) && Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
             if (cookieAuthenticationEnabled)
             {
                 return SPContextProvider.Get(httpContext.User as System.Security.Claims.ClaimsPrincipal);
@@ -114,21 +115,15 @@ namespace SPMVCWeb.Helpers
         public static void ExecuteUserContextQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
             where TContext : ClientContext
         {
-            if (action == null) throw new ArgumentNullException("action");
-            if (spContext != null)
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            TContext clientContext = (TContext) spContext?.CreateUserClientContextForSPHost();
+            if (clientContext != null)
             {
-                TContext clientContext = (TContext)spContext.CreateUserClientContextForSPHost();
-                if (clientContext != null)
+                using (clientContext)
                 {
-                    using (clientContext)
-                    {
-                        Action result = action.Invoke(clientContext);
-                        clientContext.ExecuteQuery();
-                        if (result != null)
-                        {
-                            result.Invoke();
-                        }
-                    }
+                    Action result = action.Invoke(clientContext);
+                    clientContext.ExecuteQuery();
+                    result?.Invoke();
                 }
             }
         }
@@ -159,21 +154,15 @@ namespace SPMVCWeb.Helpers
         public static void ExecuteUserClientContextForSPAppWebQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
               where TContext : ClientContext
         {
-            if (action == null) throw new ArgumentNullException("action");
-            if (spContext != null)
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            TContext clientContext = (TContext) spContext?.CreateUserClientContextForSPAppWeb();
+            if (clientContext != null)
             {
-                TContext clientContext = (TContext)spContext.CreateUserClientContextForSPAppWeb();
-                if (clientContext != null)
+                using (clientContext)
                 {
-                    using (clientContext)
-                    {
-                        Action result = action.Invoke(clientContext);
-                        clientContext.ExecuteQuery();
-                        if (result != null)
-                        {
-                            result.Invoke();
-                        }
-                    }
+                    Action result = action.Invoke(clientContext);
+                    clientContext.ExecuteQuery();
+                    result?.Invoke();
                 }
             }
         }
@@ -182,20 +171,17 @@ namespace SPMVCWeb.Helpers
         public static void ExecuteAppOnlyClientContextForSPAppWebQuery<TContext>(ISPContext spContext, Func<TContext, Action> action)
             where TContext : ClientContext
         {
-            if (action == null) throw new ArgumentNullException("action");
-            if (spContext != null)
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            TContext clientContext = (TContext) spContext?.CreateAppOnlyClientContextForSPAppWeb();
+            if (clientContext != null)
             {
-                TContext clientContext = (TContext)spContext.CreateAppOnlyClientContextForSPAppWeb();
-                if (clientContext != null)
+                using (clientContext)
                 {
-                    using (clientContext)
+                    Action result = action.Invoke(clientContext);
+                    clientContext.ExecuteQuery();
+                    if (result != null)
                     {
-                        Action result = action.Invoke(clientContext);
-                        clientContext.ExecuteQuery();
-                        if (result != null)
-                        {
-                            result.Invoke();
-                        }
+                        result.Invoke();
                     }
                 }
             }

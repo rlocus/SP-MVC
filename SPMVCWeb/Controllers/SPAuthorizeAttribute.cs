@@ -28,10 +28,7 @@ namespace SPMVCWeb.Controllers
 
         protected override bool AuthorizeCore(HttpContextBase httpContext)
         {
-            var cookieAuthenticationEnabled =
-                string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"))
-                    ? false
-                    : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            var cookieAuthenticationEnabled = !string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) && Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
             bool authorized = !cookieAuthenticationEnabled || base.AuthorizeCore(httpContext);
             if (authorized)
             {
@@ -57,15 +54,12 @@ namespace SPMVCWeb.Controllers
                     if (clientContext != null)
                     {
                         User user = clientContext.Web.CurrentUser;
-                        ClientResult<bool> hasPermissions = null;
+                        ClientResult<bool> hasPermissions;
                         List<Func<bool>> checkers = new List<Func<bool>>();
                         if (SiteAdminRequired)
                         {
                             clientContext.Load(user, u => u.IsSiteAdmin);
-                            checkers.Add(() =>
-                            {
-                                return user.IsSiteAdmin;
-                            });
+                            checkers.Add(() => user.IsSiteAdmin);
                         }
                         if (!string.IsNullOrEmpty(SPGroup))
                         {
@@ -80,15 +74,12 @@ namespace SPMVCWeb.Controllers
                             var perm = new BasePermissions();
                             perm.Set(Permissions);
                             hasPermissions = clientContext.Web.DoesUserHavePermissions(perm);
-                            checkers.Add(() =>
-                            {
-                                return hasPermissions.Value;
-                            });
+                            checkers.Add(() => hasPermissions.Value);
                         }
                         if (checkers.Count > 0)
                         {
                             clientContext.ExecuteQuery();
-                            authorized = checkers.All(c => c() == true);
+                            authorized = checkers.All(c => c());
                             if (!authorized)
                             {
                                 throw new UnauthorizedAccessException();
@@ -100,9 +91,9 @@ namespace SPMVCWeb.Controllers
             return authorized;
         }
 
-        protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
-        {
-            base.HandleUnauthorizedRequest(filterContext);
-        }
+        //protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
+        //{
+        //    base.HandleUnauthorizedRequest(filterContext);
+        //}
     }
 }

@@ -1,9 +1,6 @@
-﻿using Microsoft.SharePoint.Client;
+﻿using System;
+using Microsoft.SharePoint.Client;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace SPMVCWeb.Models
 {
@@ -11,6 +8,7 @@ namespace SPMVCWeb.Models
     {
         internal SPRegionalInfo(RegionalSettings regionalSettings)
         {
+            if (regionalSettings == null) throw new ArgumentNullException(nameof(regionalSettings));
             if (regionalSettings.IsPropertyAvailable("AM"))
             {
                 this.AM = regionalSettings.AM;

@@ -38,13 +38,13 @@ namespace SPMVCWeb.Controllers
             if (string.IsNullOrEmpty(returnUrl))
                 returnUrl = "/";
 
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            var cookieAuthenticationEnabled = !string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) && Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
             if (cookieAuthenticationEnabled)
             {
                 Uri spHostUrl = GetSPHostUrl(returnUrl);
                 if (spHostUrl == null)
                 {
-                    throw new Exception(string.Format("Unable to determine {0}.", SharePointContext.SPHostUrlKey));
+                    throw new Exception($"Unable to determine {SharePointContext.SPHostUrlKey}.");
                 }
                 return new ChallengeResult(SPAddinAuthenticationDefaults.AuthenticationType, spHostUrl.ToString(), returnUrl);
             }
@@ -76,7 +76,7 @@ namespace SPMVCWeb.Controllers
         [HttpGet]
         public ActionResult Logout(string returnUrl)
         {
-            var cookieAuthenticationEnabled = string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) ? false : Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
+            var cookieAuthenticationEnabled = !string.IsNullOrEmpty(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled")) && Convert.ToBoolean(WebConfigurationManager.AppSettings.Get("CookieAuthenticationEnabled"));
             if (cookieAuthenticationEnabled)
             {
                 if (Request.IsAuthenticated)
@@ -85,8 +85,7 @@ namespace SPMVCWeb.Controllers
                     HttpContext.GetOwinContext().Authentication.SignOut(SPAddinAuthenticationDefaults.AuthenticationType);
                     if (spContext.SPAppWebUrl != null)
                     {
-                        return new RedirectResult(string.Format("{0}/_layouts/closeConnection.aspx?loginasanotheruser=true",
-                                spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path).TrimEnd('/')));
+                        return new RedirectResult($"{spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path).TrimEnd('/')}/_layouts/closeConnection.aspx?loginasanotheruser=true");
                     }
                 }
             }
@@ -103,12 +102,11 @@ namespace SPMVCWeb.Controllers
                     Uri appWebUrl = spContext.SPAppWebUrl;
                     if (appWebUrl != null)
                     {
-                        return new RedirectResult(string.Format("{0}/_layouts/closeConnection.aspx?loginasanotheruser=true",
-                                appWebUrl.GetLeftPart(UriPartial.Path).TrimEnd('/')));
+                        return new RedirectResult($"{appWebUrl.GetLeftPart(UriPartial.Path).TrimEnd('/')}/_layouts/closeConnection.aspx?loginasanotheruser=true");
                     }
                 }
             }
-            return new RedirectResult(string.Format("/login?ReturnUrl={0}", HttpUtility.UrlEncode(returnUrl)));
+            return new RedirectResult($"/login?ReturnUrl={HttpUtility.UrlEncode(returnUrl)}");
         }
 
         public ActionResult UnauthorizedAccess(Exception exception)

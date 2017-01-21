@@ -11,7 +11,6 @@ import * as app from "./app.module";
 namespace Angular {
 
     "use strict";
-
     export class App extends app.App.AppBase {
 
         public $angular: angular.IAngularStatic;

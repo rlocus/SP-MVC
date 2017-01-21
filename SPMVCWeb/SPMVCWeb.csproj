@@ -279,7 +279,6 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\SessionRouteHandler.cs" />
-    <Compile Include="Authentication\Caching\CachingProvider.cs" />
     <Compile Include="Authentication\Caching\DefaultTokenCache.cs" />
     <Compile Include="Authentication\Caching\ITokenCache.cs" />
     <Compile Include="Authentication\AccessToken.cs" />

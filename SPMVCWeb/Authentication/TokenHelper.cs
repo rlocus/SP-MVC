@@ -102,8 +102,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             string stsAuthority = (new Uri(token.SecurityTokenServiceUri)).Authority;
             int firstDot = stsAuthority.IndexOf('.');
 
-            GlobalEndPointPrefix = stsAuthority.Substring(0, firstDot);
-            AcsHostUrl = stsAuthority.Substring(firstDot + 1);
+            _globalEndPointPrefix = stsAuthority.Substring(0, firstDot);
+            _acsHostUrl = stsAuthority.Substring(firstDot + 1);
 
             tokenHandler.ValidateToken(jsonToken);
 
@@ -207,7 +207,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
             // Get token
             OAuth2S2SClient client = new OAuth2S2SClient();
-            OAuth2AccessTokenResponse oauth2Response;
+            OAuth2AccessTokenResponse oauth2Response = null;
             try
             {
                 oauth2Response =
@@ -215,10 +215,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             }
             catch (WebException wex)
             {
-                using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
+                if (wex.Response != null)
                 {
-                    string responseText = sr.ReadToEnd();
-                    throw new WebException(wex.Message + " - " + responseText, wex);
+                    using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
+                    {
+                        string responseText = sr.ReadToEnd();
+                        throw new WebException(wex.Message + " - " + responseText, wex);
+                    }
                 }
             }
 
@@ -258,10 +261,6 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             {
                 oauth2Response =
                     client.Issue(AcsMetadataParser.GetStsUrl(targetRealm), oauth2Request) as OAuth2AccessTokenResponse;
-            }
-            catch (Microsoft.IdentityModel.SecurityTokenService.RequestFailedException)
-            {
-                throw;
             }
             catch (WebException wex)
             {
@@ -308,7 +307,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             // Get token
             OAuth2S2SClient client = new OAuth2S2SClient();
 
-            OAuth2AccessTokenResponse oauth2Response;
+            OAuth2AccessTokenResponse oauth2Response = null;
             try
             {
                 oauth2Response =
@@ -316,10 +315,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             }
             catch (WebException wex)
             {
-                using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
+                if (wex.Response != null)
                 {
-                    string responseText = sr.ReadToEnd();
-                    throw new WebException(wex.Message + " - " + responseText, wex);
+                    using (StreamReader sr = new StreamReader(wex.Response.GetResponseStream()))
+                    {
+                        string responseText = sr.ReadToEnd();
+                        throw new WebException(wex.Message + " - " + responseText, wex);
+                    }
                 }
             }
 
@@ -430,9 +432,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <returns>A ClientContext ready to call targetUrl with the specified access token</returns>
         public static ClientContext GetClientContextWithAccessToken(string targetUrl, string accessToken)
         {
-            ClientContext clientContext = new ClientContext(targetUrl);
-            clientContext.AuthenticationMode = ClientAuthenticationMode.Anonymous;
-            clientContext.FormDigestHandlingEnabled = false;
+            ClientContext clientContext = new ClientContext(targetUrl)
+            {
+                AuthenticationMode = ClientAuthenticationMode.Anonymous,
+                FormDigestHandlingEnabled = false
+            };
             clientContext.ExecutingWebRequest +=
                 delegate(object oSender, WebRequestEventArgs webRequestEventArgs)
                 {
@@ -458,11 +462,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             string appHostUrl)
         {
             SharePointContextToken contextToken = ReadAndValidateContextToken(contextTokenString, appHostUrl);
-
             Uri targetUri = new Uri(targetUrl);
-
             string accessToken = GetAccessToken(contextToken, targetUri.Authority).AccessToken;
-
             return GetClientContextWithAccessToken(targetUrl, accessToken);
         }
 
@@ -476,12 +477,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <returns>Url of the SharePoint site's OAuth authorization page</returns>
         public static string GetAuthorizationUrl(string contextUrl, string scope)
         {
-            return string.Format(
-                "{0}{1}?IsDlg=1&client_id={2}&scope={3}&response_type=code",
-                EnsureTrailingSlash(contextUrl),
-                AuthorizationPage,
-                ClientId,
-                scope);
+            return $"{EnsureTrailingSlash(contextUrl)}{AuthorizationPage}?IsDlg=1&client_id={ClientId}&scope={scope}&response_type=code";
         }
 
         /// <summary>
@@ -496,13 +492,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <returns>Url of the SharePoint site's OAuth authorization page</returns>
         public static string GetAuthorizationUrl(string contextUrl, string scope, string redirectUri)
         {
-            return string.Format(
-                "{0}{1}?IsDlg=1&client_id={2}&scope={3}&response_type=code&redirect_uri={4}",
-                EnsureTrailingSlash(contextUrl),
-                AuthorizationPage,
-                ClientId,
-                scope,
-                redirectUri);
+            return $"{EnsureTrailingSlash(contextUrl)}{AuthorizationPage}?IsDlg=1&client_id={ClientId}&scope={scope}&response_type=code&redirect_uri={redirectUri}";
         }
 
         /// <summary>
@@ -513,12 +503,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <returns>Url of the SharePoint site's context token redirect page</returns>
         public static string GetAppContextTokenRequestUrl(string contextUrl, string redirectUri)
         {
-            return string.Format(
-                "{0}{1}?client_id={2}&redirect_uri={3}",
-                EnsureTrailingSlash(contextUrl),
-                RedirectPage,
-                ClientId,
-                redirectUri);
+            return $"{EnsureTrailingSlash(contextUrl)}{RedirectPage}?client_id={ClientId}&redirect_uri={redirectUri}";
         }
 
         /// <summary>
@@ -534,9 +519,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             WindowsIdentity identity)
         {
             string realm = string.IsNullOrEmpty(Realm) ? GetRealmFromTargetUrl(targetApplicationUri) : Realm;
-
             JsonWebTokenClaim[] claims = identity != null ? GetClaimsWithWindowsIdentity(identity) : null;
-
             return GetS2SAccessTokenWithClaims(targetApplicationUri.Authority, realm, claims);
         }
 
@@ -554,11 +537,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             WindowsIdentity identity)
         {
             string realm = string.IsNullOrEmpty(Realm) ? GetRealmFromTargetUrl(targetApplicationUri) : Realm;
-
             JsonWebTokenClaim[] claims = identity != null ? GetClaimsWithWindowsIdentity(identity) : null;
-
             string accessToken = GetS2SAccessTokenWithClaims(targetApplicationUri.Authority, realm, claims);
-
             return GetClientContextWithAccessToken(targetApplicationUri.ToString(), accessToken);
         }
 
@@ -580,26 +560,18 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             }
             catch (WebException e)
             {
-                if (e.Response == null)
-                {
-                    return null;
-                }
-
-                string bearerResponseHeader = e.Response.Headers["WWW-Authenticate"];
+                string bearerResponseHeader = e.Response?.Headers["WWW-Authenticate"];
                 if (string.IsNullOrEmpty(bearerResponseHeader))
                 {
                     return null;
                 }
-
                 const string bearer = "Bearer realm=\"";
                 int bearerIndex = bearerResponseHeader.IndexOf(bearer, StringComparison.Ordinal);
                 if (bearerIndex < 0)
                 {
                     return null;
                 }
-
                 int realmIndex = bearerIndex + bearer.Length;
-
                 if (bearerResponseHeader.Length >= realmIndex + 36)
                 {
                     string targetRealm = bearerResponseHeader.Substring(realmIndex, 36);
@@ -661,8 +633,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         // Environment Constants
         //
 
-        private static string GlobalEndPointPrefix = "accounts";
-        private static string AcsHostUrl = "accesscontrol.windows.net";
+        private static string _globalEndPointPrefix = "accounts";
+        private static string _acsHostUrl = "accesscontrol.windows.net";
 
         //
         // Hosted app configuration
@@ -722,23 +694,23 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         private static string GetAcsGlobalEndpointUrl()
         {
-            return String.Format(CultureInfo.InvariantCulture, "https://{0}.{1}/", GlobalEndPointPrefix, AcsHostUrl);
+            return String.Format(CultureInfo.InvariantCulture, "https://{0}.{1}/", _globalEndPointPrefix, _acsHostUrl);
         }
 
         private static JsonWebSecurityTokenHandler CreateJsonWebSecurityTokenHandler()
         {
             JsonWebSecurityTokenHandler handler = new JsonWebSecurityTokenHandler();
-            handler.Configuration = new SecurityTokenHandlerConfiguration();
-            handler.Configuration.AudienceRestriction = new AudienceRestriction(AudienceUriMode.Never);
-            handler.Configuration.CertificateValidator = X509CertificateValidator.None;
-
+            handler.Configuration = new SecurityTokenHandlerConfiguration
+            {
+                AudienceRestriction = new AudienceRestriction(AudienceUriMode.Never),
+                CertificateValidator = X509CertificateValidator.None
+            };
             List<byte[]> securityKeys = new List<byte[]>();
             securityKeys.Add(Convert.FromBase64String(ClientSecret));
             if (!string.IsNullOrEmpty(SecondaryClientSecret))
             {
                 securityKeys.Add(Convert.FromBase64String(SecondaryClientSecret));
             }
-
             List<SecurityToken> securityTokens = new List<SecurityToken>();
             securityTokens.Add(new MultipleSymmetricKeySecurityToken(securityKeys));
 
@@ -774,12 +746,15 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         private static JsonWebTokenClaim[] GetClaimsWithWindowsIdentity(WindowsIdentity identity)
         {
-            JsonWebTokenClaim[] claims = new JsonWebTokenClaim[]
+            if (identity.User != null)
             {
-                new JsonWebTokenClaim(NameIdentifierClaimType, identity.User.Value.ToLower()),
-                new JsonWebTokenClaim("nii", "urn:office:idp:activedirectory")
-            };
-            return claims;
+                JsonWebTokenClaim[] claims = {
+                    new JsonWebTokenClaim(NameIdentifierClaimType, identity.User.Value.ToLower()),
+                    new JsonWebTokenClaim("nii", "urn:office:idp:activedirectory")
+                };
+                return claims;
+            }
+            return null;
         }
 
         private static string IssueToken(
@@ -800,9 +775,9 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
             #region Actor token
 
-            string issuer = string.IsNullOrEmpty(sourceRealm) ? issuerApplication : string.Format("{0}@{1}", issuerApplication, sourceRealm);
-            string nameid = string.IsNullOrEmpty(sourceRealm) ? sourceApplication : string.Format("{0}@{1}", sourceApplication, sourceRealm);
-            string audience = string.Format("{0}/{1}@{2}", targetApplication, targetApplicationHostName, targetRealm);
+            string issuer = string.IsNullOrEmpty(sourceRealm) ? issuerApplication : $"{issuerApplication}@{sourceRealm}";
+            string nameid = string.IsNullOrEmpty(sourceRealm) ? sourceApplication : $"{sourceApplication}@{sourceRealm}";
+            string audience = $"{targetApplication}/{targetApplicationHostName}@{targetRealm}";
 
             List<JsonWebTokenClaim> actorClaims = new List<JsonWebTokenClaim>();
             actorClaims.Add(new JsonWebTokenClaim(JsonWebTokenConstants.ReservedClaims.NameIdentifier, nameid));
@@ -861,13 +836,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             {
                 JsonMetadataDocument document = GetMetadataDocument(realm);
 
-                if (null != document.keys && document.keys.Count > 0)
+                if (null != document.Keys && document.Keys.Count > 0)
                 {
-                    JsonKey signingKey = document.keys[0];
+                    JsonKey signingKey = document.Keys[0];
 
-                    if (null != signingKey && null != signingKey.keyValue)
+                    if (null != signingKey && null != signingKey.KeyValue)
                     {
-                        return new X509Certificate2(Encoding.UTF8.GetBytes(signingKey.keyValue.value));
+                        return new X509Certificate2(Encoding.UTF8.GetBytes(signingKey.KeyValue.value));
                     }
                 }
 
@@ -878,11 +853,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             {
                 JsonMetadataDocument document = GetMetadataDocument(realm);
 
-                JsonEndpoint delegationEndpoint = document.endpoints.SingleOrDefault(e => e.protocol == DelegationIssuance);
+                JsonEndpoint delegationEndpoint = document.Endpoints.SingleOrDefault(e => e.Protocol == DelegationIssuance);
 
                 if (null != delegationEndpoint)
                 {
-                    return delegationEndpoint.location;
+                    return delegationEndpoint.Location;
                 }
                 throw new Exception("Metadata document does not contain Delegation Service endpoint Url");
             }
@@ -914,29 +889,26 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             public static string GetStsUrl(string realm)
             {
                 JsonMetadataDocument document = GetMetadataDocument(realm);
-
-                JsonEndpoint s2sEndpoint = document.endpoints.SingleOrDefault(e => e.protocol == S2SProtocol);
-
-                if (null != s2sEndpoint)
+                JsonEndpoint endpoint = document.Endpoints.SingleOrDefault(e => e.Protocol == S2SProtocol);
+                if (null != endpoint)
                 {
-                    return s2sEndpoint.location;
+                    return endpoint.Location;
                 }
-
                 throw new Exception("Metadata document does not contain STS endpoint url");
             }
 
             private class JsonMetadataDocument
             {
-                public string serviceName { get; set; }
-                public List<JsonEndpoint> endpoints { get; set; }
-                public List<JsonKey> keys { get; set; }
+                //public string serviceName { get; set; }
+                public List<JsonEndpoint> Endpoints { get; set; }
+                public List<JsonKey> Keys { get; set; }
             }
 
             private class JsonEndpoint
             {
-                public string location { get; set; }
-                public string protocol { get; set; }
-                public string usage { get; set; }
+                public string Location { get; set; }
+                public string Protocol { get; set; }
+                //public string usage { get; set; }
             }
 
             private class JsonKeyValue
@@ -947,8 +919,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
             private class JsonKey
             {
-                public string usage { get; set; }
-                public JsonKeyValue keyValue { get; set; }
+                //public string usage { get; set; }
+                public JsonKeyValue KeyValue { get; set; }
             }
         }
 
@@ -980,13 +952,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
         }
 
-        public string NameId
-        {
-            get
-            {
-                return GetClaimValue(this, "nameid");
-            }
-        }
+        public string NameId => GetClaimValue(this, "nameid");
 
         /// <summary>
         /// The principal name portion of the context token's "appctxsender" claim
@@ -996,26 +962,14 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             get
             {
                 string appctxsender = GetClaimValue(this, "appctxsender");
-
-                if (appctxsender == null)
-                {
-                    return null;
-                }
-
-                return appctxsender.Split('@')[0];
+                return appctxsender?.Split('@')[0];
             }
         }
 
         /// <summary>
         /// The context token's "refreshtoken" claim
         /// </summary>
-        public string RefreshToken
-        {
-            get
-            {
-                return GetClaimValue(this, "refreshtoken");
-            }
-        }
+        public string RefreshToken => GetClaimValue(this, "refreshtoken");
 
         /// <summary>
         /// The context token's "CacheKey" claim
@@ -1050,11 +1004,9 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 {
                     return null;
                 }
-
                 ClientContext ctx = new ClientContext("http://tempuri.org");
                 Dictionary<string, object> dict = (Dictionary<string, object>)ctx.ParseObjectFromJsonString(appctx);
                 string securityTokenServiceUri = (string)dict["SecurityTokenServiceUri"];
-
                 return securityTokenServiceUri;
             }
         }
@@ -1067,13 +1019,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             get
             {
                 string aud = Audience;
-                if (aud == null)
-                {
-                    return null;
-                }
-
-                string tokenRealm = aud.Substring(aud.IndexOf('@') + 1);
-
+                string tokenRealm = aud?.Substring(aud.IndexOf('@') + 1);
                 return tokenRealm;
             }
         }
@@ -1082,7 +1028,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (token == null)
             {
-                throw new ArgumentNullException("token");
+                throw new ArgumentNullException(nameof(token));
             }
 
             foreach (JsonWebTokenClaim claim in token.Claims)
@@ -1121,71 +1067,47 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (keys == null)
             {
-                throw new ArgumentNullException("keys");
+                throw new ArgumentNullException(nameof(keys));
             }
 
-            if (String.IsNullOrEmpty(tokenId))
+            if (string.IsNullOrEmpty(tokenId))
             {
-                throw new ArgumentException("Value cannot be a null or empty string.", "tokenId");
+                throw new ArgumentException("Value cannot be a null or empty string.", nameof(tokenId));
             }
 
-            foreach (byte[] key in keys)
+            var enumerable = keys as byte[][] ?? keys.ToArray();
+            foreach (byte[] key in enumerable)
             {
                 if (key.Length <= 0)
                 {
-                    throw new ArgumentException("The key length must be greater then zero.", "keys");
+                    throw new ArgumentException("The key length must be greater then zero.", nameof(keys));
                 }
             }
 
-            id = tokenId;
-            effectiveTime = DateTime.UtcNow;
-            securityKeys = CreateSymmetricSecurityKeys(keys);
+            Id = tokenId;
+            ValidFrom = DateTime.UtcNow;
+            _securityKeys = CreateSymmetricSecurityKeys(enumerable);
         }
 
         /// <summary>
         /// Gets the unique identifier of the security token.
         /// </summary>
-        public override string Id
-        {
-            get
-            {
-                return id;
-            }
-        }
+        public override string Id { get; }
 
         /// <summary>
         /// Gets the cryptographic keys associated with the security token.
         /// </summary>
-        public override ReadOnlyCollection<SecurityKey> SecurityKeys
-        {
-            get
-            {
-                return securityKeys.AsReadOnly();
-            }
-        }
+        public override ReadOnlyCollection<SecurityKey> SecurityKeys => _securityKeys.AsReadOnly();
 
         /// <summary>
         /// Gets the first instant in time at which this security token is valid.
         /// </summary>
-        public override DateTime ValidFrom
-        {
-            get
-            {
-                return effectiveTime;
-            }
-        }
+        public override DateTime ValidFrom { get; }
 
         /// <summary>
         /// Gets the last instant in time at which this security token is valid.
         /// </summary>
-        public override DateTime ValidTo
-        {
-            get
-            {
-                // Never expire
-                return DateTime.MaxValue;
-            }
-        }
+        public override DateTime ValidTo => DateTime.MaxValue;
 
         /// <summary>
         /// Returns a value that indicates whether the key identifier for this instance can be resolved to the specified key identifier.
@@ -1196,7 +1118,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (keyIdentifierClause == null)
             {
-                throw new ArgumentNullException("keyIdentifierClause");
+                throw new ArgumentNullException(nameof(keyIdentifierClause));
             }
 
             // Since this is a symmetric token and we do not have IDs to distinguish tokens, we just check for the
@@ -1221,9 +1143,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             return symmetricKeys;
         }
 
-        private string id;
-        private DateTime effectiveTime;
-        private List<SecurityKey> securityKeys;
+        private readonly List<SecurityKey> _securityKeys;
 
         #endregion
     }

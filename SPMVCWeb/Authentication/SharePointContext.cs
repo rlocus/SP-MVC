@@ -21,17 +21,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected static readonly TimeSpan AccessTokenLifetimeTolerance = TimeSpan.FromMinutes(5.0);
 
-        private readonly Uri spHostUrl;
-        private readonly Uri spAppWebUrl;
-        private readonly string spLanguage;
-        private readonly string spClientTag;
-        private readonly string spProductNumber;
-
         // <AccessTokenString, UtcExpiresOn>
-        protected Tuple<string, DateTime> userAccessTokenForSPHost;
-        protected Tuple<string, DateTime> userAccessTokenForSPAppWeb;
-        protected Tuple<string, DateTime> appOnlyAccessTokenForSPHost;
-        protected Tuple<string, DateTime> appOnlyAccessTokenForSPAppWeb;
+        protected Tuple<string, DateTime> UserAccessTokenForSpHost;
+        protected Tuple<string, DateTime> UserAccessTokenForSpAppWeb;
+        protected Tuple<string, DateTime> AppOnlyAccessTokenForSpHost;
+        protected Tuple<string, DateTime> AppOnlyAccessTokenForSpAppWeb;
 
         /// <summary>
         /// Gets the SharePoint host url from QueryString of the specified HTTP request.
@@ -42,7 +36,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (httpRequest == null)
             {
-                throw new ArgumentNullException("httpRequest");
+                throw new ArgumentNullException(nameof(httpRequest));
             }
 
             string spHostUrlString = TokenHelper.EnsureTrailingSlash(httpRequest.QueryString[SPHostUrlKey]);
@@ -69,42 +63,27 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         /// <summary>
         /// The SharePoint host url.
         /// </summary>
-        public Uri SPHostUrl
-        {
-            get { return this.spHostUrl; }
-        }
+        public Uri SPHostUrl { get; }
 
         /// <summary>
         /// The SharePoint app web url.
         /// </summary>
-        public Uri SPAppWebUrl
-        {
-            get { return this.spAppWebUrl; }
-        }
+        public Uri SPAppWebUrl { get; }
 
         /// <summary>
         /// The SharePoint language.
         /// </summary>
-        public string SPLanguage
-        {
-            get { return this.spLanguage; }
-        }
+        public string SPLanguage { get; }
 
         /// <summary>
         /// The SharePoint client tag.
         /// </summary>
-        public string SPClientTag
-        {
-            get { return this.spClientTag; }
-        }
+        public string SPClientTag { get; }
 
         /// <summary>
         /// The SharePoint product number.
         /// </summary>
-        public string SPProductNumber
-        {
-            get { return this.spProductNumber; }
-        }
+        public string SPProductNumber { get; }
 
         /// <summary>
         /// The user access token for the SharePoint host.
@@ -150,29 +129,29 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (spHostUrl == null)
             {
-                throw new ArgumentNullException("spHostUrl");
+                throw new ArgumentNullException(nameof(spHostUrl));
             }
 
             if (string.IsNullOrEmpty(spLanguage))
             {
-                throw new ArgumentNullException("spLanguage");
+                throw new ArgumentNullException(nameof(spLanguage));
             }
 
             if (string.IsNullOrEmpty(spClientTag))
             {
-                throw new ArgumentNullException("spClientTag");
+                throw new ArgumentNullException(nameof(spClientTag));
             }
 
             if (string.IsNullOrEmpty(spProductNumber))
             {
-                throw new ArgumentNullException("spProductNumber");
+                throw new ArgumentNullException(nameof(spProductNumber));
             }
 
-            this.spHostUrl = spHostUrl;
-            this.spAppWebUrl = spAppWebUrl;
-            this.spLanguage = spLanguage;
-            this.spClientTag = spClientTag;
-            this.spProductNumber = spProductNumber;
+            this.SPHostUrl = spHostUrl;
+            this.SPAppWebUrl = spAppWebUrl;
+            this.SPLanguage = spLanguage;
+            this.SPClientTag = spClientTag;
+            this.SPProductNumber = spProductNumber;
         }
 
         /// <summary>
@@ -289,7 +268,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (provider == null)
             {
-                throw new ArgumentNullException("provider");
+                throw new ArgumentNullException(nameof(provider));
             }
 
             SharePointContextProvider.current = provider;
@@ -305,7 +284,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (httpContext == null)
             {
-                throw new ArgumentNullException("httpContext");
+                throw new ArgumentNullException(nameof(httpContext));
             }
 
             redirectUrl = null;
@@ -323,9 +302,9 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 contextTokenExpired = true;
             }
 
-            const string SPHasRedirectedToSharePointKey = "SPHasRedirectedToSharePoint";
+            const string spHasRedirectedToSharePointKey = "SPHasRedirectedToSharePoint";
 
-            if (!string.IsNullOrEmpty(httpContext.Request.QueryString[SPHasRedirectedToSharePointKey]) && !contextTokenExpired)
+            if (!string.IsNullOrEmpty(httpContext.Request.QueryString[spHasRedirectedToSharePointKey]) && !contextTokenExpired)
             {
                 return RedirectionStatus.CanNotRedirect;
             }
@@ -354,15 +333,15 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             queryNameValueCollection.Remove(SharePointContext.SPProductNumberKey);
 
             // Adds SPHasRedirectedToSharePoint=1.
-            queryNameValueCollection.Add(SPHasRedirectedToSharePointKey, "1");
+            queryNameValueCollection.Add(spHasRedirectedToSharePointKey, "1");
 
             UriBuilder returnUrlBuilder = new UriBuilder(requestUrl);
             returnUrlBuilder.Query = queryNameValueCollection.ToString();
 
             // Inserts StandardTokens.
-            const string StandardTokens = "{StandardTokens}";
+            const string standardTokens = "{StandardTokens}";
             string returnUrlString = returnUrlBuilder.Uri.AbsoluteUri;
-            returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?") + 1, StandardTokens + "&");
+            returnUrlString = returnUrlString.Insert(returnUrlString.IndexOf("?", StringComparison.Ordinal) + 1, standardTokens + "&");
             // Constructs redirect url.
             string redirectUrlString = TokenHelper.GetAppContextTokenRequestUrl(spHostUrl.GetLeftPart(UriPartial.Path), Uri.EscapeDataString(returnUrlString));
             redirectUrl = new Uri(redirectUrlString, UriKind.Absolute);
@@ -396,7 +375,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (httpRequest == null)
             {
-                throw new ArgumentNullException("httpRequest");
+                throw new ArgumentNullException(nameof(httpRequest));
             }
 
             if (spHostUrl == null)
@@ -462,7 +441,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (httpContext == null)
             {
-                throw new ArgumentNullException("httpContext");
+                throw new ArgumentNullException(nameof(httpContext));
             }
 
             if (spHostUrl == null)
@@ -539,39 +518,30 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     /// </summary>
     public class SharePointAcsContext : SharePointContext
     {
-        private readonly string contextToken;
-        private readonly SharePointContextToken contextTokenObj;
+        private readonly string _contextToken;
+        private readonly SharePointContextToken _contextTokenObj;
 
         /// <summary>
         /// The context token.
         /// </summary>
-        public string ContextToken
-        {
-            get { return this.contextTokenObj.ValidTo > DateTime.UtcNow ? this.contextToken : null; }
-        }
+        public string ContextToken => this._contextTokenObj.ValidTo > DateTime.UtcNow ? this._contextToken : null;
 
         /// <summary>
         /// The context token's "CacheKey" claim.
         /// </summary>
-        public string CacheKey
-        {
-            get { return this.contextTokenObj.ValidTo > DateTime.UtcNow ? this.contextTokenObj.CacheKey : null; }
-        }
+        public string CacheKey => this._contextTokenObj.ValidTo > DateTime.UtcNow ? this._contextTokenObj.CacheKey : null;
 
         /// <summary>
         /// The context token's "refreshtoken" claim.
         /// </summary>
-        public string RefreshToken
-        {
-            get { return this.contextTokenObj.ValidTo > DateTime.UtcNow ? this.contextTokenObj.RefreshToken : null; }
-        }
+        public string RefreshToken => this._contextTokenObj.ValidTo > DateTime.UtcNow ? this._contextTokenObj.RefreshToken : null;
 
         public override string UserAccessTokenForSPHost
         {
             get
             {
-                return GetAccessTokenString(ref this.userAccessTokenForSPHost,
-                                            () => TokenHelper.GetAccessToken(this.contextTokenObj, this.SPHostUrl.Authority));
+                return GetAccessTokenString(ref this.UserAccessTokenForSpHost,
+                                            () => TokenHelper.GetAccessToken(this._contextTokenObj, this.SPHostUrl.Authority));
             }
         }
 
@@ -584,8 +554,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                     return null;
                 }
 
-                return GetAccessTokenString(ref this.userAccessTokenForSPAppWeb,
-                                            () => TokenHelper.GetAccessToken(this.contextTokenObj, this.SPAppWebUrl.Authority));
+                return GetAccessTokenString(ref this.UserAccessTokenForSpAppWeb,
+                                            () => TokenHelper.GetAccessToken(this._contextTokenObj, this.SPAppWebUrl.Authority));
             }
         }
 
@@ -593,7 +563,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                return GetAccessTokenString(ref this.appOnlyAccessTokenForSPHost,
+                return GetAccessTokenString(ref this.AppOnlyAccessTokenForSpHost,
                                             () => TokenHelper.GetAppOnlyAccessToken(TokenHelper.SharePointPrincipal, this.SPHostUrl.Authority, TokenHelper.GetRealmFromTargetUrl(this.SPHostUrl)));
             }
         }
@@ -607,7 +577,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                     return null;
                 }
 
-                return GetAccessTokenString(ref this.appOnlyAccessTokenForSPAppWeb,
+                return GetAccessTokenString(ref this.AppOnlyAccessTokenForSpAppWeb,
                                             () => TokenHelper.GetAppOnlyAccessToken(TokenHelper.SharePointPrincipal, this.SPAppWebUrl.Authority, TokenHelper.GetRealmFromTargetUrl(this.SPAppWebUrl)));
             }
         }
@@ -617,16 +587,16 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (string.IsNullOrEmpty(contextToken))
             {
-                throw new ArgumentNullException("contextToken");
+                throw new ArgumentNullException(nameof(contextToken));
             }
 
             if (contextTokenObj == null)
             {
-                throw new ArgumentNullException("contextTokenObj");
+                throw new ArgumentNullException(nameof(contextTokenObj));
             }
 
-            this.contextToken = contextToken;
-            this.contextTokenObj = contextTokenObj;
+            this._contextToken = contextToken;
+            this._contextTokenObj = contextTokenObj;
         }
 
         /// <summary>
@@ -731,7 +701,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected override SharePointContext LoadSharePointContext(HttpContextBase httpContext)
         {
-            return httpContext.Session[SPContextKey] as SharePointAcsContext;
+            return httpContext.Session?[SPContextKey] as SharePointAcsContext;
         }
 
         protected override void SaveSharePointContext(SharePointContext spContext, HttpContextBase httpContext)
@@ -750,7 +720,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                 httpContext.Response.AppendCookie(spCacheKeyCookie);
             }
 
-            httpContext.Session[SPContextKey] = spAcsContext;
+            if (httpContext.Session != null)
+            {
+                httpContext.Session[SPContextKey] = spAcsContext;
+            }
         }
 
         protected override void Remove(HttpContextBase httpContext)
@@ -760,8 +733,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
             {
                 spCacheKeyCookie.Expires = DateTime.Now.AddDays(-1);
             }
-            httpContext.Session.Remove(SPContextKey);
-            httpContext.Session.Abandon();
+            if (httpContext.Session != null)
+            {
+                httpContext.Session.Remove(SPContextKey);
+                httpContext.Session.Abandon();
+            }
         }
     }
 
@@ -774,21 +750,16 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     /// </summary>
     public class SharePointHighTrustContext : SharePointContext
     {
-        private readonly WindowsIdentity logonUserIdentity;
-
         /// <summary>
         /// The Windows identity for the current user.
         /// </summary>
-        public WindowsIdentity LogonUserIdentity
-        {
-            get { return this.logonUserIdentity; }
-        }
+        public WindowsIdentity LogonUserIdentity { get; }
 
         public override string UserAccessTokenForSPHost
         {
             get
             {
-                return GetAccessTokenString(ref this.userAccessTokenForSPHost,
+                return GetAccessTokenString(ref this.UserAccessTokenForSpHost,
                                             () => TokenHelper.GetS2SAccessTokenWithWindowsIdentity(this.SPHostUrl, this.LogonUserIdentity));
             }
         }
@@ -802,7 +773,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                     return null;
                 }
 
-                return GetAccessTokenString(ref this.userAccessTokenForSPAppWeb,
+                return GetAccessTokenString(ref this.UserAccessTokenForSpAppWeb,
                                             () => TokenHelper.GetS2SAccessTokenWithWindowsIdentity(this.SPAppWebUrl, this.LogonUserIdentity));
             }
         }
@@ -811,7 +782,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             get
             {
-                return GetAccessTokenString(ref this.appOnlyAccessTokenForSPHost,
+                return GetAccessTokenString(ref this.AppOnlyAccessTokenForSpHost,
                                             () => TokenHelper.GetS2SAccessTokenWithWindowsIdentity(this.SPHostUrl, null));
             }
         }
@@ -825,7 +796,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
                     return null;
                 }
 
-                return GetAccessTokenString(ref this.appOnlyAccessTokenForSPAppWeb,
+                return GetAccessTokenString(ref this.AppOnlyAccessTokenForSpAppWeb,
                                             () => TokenHelper.GetS2SAccessTokenWithWindowsIdentity(this.SPAppWebUrl, null));
             }
         }
@@ -835,10 +806,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         {
             if (logonUserIdentity == null)
             {
-                throw new ArgumentNullException("logonUserIdentity");
+                throw new ArgumentNullException(nameof(logonUserIdentity));
             }
 
-            this.logonUserIdentity = logonUserIdentity;
+            this.LogonUserIdentity = logonUserIdentity;
         }
 
         /// <summary>
@@ -919,18 +890,24 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 
         protected override SharePointContext LoadSharePointContext(HttpContextBase httpContext)
         {
-            return httpContext.Session[SPContextKey] as SharePointHighTrustContext;
+            return httpContext.Session?[SPContextKey] as SharePointHighTrustContext;
         }
 
         protected override void SaveSharePointContext(SharePointContext spContext, HttpContextBase httpContext)
         {
-            httpContext.Session[SPContextKey] = spContext as SharePointHighTrustContext;
+            if (httpContext.Session != null)
+            {
+                httpContext.Session[SPContextKey] = spContext as SharePointHighTrustContext;
+            }
         }
 
         protected override void Remove(HttpContextBase httpContext)
         {
-            httpContext.Session.Remove(SPContextKey);
-            httpContext.Session.Abandon();
+            if (httpContext.Session != null)
+            {
+                httpContext.Session.Remove(SPContextKey);
+                httpContext.Session.Abandon();
+            }
         }
     }
 

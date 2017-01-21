@@ -11,6 +11,7 @@ namespace SPMVCWeb.Models
     {
         public FieldInformation(Field field)
         {
+            if (field == null) throw new ArgumentNullException(nameof(field));
             Id = field.Id;
             Name = field.InternalName;
             Title = HttpUtility.HtmlEncode(field.Title);
