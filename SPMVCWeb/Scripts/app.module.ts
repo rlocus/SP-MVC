@@ -157,9 +157,6 @@ export module Caml {
                                     expression = textFieldExpression.EqualTo(<string>value);
                                 }
                                 break;
-                            case FilterOperation.Neq:
-                                expression = textFieldExpression.NotEqualTo(<string>value);
-                                break;
                         }
                         break;
                     case SP.FieldType.lookup:
@@ -188,10 +185,6 @@ export module Caml {
                                         .EqualTo(<string>value);
                                 }
                                 break;
-                            case FilterOperation.Neq:
-                                expression = lookupFieldExpression.ValueAsText()
-                                    .NotEqualTo(<string>value);
-                                break;
                         }
                         break;
                     case SP.FieldType.dateTime:
@@ -202,14 +195,6 @@ export module Caml {
                                 break;
                             case FilterOperation.Geq:
                                 expression = dateFieldExpression.GreaterThanOrEqualTo(<string>value);
-                                break;
-                            case FilterOperation.Neq:
-                                if ($pnp.util.stringIsNullOrEmpty(<string>value)) {
-                                    expression = lookupFieldExpression.ValueAsText().IsNotNull();
-                                }
-                                else {
-                                    expression = lookupFieldExpression.ValueAsText().NotEqualTo(<string>value);
-                                }
                                 break;
                             case FilterOperation.Neq:
                                 if ($pnp.util.stringIsNullOrEmpty(<string>value)) {
@@ -244,14 +229,6 @@ export module Caml {
                             case FilterOperation.Geq:
                                 expression = dateTimeFieldExpression
                                     .GreaterThanOrEqualTo(<string>value);
-                                break;
-                            case FilterOperation.Neq:
-                                if ($pnp.util.stringIsNullOrEmpty(<string>value)) {
-                                    expression = dateTimeFieldExpression.IsNotNull();
-                                }
-                                else {
-                                    expression = dateTimeFieldExpression.NotEqualTo(<string>value);
-                                }
                                 break;
                             case FilterOperation.Neq:
                                 if ($pnp.util.stringIsNullOrEmpty(<string>value)) {
@@ -346,8 +323,7 @@ export module Caml {
                         }
                         break;
                     case SP.FieldType.modStat:
-                        var modStatFieldExpression = fieldExpression.ModStatField(field)
-                            .ValueAsText();
+                        var modStatFieldExpression = fieldExpression.ModStatField(field).ValueAsText();
                         switch (operation) {
                             case FilterOperation.BeginsWith:
                                 expression = modStatFieldExpression.BeginsWith(<string>value);
@@ -370,9 +346,6 @@ export module Caml {
                                 } else {
                                     expression = modStatFieldExpression.EqualTo(<string>value);
                                 }
-                                break;
-                            case FilterOperation.Neq:
-                                expression = modStatFieldExpression.NotEqualTo(<string>value);
                                 break;
                         }
                         break;
@@ -434,9 +407,6 @@ export module Caml {
                                     expression = urlFieldExpression.EqualTo(<string>value);
                                 }
                                 break;
-                            case FilterOperation.Neq:
-                                expression = urlFieldExpression.NotEqualTo(<string>value);
-                                break;
                         }
                         break;
                     case SP.FieldType.user:
@@ -463,9 +433,6 @@ export module Caml {
                                 } else {
                                     expression = userFieldExpression.EqualTo(<string>value);
                                 }
-                                break;
-                            case FilterOperation.Neq:
-                                expression = userFieldExpression.NotEqualTo(<string>value);
                                 break;
                         }
                         break;
@@ -581,25 +548,21 @@ export module Caml {
             return expressions;
         }
 
-        public Append(clause: FilterClause, filter: ICamlFilter) {
+        public Append(clause: FilterClause, ...filters: Array<ICamlFilter>) {
             if (!clause) {
                 clause = this._lastClause;
             }
-            if (filter) {
-                var expression = this.getFilterMultiValueExpression(filter);
-                if (expression) {
-                    switch (clause) {
-                        case FilterClause.None:
-                        default:
-                        case FilterClause.And:
-                            this.AppendAnd(FilterClause.And, filter);
-                            break;
-                        case FilterClause.Or:
-                            this.AppendOr(FilterClause.Or, filter);
-                            break;
-                    }
-                }
+            switch (clause) {
+                case FilterClause.None:
+                default:
+                case FilterClause.And:
+                    this.AppendAnd.apply(this, [FilterClause.And].concat(<any>filters));
+                    break;
+                case FilterClause.Or:
+                    this.AppendOr.apply(this, [FilterClause.Or].concat(<any>filters));
+                    break;
             }
+
             return this;
         }
 

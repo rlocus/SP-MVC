@@ -131,9 +131,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                         expression = textFieldExpression.EqualTo(value);
                                     }
                                     break;
-                                case FilterOperation.Neq:
-                                    expression = textFieldExpression.NotEqualTo(value);
-                                    break;
                             }
                             break;
                         case SP.FieldType.lookup:
@@ -163,10 +160,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                             .EqualTo(value);
                                     }
                                     break;
-                                case FilterOperation.Neq:
-                                    expression = lookupFieldExpression.ValueAsText()
-                                        .NotEqualTo(value);
-                                    break;
                             }
                             break;
                         case SP.FieldType.dateTime:
@@ -177,14 +170,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                     break;
                                 case FilterOperation.Geq:
                                     expression = dateFieldExpression.GreaterThanOrEqualTo(value);
-                                    break;
-                                case FilterOperation.Neq:
-                                    if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = lookupFieldExpression.ValueAsText().IsNotNull();
-                                    }
-                                    else {
-                                        expression = lookupFieldExpression.ValueAsText().NotEqualTo(value);
-                                    }
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
@@ -220,14 +205,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 case FilterOperation.Geq:
                                     expression = dateTimeFieldExpression
                                         .GreaterThanOrEqualTo(value);
-                                    break;
-                                case FilterOperation.Neq:
-                                    if ($pnp.util.stringIsNullOrEmpty(value)) {
-                                        expression = dateTimeFieldExpression.IsNotNull();
-                                    }
-                                    else {
-                                        expression = dateTimeFieldExpression.NotEqualTo(value);
-                                    }
                                     break;
                                 case FilterOperation.Neq:
                                     if ($pnp.util.stringIsNullOrEmpty(value)) {
@@ -325,8 +302,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             }
                             break;
                         case SP.FieldType.modStat:
-                            var modStatFieldExpression = fieldExpression.ModStatField(field)
-                                .ValueAsText();
+                            var modStatFieldExpression = fieldExpression.ModStatField(field).ValueAsText();
                             switch (operation) {
                                 case FilterOperation.BeginsWith:
                                     expression = modStatFieldExpression.BeginsWith(value);
@@ -350,9 +326,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                     else {
                                         expression = modStatFieldExpression.EqualTo(value);
                                     }
-                                    break;
-                                case FilterOperation.Neq:
-                                    expression = modStatFieldExpression.NotEqualTo(value);
                                     break;
                             }
                             break;
@@ -416,9 +389,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                         expression = urlFieldExpression.EqualTo(value);
                                     }
                                     break;
-                                case FilterOperation.Neq:
-                                    expression = urlFieldExpression.NotEqualTo(value);
-                                    break;
                             }
                             break;
                         case SP.FieldType.user:
@@ -446,9 +416,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                     else {
                                         expression = userFieldExpression.EqualTo(value);
                                     }
-                                    break;
-                                case FilterOperation.Neq:
-                                    expression = userFieldExpression.NotEqualTo(value);
                                     break;
                             }
                             break;
@@ -558,24 +525,23 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 }
                 return expressions;
             };
-            Builder.prototype.Append = function (clause, filter) {
+            Builder.prototype.Append = function (clause) {
+                var filters = [];
+                for (var _i = 1; _i < arguments.length; _i++) {
+                    filters[_i - 1] = arguments[_i];
+                }
                 if (!clause) {
                     clause = this._lastClause;
                 }
-                if (filter) {
-                    var expression = this.getFilterMultiValueExpression(filter);
-                    if (expression) {
-                        switch (clause) {
-                            case FilterClause.None:
-                            default:
-                            case FilterClause.And:
-                                this.AppendAnd(FilterClause.And, filter);
-                                break;
-                            case FilterClause.Or:
-                                this.AppendOr(FilterClause.Or, filter);
-                                break;
-                        }
-                    }
+                switch (clause) {
+                    case FilterClause.None:
+                    default:
+                    case FilterClause.And:
+                        this.AppendAnd.apply(this, [FilterClause.And].concat(filters));
+                        break;
+                    case FilterClause.Or:
+                        this.AppendOr.apply(this, [FilterClause.Or].concat(filters));
+                        break;
                 }
                 return this;
             };
