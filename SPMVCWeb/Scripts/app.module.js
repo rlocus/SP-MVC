@@ -19,35 +19,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             FilterOperation[FilterOperation["In"] = 8] = "In";
         })(Caml.FilterOperation || (Caml.FilterOperation = {}));
         var FilterOperation = Caml.FilterOperation;
-        (function (FilterClause) {
-            FilterClause[FilterClause["None"] = 0] = "None";
-            FilterClause[FilterClause["And"] = 1] = "And";
-            FilterClause[FilterClause["Or"] = 2] = "Or";
-        })(Caml.FilterClause || (Caml.FilterClause = {}));
-        var FilterClause = Caml.FilterClause;
         var Builder = (function () {
             function Builder(viewXml, replace) {
                 this._expression == null;
                 this._viewXml = viewXml;
                 this._replace = replace;
-                /*       switch (clause) {
-                           case FilterClause.And:
-                               this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
-                               this._lastClause = FilterClause.And;
-                               break;
-                           case FilterClause.Or:
-                               this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendOr();
-                               this._lastClause = FilterClause.Or;
-                               break;
-                           default:
-                               this._camlBuilder = CamlBuilder.FromXml(viewXml).ReplaceWhere();
-                               this._lastClause = FilterClause.None;
-                               break;
-                       }
-                   }
-                   else {
-                       this._camlBuilder = new CamlBuilder().View().Query().Where();
-                   }*/
             }
             Builder.prototype.getFilterLookupCondition = function (field, value, operation, fieldType) {
                 var fieldExpression = CamlBuilder.Expression();
@@ -548,6 +524,30 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 }
                 return conditions;
             };
+            Builder.prototype.getAndWithAllCondition = function (conditions) {
+                if (this._condition) {
+                    return this._condition.And().All(conditions);
+                }
+                return CamlBuilder.Expression().All(conditions);
+            };
+            Builder.prototype.getAndWithAnyCondition = function (conditions) {
+                if (this._condition) {
+                    return this._condition.And().Any(conditions);
+                }
+                return CamlBuilder.Expression().Any(conditions);
+            };
+            Builder.prototype.getOrWithAllCondition = function (conditions) {
+                if (this._condition) {
+                    return this._condition.Or().All(conditions);
+                }
+                return CamlBuilder.Expression().All(conditions);
+            };
+            Builder.prototype.getOrWithAnyCondition = function (conditions) {
+                if (this._condition) {
+                    return this._condition.And().Any(conditions);
+                }
+                return CamlBuilder.Expression().Any(conditions);
+            };
             Builder.prototype.appendOr = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
@@ -556,6 +556,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
                     this._expression = this.getOrFieldExpression().Any(conditions);
+                    this._condition = this.getOrWithAnyCondition(this.getConditions(filters));
                 }
                 return this;
             };
@@ -567,10 +568,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
                     this._expression = this.getAndFieldExpression().All(conditions);
+                    this._condition = this.getAndWithAllCondition(this.getConditions(filters));
                 }
                 return this;
             };
-            Builder.prototype.appendOrAll = function () {
+            Builder.prototype.appendOrWithAll = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
                     filters[_i - 0] = arguments[_i];
@@ -578,10 +580,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
                     this._expression = this.getOrFieldExpression().All(conditions);
+                    this._condition = this.getOrWithAllCondition(this.getConditions(filters));
                 }
                 return this;
             };
-            Builder.prototype.appendAndAny = function () {
+            Builder.prototype.appendAndWithAny = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
                     filters[_i - 0] = arguments[_i];
@@ -589,11 +592,49 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
                     this._expression = this.getAndFieldExpression().Any(conditions);
+                    this._condition = this.getAndWithAnyCondition(this.getConditions(filters));
+                }
+                return this;
+            };
+            Builder.prototype.combineAll = function () {
+                var builders = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    builders[_i - 0] = arguments[_i];
+                }
+                var conditions = new Array();
+                for (var i in builders) {
+                    var builder = builders[i];
+                    if (builder && builder._condition) {
+                        conditions.push(builder._condition);
+                    }
+                }
+                if (conditions.length > 0) {
+                    this._expression = this.getAndFieldExpression().All(conditions);
+                    this._condition = this.getAndWithAllCondition(conditions);
+                }
+                return this;
+            };
+            Builder.prototype.combineAny = function () {
+                var builders = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    builders[_i - 0] = arguments[_i];
+                }
+                var conditions = new Array();
+                for (var i in builders) {
+                    var builder = builders[i];
+                    if (builder && builder._condition) {
+                        conditions.push(builder._condition);
+                    }
+                }
+                if (conditions.length > 0) {
+                    this._expression = this.getOrFieldExpression().Any(conditions);
+                    this._condition = this.getOrWithAnyCondition(conditions);
                 }
                 return this;
             };
             Builder.prototype.clear = function () {
                 this._expression = null;
+                this._condition = null;
             };
             Builder.prototype.toString = function () {
                 if (this._expression) {

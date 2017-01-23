@@ -36,15 +36,10 @@ export module Caml {
         In
     }
 
-    export enum FilterClause {
-        None,
-        And,
-        Or
-    }
-
     export class Builder {
 
         private _expression: CamlBuilder.IExpression;
+        private _condition: CamlBuilder.IExpression;
         private _viewXml;
         private _replace?: boolean;
 
@@ -52,24 +47,6 @@ export module Caml {
             this._expression == null;
             this._viewXml = viewXml;
             this._replace = replace;
-            /*       switch (clause) {
-                       case FilterClause.And:
-                           this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendAnd();
-                           this._lastClause = FilterClause.And;
-                           break;
-                       case FilterClause.Or:
-                           this._camlBuilder = CamlBuilder.FromXml(viewXml).ModifyWhere().AppendOr();
-                           this._lastClause = FilterClause.Or;
-                           break;
-                       default:
-                           this._camlBuilder = CamlBuilder.FromXml(viewXml).ReplaceWhere();
-                           this._lastClause = FilterClause.None;
-                           break;
-                   }
-               }
-               else {
-                   this._camlBuilder = new CamlBuilder().View().Query().Where();
-               }*/
         }
 
         private getFilterLookupCondition(field: string,
@@ -539,7 +516,6 @@ export module Caml {
             if (this._replace) {
                 return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
             }
-
             return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendAnd();
         }
 
@@ -577,10 +553,39 @@ export module Caml {
             return conditions;
         }
 
+        private getAndWithAllCondition(conditions: Array<CamlBuilder.IExpression>) {
+            if (this._condition) {
+                return this._condition.And().All(conditions);
+            }
+            return CamlBuilder.Expression().All(conditions);
+        }
+
+        private getAndWithAnyCondition(conditions: Array<CamlBuilder.IExpression>) {
+            if (this._condition) {
+                return this._condition.And().Any(conditions);
+            }
+            return CamlBuilder.Expression().Any(conditions);
+        }
+
+        private getOrWithAllCondition(conditions: Array<CamlBuilder.IExpression>) {
+            if (this._condition) {
+                return this._condition.Or().All(conditions);
+            }
+            return CamlBuilder.Expression().All(conditions);
+        }
+
+        private getOrWithAnyCondition(conditions: Array<CamlBuilder.IExpression>) {
+            if (this._condition) {
+                return this._condition.And().Any(conditions);
+            }
+            return CamlBuilder.Expression().Any(conditions);
+        }
+
         public appendOr(...filters: Array<ICamlFilter>) {
             var conditions = this.getConditions(filters);
             if (conditions.length > 0) {
                 this._expression = this.getOrFieldExpression().Any(conditions);
+                this._condition = this.getOrWithAnyCondition(this.getConditions(filters));
             }
             return this;
         }
@@ -589,28 +594,62 @@ export module Caml {
             var conditions = this.getConditions(filters);
             if (conditions.length > 0) {
                 this._expression = this.getAndFieldExpression().All(conditions);
+                this._condition = this.getAndWithAllCondition(this.getConditions(filters));
             }
             return this;
         }
 
-        public appendOrAll(...filters: Array<ICamlFilter>) {
+        public appendOrWithAll(...filters: Array<ICamlFilter>) {
             var conditions = this.getConditions(filters);
             if (conditions.length > 0) {
                 this._expression = this.getOrFieldExpression().All(conditions);
+                this._condition = this.getOrWithAllCondition(this.getConditions(filters));
             }
             return this;
         }
 
-        public appendAndAny(...filters: Array<ICamlFilter>) {
+        public appendAndWithAny(...filters: Array<ICamlFilter>) {
             var conditions = this.getConditions(filters);
             if (conditions.length > 0) {
                 this._expression = this.getAndFieldExpression().Any(conditions);
+                this._condition = this.getAndWithAnyCondition(this.getConditions(filters));
+            }
+            return this;
+        }
+
+        public combineAll(...builders: Array<Builder>) {
+            var conditions = new Array<CamlBuilder.IExpression>();
+            for (var i in builders) {
+                var builder = builders[i];
+                if (builder && builder._condition) {
+                    conditions.push(builder._condition);
+                }
+            }
+            if (conditions.length > 0) {
+                this._expression = this.getAndFieldExpression().All(conditions);
+                this._condition = this.getAndWithAllCondition(conditions);
+            }
+            return this;
+        }
+
+        public combineAny(...builders: Array<Builder>) {
+            var conditions = new Array<CamlBuilder.IExpression>();
+            for (var i in builders) {
+                var builder = builders[i];
+                if (builder && builder._condition) {
+                    conditions.push(builder._condition);
+                }
+            }
+            if (conditions.length > 0) {
+                this._expression = this.getOrFieldExpression().Any(conditions);
+                this._condition = this.getOrWithAnyCondition(conditions);
             }
             return this;
         }
 
         public clear() {
             this._expression = null;
+            this._condition = null;
         }
 
         public toString() {
