@@ -6,7 +6,7 @@
 @section scripts
 {
     <script type="text/javascript">
-        require(["jquery", "angular", "app"], function ($, angular, app) {
+        require(["jquery", "angular", "app"], function($, angular, app) {
             if (app.is_initialized()) {
                 init();
             } else {
@@ -20,11 +20,6 @@
                 var viewJoins = app.$("<div />").html(list.ViewJoins).text();
                 var viewProjectedFields = app.$("<div />").html(list.ViewProjectedFields).text();
                 var viewQuery = app.$("<div />").html(list.ViewQuery).text();
-                if (viewQuery) {
-                    viewXml += "<Query>";
-                    viewXml += viewQuery;
-                    viewXml += "</Query>";
-                }
                 if (viewJoins) {
                     viewXml += "<Joins>";
                     viewXml += viewJoins;
@@ -39,12 +34,17 @@
                     viewXml += "<RowLimit" + (Boolean(list.Paged) ? " Paged=\"TRUE\"" : "") + ">" + list.RowLimit + "</RowLimit>";
                 }
                 if ($.isArray(list.Fields)) {
-                    viewXml += new CamlBuilder().ViewFields($.map(list.Fields, function (field) {
+                    viewXml += new CamlBuilder().ViewFields($.map(list.Fields, function(field) {
                         return field.Name;
                     })).ToString();
                 }
+                if (viewQuery) {
+                    viewXml += "<Query>";
+                    viewXml += viewQuery;
+                    viewXml += "</Query>";
+                }
                 viewXml += "</View>";
-                //var viewXml = app.$("<div />").html(list.ViewSchema).text();
+                //viewXml = app.$("<div />").html(list.ViewSchema).text();
                 var listView = app.get_ListView({
                     controllerName: "listview-controller",
                     listId: list.Id,
@@ -55,7 +55,7 @@
                     limit: list.RowLimit,
                     paged: list.Paged,
                     scope: Number(list.Scope) > 0 ? Number(list.Scope) - 1 : null,
-                    viewFields: $.isArray(list.Fields) ? $.map(list.Fields, function (field) {
+                    viewFields: $.isArray(list.Fields) ? $.map(list.Fields, function(field) {
                         return field.Name;
                     }) : null,
                     renderMethod: null,
@@ -63,58 +63,58 @@
                     delay: 600
                 });
 
-                $(listView).on("model-render", function (ev, $scope, factory) {
+                $(listView).on("model-render", function(ev, $scope, factory) {
                     $scope.fields = list.Fields;
-                    $scope.getFieldValue = function (listItem, field) {
+                    $scope.getFieldValue = function(listItem, field) {
                         var value = listItem.$data[field.Name];
                         switch (field.TypeKind) {
-                            case SP.FieldType.computed:
-                                switch (field.Name) {
-                                    case "DocIcon":
-                                        if (listItem.$data.FSObjType === "1") {
-                                            value = "<uif-icon uif-type=\"folder\"></uif-icon>";
-                                        } else {
-                                            value = "<uif-icon uif-type=\"document\"></uif-icon>";
-                                        }
-                                        break;
-                                    case "LinkTitle":
-                                    case "LinkTitleNoMenu":
-                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["Title"]) + "</a>";
-                                        break;
-                                    case "LinkFilename":
-                                    case "LinkFilenameNoMenu":
-                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["FileLeafRef"]) + "</a>";
-                                        break;
-                                    case "FileSizeDisplay":
-                                        value = listItem.$data["File_x0020_Size"];
-                                        if (value) {
-                                            var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                                            var bytes = Number(value);
-                                            if (bytes === 0 || isNaN(bytes)) {
-                                                value = '0 B';
-                                            } else {
-                                                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-                                                value = Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-                                            }
-                                        }
-                                        break;
-                                    case "ImageSize":
-                                        if (listItem.$data["ImageWidth"] && listItem.$data["ImageHeight"])
-                                            value = [listItem.$data["ImageWidth"], listItem.$data["ImageHeight"]].join(" x ");
-                                        break;
+                        case SP.FieldType.computed:
+                            switch (field.Name) {
+                            case "DocIcon":
+                                if (listItem.$data.FSObjType === "1") {
+                                    value = "<uif-icon uif-type=\"folder\"></uif-icon>";
+                                } else {
+                                    value = "<uif-icon uif-type=\"document\"></uif-icon>";
                                 }
                                 break;
-                            case SP.FieldType.user:
+                            case "LinkTitle":
+                            case "LinkTitleNoMenu":
+                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["Title"]) + "</a>";
+                                break;
+                            case "LinkFilename":
+                            case "LinkFilenameNoMenu":
+                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["FileLeafRef"]) + "</a>";
+                                break;
+                            case "FileSizeDisplay":
+                                value = listItem.$data["File_x0020_Size"];
                                 if (value) {
-                                    if ($.isArray(value)) {
-                                        value = $.map(value, function (item) {
-                                            return "<a>" + item.title + "</a>";
-                                        }).join('<br />');
+                                    var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                                    var bytes = Number(value);
+                                    if (bytes === 0 || isNaN(bytes)) {
+                                        value = '0 B';
                                     } else {
-                                        value = value.title;
+                                        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                                        value = Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
                                     }
                                 }
                                 break;
+                            case "ImageSize":
+                                if (listItem.$data["ImageWidth"] && listItem.$data["ImageHeight"])
+                                    value = [listItem.$data["ImageWidth"], listItem.$data["ImageHeight"]].join(" x ");
+                                break;
+                            }
+                            break;
+                        case SP.FieldType.user:
+                            if (value) {
+                                if ($.isArray(value)) {
+                                    value = $.map(value, function(item) {
+                                        return "<a>" + item.title + "</a>";
+                                    }).join('<br />');
+                                } else {
+                                    value = value.title;
+                                }
+                            }
+                            break;
                         }
                         if (field.ListItemMenuAllowed) {
                             value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
@@ -129,18 +129,23 @@
                     $scope.nextText = "+" + list.RowLimit;
                 });
 
-                $(listView).on("search-item", function (ev, filters, term) {
-                    filters.push({ field: "Title", fieldType: SP.FieldType.text, value: term, operation: 7 });
+                $(listView).on("search-item", function(ev, filters, term) {
+                    if (list.ListType === 0) {
+                        filters.push({ field: "Title", fieldType: SP.FieldType.text, value: term, operation: 7 });
+                    }
+                    if (list.ListType === 1) {
+                        filters.push({ field: "FileLeafRef", fieldType: SP.FieldType.text, value: term, operation: 7 });
+                    }
                 });
 
-                $(app).on("app-error", function (ev, message, stackTrace) {
+                $(app).on("app-error", function(ev, message, stackTrace) {
                     alert(message);
                 });
 
                 if (!window.renderSPChrome) {
                     app.render([listView]);
                 } else {
-                    $('body').on("chrome-loaded", function () {
+                    $('body').on("chrome-loaded", function() {
                         app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
                         app.render([listView]);
                     });
