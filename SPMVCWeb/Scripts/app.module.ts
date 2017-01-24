@@ -8,16 +8,16 @@ import * as $pnp from "pnp";
 export interface IFilter {
     field: string;
     value: Array<string> | Array<number> | Array<Date> | string | number | boolean;
-    operation: Caml.FilterOperation;
-    lookupId: boolean;
+    operation?: Caml.FilterOperation;
+    lookupId?: boolean;
 }
 
 export interface IQueryStringFilter extends IFilter {
-    data: string;
+    data?: string;
 }
 
 export interface ICamlFilter extends IFilter {
-    fieldType: SP.FieldType;
+    fieldType?: SP.FieldType;
 }
 
 
@@ -40,19 +40,40 @@ export module Caml {
 
         private _expression: CamlBuilder.IExpression;
         private _condition: CamlBuilder.IExpression;
+        private _originalViewXml;
         private _viewXml;
         private _replace?: boolean;
+        private _paged?: boolean;
+        private _limit: number;
+        private _scope: CamlBuilder.ViewScope;
+        private _orderBy: string;
+        private _sortAsc: boolean;
+        private _viewFields?: Array<string>;
 
-        constructor(viewXml: string, replace?: boolean) {
+        constructor(limit?: number, paged?: boolean, orderBy?: string, sortAsc?: boolean, scope?: CamlBuilder.ViewScope, viewFields?: Array<string>) {
             this._expression == null;
-            this._viewXml = viewXml;
-            this._replace = replace;
+            this._paged = paged;
+            this._limit = limit;
+            this._orderBy = orderBy;
+            this._sortAsc = sortAsc;
+            this._scope = scope;
+            this._viewFields = viewFields;
+        }
+
+        public static FromXml(viewXml?: string, replace?: boolean) {
+            var builder = new Builder();
+            builder._originalViewXml = viewXml;
+            builder._replace = replace;
+            return builder;
         }
 
         private getFilterLookupCondition(field: string,
             value: string | boolean | number,
             operation: FilterOperation,
             fieldType: SP.FieldType) {
+            if ($pnp.util.stringIsNullOrEmpty(field)) {
+                throw "Field Internal Name cannot be empty.";
+            }
             var fieldExpression = CamlBuilder.Expression();
             var condition: CamlBuilder.IExpression;
             var numberFieldExpression: CamlBuilder.INumberFieldExpression;
@@ -94,12 +115,18 @@ export module Caml {
                 case FilterOperation.Leq:
                     condition = numberFieldExpression.LessThanOrEqualTo(<number>value);
                     break;
+                case FilterOperation.BeginsWith:
+                case FilterOperation.Contains:
+                    throw "Lookup field: '" + field + "'. Operation " + operation + " is not supported.";
             }
             return condition;
         }
 
         private getFilterCondition(field: string, value: string | boolean | number, operation: FilterOperation, isLookupId: boolean, fieldType: SP.FieldType) {
             var self = this;
+            if ($pnp.util.stringIsNullOrEmpty(field)) {
+                throw "Field Internal Name cannot be empty.";
+            }
             var condition: CamlBuilder.IExpression;
             if (Boolean(isLookupId)) {
                 condition = self.getFilterLookupCondition(field, value, operation, fieldType);
@@ -156,8 +183,7 @@ export module Caml {
                                 if ($pnp.util.stringIsNullOrEmpty(<string>value)) {
                                     condition = lookupFieldExpression.ValueAsText().IsNull();
                                 } else {
-                                    condition = lookupFieldExpression.ValueAsText()
-                                        .EqualTo(<string>value);
+                                    condition = lookupFieldExpression.ValueAsText().EqualTo(<string>value);
                                 }
                                 break;
                         }
@@ -193,6 +219,9 @@ export module Caml {
                             case FilterOperation.Leq:
                                 condition = dateFieldExpression.LessThanOrEqualTo(<string>value);
                                 break;
+                            case FilterOperation.BeginsWith:
+                            case FilterOperation.Contains:
+                                throw "Date field: '" + field + "'. Operation " + operation + " is not supported.";
                         }
                         break;
                     case <SP.FieldType>101: //datetime 
@@ -227,6 +256,9 @@ export module Caml {
                             case FilterOperation.Leq:
                                 condition = dateTimeFieldExpression.LessThanOrEqualTo(<string>value);
                                 break;
+                            case FilterOperation.BeginsWith:
+                            case FilterOperation.Contains:
+                                throw "Date time field: '" + field + "'. Operation " + operation + " is not supported.";
                         }
                         break;
                     case SP.FieldType.counter:
@@ -261,6 +293,9 @@ export module Caml {
                             case FilterOperation.Leq:
                                 condition = counterFieldExpression.LessThanOrEqualTo(<number>value);
                                 break;
+                            case FilterOperation.BeginsWith:
+                            case FilterOperation.Contains:
+                                throw "Counter field: '" + field + "'. Operation " + operation + " is not supported.";
                         }
                         break;
                     case SP.FieldType.integer:
@@ -294,6 +329,9 @@ export module Caml {
                             case FilterOperation.Leq:
                                 condition = integerFieldExpression.LessThanOrEqualTo(<number>value);
                                 break;
+                            case FilterOperation.BeginsWith:
+                            case FilterOperation.Contains:
+                                throw "Integer field: '" + field + "'. Operation " + operation + " is not supported.";
                         }
                         break;
                     case SP.FieldType.modStat:
@@ -354,6 +392,9 @@ export module Caml {
                             case FilterOperation.Leq:
                                 condition = numberFieldExpression.LessThanOrEqualTo(<number>value);
                                 break;
+                            case FilterOperation.BeginsWith:
+                            case FilterOperation.Contains:
+                                throw "Number field: '" + field + "'. Operation " + operation + " is not supported.";
                         }
                         break;
                     case SP.FieldType.URL:
@@ -411,6 +452,9 @@ export module Caml {
                         }
                         break;
                     case SP.FieldType.boolean:
+                        if (operation == FilterOperation.BeginsWith || operation == FilterOperation.Contains) {
+                            throw "Boolean field: '" + field + "'. Operation " + operation + " is not supported.";
+                        }
                         var booleanFieldExpression = fieldExpression.BooleanField(field);
                         if ($pnp.util.stringIsNullOrEmpty(<string>value)) {
                             if (operation == FilterOperation.Neq) {
@@ -436,6 +480,11 @@ export module Caml {
             var self = this;
             var fieldExpression = CamlBuilder.Expression();
             var condition: CamlBuilder.IExpression;
+
+            if ($pnp.util.stringIsNullOrEmpty(filter.field)) {
+                throw "Field Internal Name cannot be empty.";
+            }
+
             if ($pnp.util.isArray(filter.value)) {
                 if ((<any[]>filter.value).length === 1) {
                     condition = self.getFilterCondition(filter.field,
@@ -444,23 +493,23 @@ export module Caml {
                         filter.lookupId,
                         filter.fieldType);
                 } else if ((<any[]>filter.value).length > 1) {
+                    if (!$pnp.util.stringIsNullOrEmpty(<any>filter.operation) && filter.operation != FilterOperation.In) {
+                        throw "Field: '" + filter.field + "'. Operation " + filter.operation + " is not supported.";
+                    }
                     if (Boolean(filter.lookupId)) {
                         switch (filter.fieldType) {
                             case SP.FieldType.lookup:
                             default:
-                                condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id()
-                                    .In(<number[]>filter.value);
+                                condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id().In(<number[]>filter.value);
                                 break;
                             case SP.FieldType.user:
-                                condition = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id()
-                                    .In(<number[]>filter.value);
+                                condition = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id().In(<number[]>filter.value);
                                 break;
                         }
                     } else {
                         switch (filter.fieldType) {
                             case SP.FieldType.lookup:
-                                condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat()
-                                    .ValueAsText().In(<string[]>filter.value);
+                                condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().ValueAsText().In(<string[]>filter.value);
                                 break;
                             case SP.FieldType.text:
                             default:
@@ -504,19 +553,32 @@ export module Caml {
             return condition;
         }
 
+        private getQuery() {
+            var view = new CamlBuilder().View(this._viewFields);
+            if (!$pnp.util.stringIsNullOrEmpty(<any>this._limit) || !$pnp.util.stringIsNullOrEmpty(<any>this._paged)) {
+                view = view.RowLimit(this._limit, this._paged);
+            }
+            if (!$pnp.util.stringIsNullOrEmpty(<any>this._scope)) {
+                view = view.Scope(this._scope);
+            }
+            var query = view.Query();
+            if (!$pnp.util.stringIsNullOrEmpty(<any>this._orderBy)) {
+                query.OrderBy(this._orderBy);
+            }
+            return query;
+        }
+
         private getAndFieldExpression(): CamlBuilder.IFieldExpression {
             if (this._expression) {
                 return this._expression.And();
             }
-
-            if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
-                return new CamlBuilder().View().Query().Where();
+            if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                return this.getQuery().Where();
             }
-
             if (this._replace) {
-                return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
+                return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
             }
-            return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendAnd();
+            return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendAnd();
         }
 
         private getOrFieldExpression(): CamlBuilder.IFieldExpression {
@@ -524,15 +586,15 @@ export module Caml {
                 return this._expression.Or();
             }
 
-            if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+            if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
                 return new CamlBuilder().View().Query().Where();
             }
 
             if (this._replace) {
-                return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
+                return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
             }
 
-            return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendOr();
+            return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendOr();
         }
 
         private getConditions(filters: Array<ICamlFilter>) {
@@ -648,13 +710,26 @@ export module Caml {
         }
 
         public clear() {
+            delete this._expression;
+            delete this._condition;
+            delete this._viewXml;
             this._expression = null;
             this._condition = null;
         }
 
         public toString() {
             if (this._expression) {
-                this._viewXml = this._expression.ToString();
+                var viewXml = this._expression.ToString();
+                this.clear();
+                this._viewXml = viewXml;
+            }
+            if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                if (!$pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                    this._viewXml = this._originalViewXml;
+                }
+                else {
+                    this._viewXml = this.getQuery().ToString();
+                }
             }
             return this._viewXml;
         }
@@ -841,8 +916,9 @@ export namespace App {
             limit?: number;
             expands?: string[];
             paged?: boolean,
+            scope?: CamlBuilder.ViewScope,
             rootFolder?: string,
-            //fields?: string[];
+            viewFields?: string[];
             appendRows?: boolean;
             renderMethod?: RenderMethod;
             renderOptions?: number;
@@ -878,12 +954,15 @@ export namespace App {
                     sortAsc: null,
                     limit: null,
                     paged: null,
+                    scope: null,
                     rootFolder: null,
                     appendRows: null,
                     renderMethod: null,
                     renderOptions: null,
                     queryStringFilters: null,
-                    queryBuilder: new Caml.Builder(options.viewXml, false)
+                    queryBuilder: !$pnp.util.stringIsNullOrEmpty(options.viewXml)
+                        ? Caml.Builder.FromXml(options.viewXml, false)
+                        : new Caml.Builder(options.limit, options.paged, options.orderBy, options.sortAsc, options.scope, options.viewFields)
                 }, options);
             }
 
@@ -982,9 +1061,9 @@ export namespace App {
                     if (!$pnp.util.stringIsNullOrEmpty(viewXml)) {
                         parameters.ViewXml = viewXml;
                     }
-                    if (!$pnp.util.stringIsNullOrEmpty(<any>self._options.paged)) {
-                        //parameters.Paging = self._options.paged == true ? "TRUE" : undefined;
-                    }
+                    //if (!$pnp.util.stringIsNullOrEmpty(<any>self._options.paged)) {
+                    //    parameters.Paging = self._options.paged == true ? "TRUE" : undefined;
+                    //}
                     if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
                         parameters.FolderServerRelativeUrl = self._options.rootFolder;
                     }
@@ -1234,7 +1313,7 @@ export namespace App {
                     var items = list.getItems(camlQuery);
                     context.load(items);
                     context.executeQueryAsync(() => {
-                        var listData = { Row: self._app.$.map(items.get_data(), (item: SP.ListItem) => { return item.get_fieldValues(); }), NextHref: null, PrevHref: null };
+                        var listData = { Row: self._app.$.map(items.get_data(), (item: SP.ListItem) => { return item.get_fieldValues(); }), NextHref: null, PrevHref: null, FirstRow: 0, LastRow: 0 };
                         var position = items.get_listItemCollectionPosition();
                         if (position) {
                             listData.NextHref = position.get_pagingInfo();
@@ -1281,7 +1360,7 @@ export namespace App {
         }
 
         export interface IListsViewOptions extends IModuleOptions {
-            delay: number;
+
         }
 
         export class ListsViewBase implements IModule {
@@ -1293,7 +1372,7 @@ export namespace App {
                     throw "App must be specified for ListView!";
                 }
                 this._app = app;
-                this._options = $pnp.util.extend(options, { delay: 1000 });
+                this._options = options;
             }
 
             public getLists() {

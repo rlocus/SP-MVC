@@ -20,12 +20,25 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
         })(Caml.FilterOperation || (Caml.FilterOperation = {}));
         var FilterOperation = Caml.FilterOperation;
         var Builder = (function () {
-            function Builder(viewXml, replace) {
+            function Builder(limit, paged, orderBy, sortAsc, scope, viewFields) {
                 this._expression == null;
-                this._viewXml = viewXml;
-                this._replace = replace;
+                this._paged = paged;
+                this._limit = limit;
+                this._orderBy = orderBy;
+                this._sortAsc = sortAsc;
+                this._scope = scope;
+                this._viewFields = viewFields;
             }
+            Builder.FromXml = function (viewXml, replace) {
+                var builder = new Builder();
+                builder._originalViewXml = viewXml;
+                builder._replace = replace;
+                return builder;
+            };
             Builder.prototype.getFilterLookupCondition = function (field, value, operation, fieldType) {
+                if ($pnp.util.stringIsNullOrEmpty(field)) {
+                    throw "Field Internal Name cannot be empty.";
+                }
                 var fieldExpression = CamlBuilder.Expression();
                 var condition;
                 var numberFieldExpression;
@@ -68,11 +81,17 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     case FilterOperation.Leq:
                         condition = numberFieldExpression.LessThanOrEqualTo(value);
                         break;
+                    case FilterOperation.BeginsWith:
+                    case FilterOperation.Contains:
+                        throw "Lookup field: '" + field + "'. Operation " + operation + " is not supported.";
                 }
                 return condition;
             };
             Builder.prototype.getFilterCondition = function (field, value, operation, isLookupId, fieldType) {
                 var self = this;
+                if ($pnp.util.stringIsNullOrEmpty(field)) {
+                    throw "Field Internal Name cannot be empty.";
+                }
                 var condition;
                 if (Boolean(isLookupId)) {
                     condition = self.getFilterLookupCondition(field, value, operation, fieldType);
@@ -132,8 +151,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                         condition = lookupFieldExpression.ValueAsText().IsNull();
                                     }
                                     else {
-                                        condition = lookupFieldExpression.ValueAsText()
-                                            .EqualTo(value);
+                                        condition = lookupFieldExpression.ValueAsText().EqualTo(value);
                                     }
                                     break;
                             }
@@ -170,6 +188,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 case FilterOperation.Leq:
                                     condition = dateFieldExpression.LessThanOrEqualTo(value);
                                     break;
+                                case FilterOperation.BeginsWith:
+                                case FilterOperation.Contains:
+                                    throw "Date field: '" + field + "'. Operation " + operation + " is not supported.";
                             }
                             break;
                         case 101:
@@ -205,6 +226,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 case FilterOperation.Leq:
                                     condition = dateTimeFieldExpression.LessThanOrEqualTo(value);
                                     break;
+                                case FilterOperation.BeginsWith:
+                                case FilterOperation.Contains:
+                                    throw "Date time field: '" + field + "'. Operation " + operation + " is not supported.";
                             }
                             break;
                         case SP.FieldType.counter:
@@ -240,6 +264,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 case FilterOperation.Leq:
                                     condition = counterFieldExpression.LessThanOrEqualTo(value);
                                     break;
+                                case FilterOperation.BeginsWith:
+                                case FilterOperation.Contains:
+                                    throw "Counter field: '" + field + "'. Operation " + operation + " is not supported.";
                             }
                             break;
                         case SP.FieldType.integer:
@@ -274,6 +301,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 case FilterOperation.Leq:
                                     condition = integerFieldExpression.LessThanOrEqualTo(value);
                                     break;
+                                case FilterOperation.BeginsWith:
+                                case FilterOperation.Contains:
+                                    throw "Integer field: '" + field + "'. Operation " + operation + " is not supported.";
                             }
                             break;
                         case SP.FieldType.modStat:
@@ -336,6 +366,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                                 case FilterOperation.Leq:
                                     condition = numberFieldExpression.LessThanOrEqualTo(value);
                                     break;
+                                case FilterOperation.BeginsWith:
+                                case FilterOperation.Contains:
+                                    throw "Number field: '" + field + "'. Operation " + operation + " is not supported.";
                             }
                             break;
                         case SP.FieldType.URL:
@@ -395,6 +428,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                             }
                             break;
                         case SP.FieldType.boolean:
+                            if (operation == FilterOperation.BeginsWith || operation == FilterOperation.Contains) {
+                                throw "Boolean field: '" + field + "'. Operation " + operation + " is not supported.";
+                            }
                             var booleanFieldExpression = fieldExpression.BooleanField(field);
                             if ($pnp.util.stringIsNullOrEmpty(value)) {
                                 if (operation == FilterOperation.Neq) {
@@ -421,29 +457,32 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 var self = this;
                 var fieldExpression = CamlBuilder.Expression();
                 var condition;
+                if ($pnp.util.stringIsNullOrEmpty(filter.field)) {
+                    throw "Field Internal Name cannot be empty.";
+                }
                 if ($pnp.util.isArray(filter.value)) {
                     if (filter.value.length === 1) {
                         condition = self.getFilterCondition(filter.field, filter.value[0], filter.operation, filter.lookupId, filter.fieldType);
                     }
                     else if (filter.value.length > 1) {
+                        if (!$pnp.util.stringIsNullOrEmpty(filter.operation) && filter.operation != FilterOperation.In) {
+                            throw "Field: '" + filter.field + "'. Operation " + filter.operation + " is not supported.";
+                        }
                         if (Boolean(filter.lookupId)) {
                             switch (filter.fieldType) {
                                 case SP.FieldType.lookup:
                                 default:
-                                    condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id()
-                                        .In(filter.value);
+                                    condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().Id().In(filter.value);
                                     break;
                                 case SP.FieldType.user:
-                                    condition = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id()
-                                        .In(filter.value);
+                                    condition = fieldExpression.UserMultiField(filter.field).IncludesSuchItemThat().Id().In(filter.value);
                                     break;
                             }
                         }
                         else {
                             switch (filter.fieldType) {
                                 case SP.FieldType.lookup:
-                                    condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat()
-                                        .ValueAsText().In(filter.value);
+                                    condition = fieldExpression.LookupMultiField(filter.field).IncludesSuchItemThat().ValueAsText().In(filter.value);
                                     break;
                                 case SP.FieldType.text:
                                 default:
@@ -483,29 +522,43 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 }
                 return condition;
             };
+            Builder.prototype.getQuery = function () {
+                var view = new CamlBuilder().View(this._viewFields);
+                if (!$pnp.util.stringIsNullOrEmpty(this._limit) || !$pnp.util.stringIsNullOrEmpty(this._paged)) {
+                    view = view.RowLimit(this._limit, this._paged);
+                }
+                if (!$pnp.util.stringIsNullOrEmpty(this._scope)) {
+                    view = view.Scope(this._scope);
+                }
+                var query = view.Query();
+                if (!$pnp.util.stringIsNullOrEmpty(this._orderBy)) {
+                    query.OrderBy(this._orderBy);
+                }
+                return query;
+            };
             Builder.prototype.getAndFieldExpression = function () {
                 if (this._expression) {
                     return this._expression.And();
                 }
-                if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
-                    return new CamlBuilder().View().Query().Where();
+                if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                    return this.getQuery().Where();
                 }
                 if (this._replace) {
-                    return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
+                    return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
                 }
-                return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendAnd();
+                return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendAnd();
             };
             Builder.prototype.getOrFieldExpression = function () {
                 if (this._expression) {
                     return this._expression.Or();
                 }
-                if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
                     return new CamlBuilder().View().Query().Where();
                 }
                 if (this._replace) {
-                    return CamlBuilder.FromXml(this._viewXml).ReplaceWhere();
+                    return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
                 }
-                return CamlBuilder.FromXml(this._viewXml).ModifyWhere().AppendOr();
+                return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendOr();
             };
             Builder.prototype.getConditions = function (filters) {
                 var conditions = new Array();
@@ -633,12 +686,25 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 return this;
             };
             Builder.prototype.clear = function () {
+                delete this._expression;
+                delete this._condition;
+                delete this._viewXml;
                 this._expression = null;
                 this._condition = null;
             };
             Builder.prototype.toString = function () {
                 if (this._expression) {
-                    this._viewXml = this._expression.ToString();
+                    var viewXml = this._expression.ToString();
+                    this.clear();
+                    this._viewXml = viewXml;
+                }
+                if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                    if (!$pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                        this._viewXml = this._originalViewXml;
+                    }
+                    else {
+                        this._viewXml = this.getQuery().ToString();
+                    }
                 }
                 return this._viewXml;
             };
@@ -809,12 +875,15 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         sortAsc: null,
                         limit: null,
                         paged: null,
+                        scope: null,
                         rootFolder: null,
                         appendRows: null,
                         renderMethod: null,
                         renderOptions: null,
                         queryStringFilters: null,
-                        queryBuilder: new Caml.Builder(options.viewXml, false)
+                        queryBuilder: !$pnp.util.stringIsNullOrEmpty(options.viewXml)
+                            ? Caml.Builder.FromXml(options.viewXml, false)
+                            : new Caml.Builder(options.limit, options.paged, options.orderBy, options.sortAsc, options.scope, options.viewFields)
                     }, options);
                 }
                 ListViewBase.prototype.addToken = function (query, token) {
@@ -912,8 +981,9 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         if (!$pnp.util.stringIsNullOrEmpty(viewXml)) {
                             parameters.ViewXml = viewXml;
                         }
-                        if (!$pnp.util.stringIsNullOrEmpty(self._options.paged)) {
-                        }
+                        //if (!$pnp.util.stringIsNullOrEmpty(<any>self._options.paged)) {
+                        //    parameters.Paging = self._options.paged == true ? "TRUE" : undefined;
+                        //}
                         if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
                             parameters.FolderServerRelativeUrl = self._options.rootFolder;
                         }
@@ -1166,7 +1236,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         var items = list.getItems(camlQuery);
                         context.load(items);
                         context.executeQueryAsync(function () {
-                            var listData = { Row: self._app.$.map(items.get_data(), function (item) { return item.get_fieldValues(); }), NextHref: null, PrevHref: null };
+                            var listData = { Row: self._app.$.map(items.get_data(), function (item) { return item.get_fieldValues(); }), NextHref: null, PrevHref: null, FirstRow: 0, LastRow: 0 };
                             var position = items.get_listItemCollectionPosition();
                             if (position) {
                                 listData.NextHref = position.get_pagingInfo();
@@ -1216,7 +1286,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         throw "App must be specified for ListView!";
                     }
                     this._app = app;
-                    this._options = $pnp.util.extend(options, { delay: 1000 });
+                    this._options = options;
                 }
                 ListsViewBase.prototype.getLists = function () {
                     var self = this;

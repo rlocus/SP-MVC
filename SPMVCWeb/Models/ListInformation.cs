@@ -13,11 +13,26 @@ namespace SPMVCWeb.Models
         {
             if (list == null) throw new ArgumentNullException(nameof(list));
             if (view == null) throw new ArgumentNullException(nameof(view));
-            Id = list.Id;
-            Title = list.Title;
-            ListTemplate = list.BaseTemplate;
-            ListType = (int)list.BaseType;
-            ViewId = view.Id;
+            if (list.IsPropertyAvailable("Id"))
+            {
+                Id = list.Id;
+            }
+            if (list.IsPropertyAvailable("Title"))
+            {
+                Title = list.Title;
+            }
+            if (list.IsPropertyAvailable("BaseTemplate"))
+            {
+                ListTemplate = list.BaseTemplate;
+            }
+            if (list.IsPropertyAvailable("BaseType"))
+            {
+                ListType = (int) list.BaseType;
+            }
+            if (view.IsPropertyAvailable("Id"))
+            {
+                ViewId = view.Id;
+            }
             if (view.ViewFields.AreItemsAvailable && list.Fields.AreItemsAvailable)
             {
                 List<Field> fields = new List<Field>();
@@ -31,15 +46,51 @@ namespace SPMVCWeb.Models
                 }
                 Fields = fields.Select(FieldInformation.GetInformation).ToArray();
             }
-            ViewJoins = HttpUtility.HtmlEncode(view.ViewJoins);
-            ViewProjectedFields = HttpUtility.HtmlEncode(view.ViewProjectedFields);
-            ViewQuery = HttpUtility.HtmlEncode(view.ViewQuery);
-            ViewXml = HttpUtility.HtmlEncode(view.ListViewXml);
-            Paged = view.Paged;
-            RowLimit = view.RowLimit;
-            ViewTitle = view.Title;
-            ViewUrl = view.ServerRelativeUrl;
-            ListUrl = list.RootFolder.ServerRelativeUrl;
+            if (view.IsPropertyAvailable("ViewJoins"))
+            {
+                ViewJoins = HttpUtility.HtmlEncode(view.ViewJoins);
+            }
+            if (view.IsPropertyAvailable("ViewProjectedFields"))
+            {
+                ViewProjectedFields = HttpUtility.HtmlEncode(view.ViewProjectedFields);
+            }
+            if (view.IsPropertyAvailable("ViewQuery"))
+            {
+                ViewQuery = HttpUtility.HtmlEncode(view.ViewQuery);
+            }
+            if (view.IsPropertyAvailable("ListViewXml"))
+            {
+                ViewSchema = HttpUtility.HtmlEncode(view.ListViewXml);
+            }
+            if (view.IsPropertyAvailable("Paged"))
+            {
+                Paged = view.Paged;
+            }
+            if (view.IsPropertyAvailable("RowLimit"))
+            {
+                RowLimit = view.RowLimit;
+            }
+            if (view.IsPropertyAvailable("Title"))
+            {
+                ViewTitle = view.Title;
+            }
+            if (view.IsPropertyAvailable("ServerRelativeUrl"))
+            {
+                ViewUrl = view.ServerRelativeUrl;
+            }
+
+            if (view.IsPropertyAvailable("Scope"))
+            {
+                ViewScope = (int)view.Scope;
+            }
+            if (list.IsPropertyAvailable("ItemCount"))
+            {
+                ItemCount = list.ItemCount;
+            }
+            if (list.RootFolder.IsPropertyAvailable("ServerRelativeUrl"))
+            {
+                ListUrl = list.RootFolder.ServerRelativeUrl;
+            }
         }
 
         public string Title { get; private set; }
@@ -56,6 +107,8 @@ namespace SPMVCWeb.Models
         public string ViewTitle { get; private set; }
         public string ViewUrl { get; private set; }
         public string ListUrl { get; private set; }
-        public string ViewXml { get; private set; }
+        public string ViewSchema { get; private set; }
+        public int ViewScope { get; private set; }
+        public int ItemCount { get; private set; }
     }
 }

@@ -119,6 +119,9 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                 var ListView = (function (_super) {
                     __extends(ListView, _super);
                     function ListView(app, options) {
+                        if (!options.delay) {
+                            options.delay = 1000;
+                        }
                         _super.call(this, app, options);
                     }
                     ListView.prototype.getEntity = function (listItem) {
@@ -173,7 +176,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             factory.listItems.push(self.getEntity(listItem));
                                         }));
                                         factory.$nextToken = data.ListData.NextHref;
-                                        factory.$prevToken = data.ListData.PrevHref;
+                                        //factory.$prevToken = data.ListData.PrevHref;
                                         factory.$currentToken = token;
                                         factory.$first = data.ListData.FirstRow ? Number(data.ListData.FirstRow) : 0;
                                         factory.$last = data.ListData.LastRow ? Number(data.ListData.LastRow) : 0;
@@ -184,20 +187,18 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                             };
                             return factory;
                         });
-                        var deferred = app.$.Deferred();
                         app.ngModule.controller(options.controllerName, [
                             "$scope", "ListViewFactory", App.SPServiceName, function ($scope, factory, service) {
                                 $scope.loading = true;
                                 $scope.listItems = [];
                                 factory.getListItems().then(function () {
-                                    $scope.listItems = app.$angular.copy(factory.listItems);
-                                    $scope.selection.pager.first = factory.$first;
-                                    $scope.selection.pager.last = factory.$last;
-                                    $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                     allTokens.push(factory.$nextToken);
+                                    $scope.listItems = app.$angular.copy(factory.listItems);
+                                    $scope.selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                    $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                    $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                     $scope.loading = false;
-                                    deferred.resolve();
-                                }, deferred.reject);
+                                });
                                 $scope.selection = {
                                     commandBar: {
                                         searchTerm: null,
@@ -253,17 +254,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();
-                                                if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
-                                                    $scope.listItems = app.$angular.copy(factory.listItems);
-                                                }
-                                                else {
-                                                    $scope.listItems = app.$angular.copy([].concat($scope.listItems).concat(factory.listItems));
-                                                }
-                                                $scope.selection.pager.first = options.appendRows === true ? ($scope.listItems.length > 0 ? 1 : 0) : factory.$first;
-                                                $scope.selection.pager.last = options.appendRows === true ? ($scope.listItems.length) : factory.$last;
-                                                $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
-                                                $scope.selection.pager.prevEnabled = options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(-1));
+                                                //(<any>$scope).selection.commandBar.clearSelection();                                       
                                                 if (!token) {
                                                     allTokens = [];
                                                 }
@@ -271,8 +262,18 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                     allTokens.pop();
                                                 }
                                                 allTokens.push(factory.$nextToken);
-                                                deferred.resolve();
-                                            }, deferred.reject);
+                                                var prevToken = factory.getToken(-1);
+                                                if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
+                                                    $scope.listItems = app.$angular.copy(factory.listItems);
+                                                }
+                                                else {
+                                                    $scope.listItems = app.$angular.copy([].concat($scope.listItems).concat(factory.listItems));
+                                                }
+                                                $scope.selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                                $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                                $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                                $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                            });
                                         },
                                         next: function (offset) {
                                             if (offset === void 0) { offset = 1; }
@@ -287,22 +288,22 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
                                                 //(<any>$scope).selection.commandBar.clearSelection();
+                                                if ($pnp.util.stringIsNullOrEmpty(token)) {
+                                                    allTokens = [];
+                                                }
+                                                allTokens.push(factory.$nextToken);
+                                                var prevToken = factory.getToken(-1);
                                                 if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
                                                     $scope.listItems = app.$angular.copy(factory.listItems);
                                                 }
                                                 else {
                                                     $scope.listItems = app.$angular.copy([].concat($scope.listItems).concat(factory.listItems));
                                                 }
-                                                $scope.selection.pager.first = options.appendRows === true ? ($scope.listItems.length > 0 ? 1 : 0) : factory.$first;
-                                                $scope.selection.pager.last = options.appendRows === true ? ($scope.listItems.length) : factory.$last;
+                                                $scope.selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                                $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                                 $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
-                                                $scope.selection.pager.prevEnabled = options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(-1));
-                                                if ($pnp.util.stringIsNullOrEmpty(token)) {
-                                                    allTokens = [];
-                                                }
-                                                allTokens.push(factory.$nextToken);
-                                                deferred.resolve();
-                                            }, deferred.reject);
+                                                $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                            });
                                         },
                                         prev: function (offset) {
                                             if (offset === void 0) { offset = 1; }
@@ -316,17 +317,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();
-                                                if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
-                                                    $scope.listItems = app.$angular.copy(factory.listItems);
-                                                }
-                                                else {
-                                                    $scope.listItems = app.$angular.copy([].concat($scope.listItems).concat(factory.listItems));
-                                                }
-                                                $scope.selection.pager.first = options.appendRows === true ? ($scope.listItems.length > 0 ? 1 : 0) : factory.$first;
-                                                $scope.selection.pager.last = options.appendRows === true ? ($scope.listItems.length) : factory.$last;
-                                                $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
-                                                $scope.selection.pager.prevEnabled = options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(-1));
+                                                //(<any>$scope).selection.commandBar.clearSelection();                                       
                                                 if ($pnp.util.stringIsNullOrEmpty(token)) {
                                                     allTokens = [];
                                                 }
@@ -336,10 +327,20 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                         allTokens.pop();
                                                         skipNext--;
                                                     }
-                                                    allTokens.push(factory.$nextToken);
                                                 }
-                                                deferred.resolve();
-                                            }, deferred.reject);
+                                                allTokens.push(factory.$nextToken);
+                                                var prevToken = factory.getToken(-1);
+                                                if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
+                                                    $scope.listItems = app.$angular.copy(factory.listItems);
+                                                }
+                                                else {
+                                                    $scope.listItems = app.$angular.copy([].concat($scope.listItems).concat(factory.listItems));
+                                                }
+                                                $scope.selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                                $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                                $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                                $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                            });
                                         },
                                     }
                                 };
@@ -349,24 +350,46 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                     $scope.selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
                                 }, true);
                                 $scope.$watch("selection.commandBar.searchTerm", function (newValue, oldValue) {
-                                    //(<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
-                                    //self._app.delay(() => {
-                                    //    $scope.$apply(function () {
-                                    //    });
-                                    //}, self._options.delay);
+                                    $scope.table.rows.splice(0, $scope.table.rows.length);
+                                    app.delay(function () {
+                                        $scope.$apply(function () {
+                                            var listItems;
+                                            if (newValue !== oldValue) {
+                                                options.queryBuilder.clear();
+                                                if (newValue) {
+                                                    var filters = new Array();
+                                                    //filters.push({ field: "Title", fieldType: SP.FieldType.text, value: newValue, operation: 7 });
+                                                    app.$(self).trigger("search-item", [filters, newValue, $scope, factory]);
+                                                    options.queryBuilder.appendAndWithAny.apply(options.queryBuilder, filters);
+                                                }
+                                                $scope.selection.pager.prevEnabled = false;
+                                                $scope.selection.pager.nextEnabled = false;
+                                                factory.getListItems(null).then(function () {
+                                                    allTokens = [];
+                                                    allTokens.push(factory.$nextToken);
+                                                    $scope.listItems = app.$angular.copy(factory.listItems);
+                                                    $scope.selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                                    $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                                    $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                                });
+                                            }
+                                        });
+                                    }, options.delay);
                                 }, false);
                                 app.$(self).trigger("model-render", [$scope, factory]);
                             }
                         ]);
-                        return deferred.promise();
                     };
                     return ListView;
                 }(app.App.Module.ListViewBase));
                 Module.ListView = ListView;
                 var ListsView = (function (_super) {
                     __extends(ListsView, _super);
-                    function ListsView() {
-                        _super.apply(this, arguments);
+                    function ListsView(app, options) {
+                        if (!options.delay) {
+                            options.delay = 1000;
+                        }
+                        _super.call(this, app, options);
                     }
                     ListsView.prototype.getEntity = function (list) {
                         switch (list.BaseType) {

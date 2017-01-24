@@ -106,7 +106,7 @@ namespace Angular {
             return new App.Module.ListView(self, options);
         }
 
-        public get_ListsView(options: app.App.Module.IListsViewOptions): App.Module.ListsView {
+        public get_ListsView(options: App.Module.IListsViewOptions): App.Module.ListsView {
             var self = this;
             //if (!self.is_initialized()) {
             //    throw "App is not initialized!";
@@ -117,9 +117,16 @@ namespace Angular {
 
     export module App.Module {
 
+        interface IListViewOptions extends app.App.Module.IListViewOptions {
+            delay?: number;
+        }
+
         export class ListView extends app.App.Module.ListViewBase {
 
-            constructor(app: App, options: app.App.Module.IListViewOptions) {
+            constructor(app: App, options: IListViewOptions) {
+                if (!options.delay) {
+                    options.delay = 1000;
+                }
                 super(<app.App.AppBase>app, options);
             }
 
@@ -138,7 +145,7 @@ namespace Angular {
                 var self = this;
                 var allTokens = [];
                 var app = <App>this.get_app();
-                var options = self.get_options();
+                var options = <IListViewOptions>self.get_options();
                 app.ngModule.factory("ListViewFactory", ($q, $http) => {
                     var factory = {} as IListViewFactory;
                     factory.listItems = [];
@@ -173,7 +180,7 @@ namespace Angular {
                                     factory.listItems.push(self.getEntity(listItem));
                                 }));
                                 factory.$nextToken = data.ListData.NextHref;
-                                factory.$prevToken = data.ListData.PrevHref;
+                                //factory.$prevToken = data.ListData.PrevHref;
                                 factory.$currentToken = token;
                                 factory.$first = data.ListData.FirstRow ? Number(data.ListData.FirstRow) : 0;
                                 factory.$last = data.ListData.LastRow ? Number(data.ListData.LastRow) : 0;
@@ -184,20 +191,19 @@ namespace Angular {
                     };
                     return factory;
                 });
-                var deferred = app.$.Deferred();
+
                 app.ngModule.controller(options.controllerName, [
                     "$scope", "ListViewFactory", App.SPServiceName, function ($scope: ng.IScope, factory: IListViewFactory, service: app.App.ISPService) {
                         (<any>$scope).loading = true;
                         (<any>$scope).listItems = [];
                         factory.getListItems().then(() => {
-                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
-                            (<any>$scope).selection.pager.first = factory.$first;
-                            (<any>$scope).selection.pager.last = factory.$last;
-                            (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                             allTokens.push(factory.$nextToken);
+                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
+                            (<any>$scope).selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                            (<any>$scope).selection.pager.last = factory.$last > 0 ? factory.$last : ((<any>$scope).selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                            (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                             (<any>$scope).loading = false;
-                            deferred.resolve();
-                        }, deferred.reject);
+                        });
                         (<any>$scope).selection = {
                             commandBar: {
                                 searchTerm: null,
@@ -252,24 +258,24 @@ namespace Angular {
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
-                                        //(<any>$scope).selection.commandBar.clearSelection();
-                                        if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
-                                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
-                                        } else {
-                                            (<any>$scope).listItems = app.$angular.copy([].concat((<any>$scope).listItems).concat(factory.listItems));
-                                        }
-                                        (<any>$scope).selection.pager.first = options.appendRows === true ? ((<any>$scope).listItems.length > 0 ? 1 : 0) : factory.$first;
-                                        (<any>$scope).selection.pager.last = options.appendRows === true ? ((<any>$scope).listItems.length) : factory.$last;
-                                        (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
-                                        (<any>$scope).selection.pager.prevEnabled = options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(-1));
+                                        //(<any>$scope).selection.commandBar.clearSelection();                                       
                                         if (!token) {
                                             allTokens = [];
                                         } else {
                                             allTokens.pop();
                                         }
                                         allTokens.push(factory.$nextToken);
-                                        deferred.resolve();
-                                    }, deferred.reject);
+                                        var prevToken = factory.getToken(-1);
+                                        if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
+                                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
+                                        } else {
+                                            (<any>$scope).listItems = app.$angular.copy([].concat((<any>$scope).listItems).concat(factory.listItems));
+                                        }
+                                        (<any>$scope).selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                        (<any>$scope).selection.pager.last = factory.$last > 0 ? factory.$last : ((<any>$scope).selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                        (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                        (<any>$scope).selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                    });
                                 },
                                 next: (offset = 1) => {
                                     if ((<any>$scope).loading) { return; }
@@ -280,21 +286,21 @@ namespace Angular {
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
                                         //(<any>$scope).selection.commandBar.clearSelection();
+                                        if ($pnp.util.stringIsNullOrEmpty(token)) {
+                                            allTokens = [];
+                                        }
+                                        allTokens.push(factory.$nextToken);
+                                        var prevToken = factory.getToken(-1);
                                         if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
                                             (<any>$scope).listItems = app.$angular.copy(factory.listItems);
                                         } else {
                                             (<any>$scope).listItems = app.$angular.copy([].concat((<any>$scope).listItems).concat(factory.listItems));
                                         }
-                                        (<any>$scope).selection.pager.first = options.appendRows === true ? ((<any>$scope).listItems.length > 0 ? 1 : 0) : factory.$first;
-                                        (<any>$scope).selection.pager.last = options.appendRows === true ? ((<any>$scope).listItems.length) : factory.$last;
+                                        (<any>$scope).selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                        (<any>$scope).selection.pager.last = factory.$last > 0 ? factory.$last : ((<any>$scope).selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                         (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
-                                        (<any>$scope).selection.pager.prevEnabled = options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(-1));
-                                        if ($pnp.util.stringIsNullOrEmpty(token)) {
-                                            allTokens = [];
-                                        }
-                                        allTokens.push(factory.$nextToken);
-                                        deferred.resolve();
-                                    }, deferred.reject);
+                                        (<any>$scope).selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                    });
                                 },
                                 prev: (offset = 1) => {
                                     if ((<any>$scope).loading) return;
@@ -305,16 +311,7 @@ namespace Angular {
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
-                                        //(<any>$scope).selection.commandBar.clearSelection();
-                                        if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
-                                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
-                                        } else {
-                                            (<any>$scope).listItems = app.$angular.copy([].concat((<any>$scope).listItems).concat(factory.listItems));
-                                        }
-                                        (<any>$scope).selection.pager.first = options.appendRows === true ? ((<any>$scope).listItems.length > 0 ? 1 : 0) : factory.$first;
-                                        (<any>$scope).selection.pager.last = options.appendRows === true ? ((<any>$scope).listItems.length) : factory.$last;
-                                        (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
-                                        (<any>$scope).selection.pager.prevEnabled = options.appendRows !== true && !$pnp.util.stringIsNullOrEmpty(factory.getToken(-1));
+                                        //(<any>$scope).selection.commandBar.clearSelection();                                       
                                         if ($pnp.util.stringIsNullOrEmpty(token)) {
                                             allTokens = [];
                                         }
@@ -324,30 +321,57 @@ namespace Angular {
                                                 allTokens.pop();
                                                 skipNext--;
                                             }
-                                            allTokens.push(factory.$nextToken);
                                         }
-                                        deferred.resolve();
-                                    }, deferred.reject);
+                                        allTokens.push(factory.$nextToken);
+                                        var prevToken = factory.getToken(-1);
+                                        if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
+                                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
+                                        } else {
+                                            (<any>$scope).listItems = app.$angular.copy([].concat((<any>$scope).listItems).concat(factory.listItems));
+                                        }
+                                        (<any>$scope).selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                        (<any>$scope).selection.pager.last = factory.$last > 0 ? factory.$last : ((<any>$scope).selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                        (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                        (<any>$scope).selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                    });
                                 },
                             }
                         };
-                        $scope.$watch("table.selectedItems", function (newValue: Array<any>, oldValue: Array<any>) {
+                        $scope.$watch("table.selectedItems", (newValue: Array<any>, oldValue: Array<any>) => {
                             (<any>$scope).selection.commandBar.viewEnabled = newValue.length === 1;
                             (<any>$scope).selection.commandBar.deleteEnabled = newValue.length > 0;
                             (<any>$scope).selection.commandBar.selectionText = newValue.length > 0 ? newValue.length + " selected" : null;
                         }, true);
-                        $scope.$watch("selection.commandBar.searchTerm", function (newValue: string, oldValue: string) {
-                            //(<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
-                            //self._app.delay(() => {
-                            //    $scope.$apply(function () {
-
-                            //    });
-                            //}, self._options.delay);
+                        $scope.$watch("selection.commandBar.searchTerm", (newValue: string, oldValue: string) => {
+                            (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
+                            app.delay(() => {
+                                $scope.$apply(() => {
+                                    var listItems;
+                                    if (newValue !== oldValue) {
+                                        options.queryBuilder.clear();
+                                        if (newValue) {
+                                            var filters = new Array<app.ICamlFilter>();
+                                            //filters.push({ field: "Title", fieldType: SP.FieldType.text, value: newValue, operation: 7 });
+                                            app.$(self).trigger("search-item", [filters, newValue, $scope, factory]);
+                                            options.queryBuilder.appendAndWithAny.apply(options.queryBuilder, filters);
+                                        }
+                                        (<any>$scope).selection.pager.prevEnabled = false;
+                                        (<any>$scope).selection.pager.nextEnabled = false;
+                                        factory.getListItems(null).then(() => {
+                                            allTokens = [];
+                                            allTokens.push(factory.$nextToken);
+                                            (<any>$scope).listItems = app.$angular.copy(factory.listItems);
+                                            (<any>$scope).selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
+                                            (<any>$scope).selection.pager.last = factory.$last > 0 ? factory.$last : ((<any>$scope).selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
+                                            (<any>$scope).selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                        });
+                                    }
+                                });
+                            }, options.delay);
                         }, false);
                         app.$(self).trigger("model-render", [$scope, factory]);
                     }
                 ]);
-                return deferred.promise();
             }
         }
 
@@ -368,11 +392,18 @@ namespace Angular {
             updateList(list, service: app.App.ISPService);
         }
 
-        export interface IListsViewOptions extends app.App.IModuleOptions {
+        export interface IListsViewOptions extends app.App.Module.IListsViewOptions {
             delay: number;
         }
 
         export class ListsView extends app.App.Module.ListsViewBase {
+
+            constructor(app: App, options: IListsViewOptions) {
+                if (!options.delay) {
+                    options.delay = 1000;
+                }
+                super(<app.App.AppBase>app, options);
+            }
 
             private getEntity(list) {
                 switch (list.BaseType) {
@@ -410,7 +441,7 @@ namespace Angular {
             public render() {
                 var self = this;
                 var app = <App>this.get_app();
-                var options = self.get_options();
+                var options = <IListsViewOptions>self.get_options();
                 app.ngModule.factory("ListsViewFactory", ($q, $http) => {
                     var factory = {} as IListsViewFactory;
                     factory.lists = [];

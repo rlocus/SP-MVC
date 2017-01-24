@@ -16,17 +16,51 @@
             function init() {
                 var listJson = '@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List))';
                 var list = JSON.parse(listJson);
+                var viewXml = "<View" + (Number(list.Scope) > 0 ? " Scope=\"" + CamlBuilder.ViewScope[Number(list.Scope) - 1] + "\"" : "") + ">";
+                var viewJoins = app.$("<div />").html(list.ViewJoins).text();
+                var viewProjectedFields = app.$("<div />").html(list.ViewProjectedFields).text();
+                var viewQuery = app.$("<div />").html(list.ViewQuery).text();
+                if (viewQuery) {
+                    viewXml += "<Query>";
+                    viewXml += viewQuery;
+                    viewXml += "</Query>";
+                }
+                if (viewJoins) {
+                    viewXml += "<Joins>";
+                    viewXml += viewJoins;
+                    viewXml += "</Joins>";
+                }
+                if (viewProjectedFields) {
+                    viewXml += "<ProjectedFields>";
+                    viewXml += viewProjectedFields;
+                    viewXml += "</ProjectedFields>";
+                }
+                if (Number(list.RowLimit) > 0) {
+                    viewXml += "<RowLimit" + (Boolean(list.Paged) ? " Paged=\"TRUE\"" : "") + ">" + list.RowLimit + "</RowLimit>";
+                }
+                if ($.isArray(list.Fields)) {
+                    viewXml += new CamlBuilder().ViewFields($.map(list.Fields, function (field) {
+                        return field.Name;
+                    })).ToString();
+                }
+                viewXml += "</View>";
+                //var viewXml = app.$("<div />").html(list.ViewSchema).text();
                 var listView = app.get_ListView({
                     controllerName: "listview-controller",
                     listId: list.Id,
                     listTitle: list.Title,
                     listUrl: list.ListUrl,
                     viewId: list.ViewId,
-                    viewXml: app.$("<div />").html(list.ViewXml).text(),
+                    viewXml: viewXml,
                     limit: list.RowLimit,
                     paged: list.Paged,
-                    renderMethod: 1,
-                    renderOptions: 0 | 1 | 2 /*| 4 | 8*/
+                    scope: Number(list.Scope) > 0 ? Number(list.Scope) - 1 : null,
+                    viewFields: $.isArray(list.Fields) ? $.map(list.Fields, function (field) {
+                        return field.Name;
+                    }) : null,
+                    renderMethod: null,
+                    renderOptions: 0 | 1 | 2 /*| 4 | 8*/,
+                    delay: 600
                 });
 
                 $(listView).on("model-render", function (ev, $scope, factory) {
@@ -45,11 +79,11 @@
                                         break;
                                     case "LinkTitle":
                                     case "LinkTitleNoMenu":
-                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["Title"] + "</a>";
+                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["Title"]) + "</a>";
                                         break;
                                     case "LinkFilename":
                                     case "LinkFilenameNoMenu":
-                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + listItem.$data["FileLeafRef"] + "</a>";
+                                        value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["FileLeafRef"]) + "</a>";
                                         break;
                                     case "FileSizeDisplay":
                                         value = listItem.$data["File_x0020_Size"];
@@ -93,6 +127,10 @@
                     };
                     $scope.prevText = "-" + list.RowLimit;
                     $scope.nextText = "+" + list.RowLimit;
+                });
+
+                $(listView).on("search-item", function (ev, filters, term) {
+                    filters.push({ field: "Title", fieldType: SP.FieldType.text, value: term, operation: 7 });
                 });
 
                 $(app).on("app-error", function (ev, message, stackTrace) {

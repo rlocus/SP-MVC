@@ -344,16 +344,20 @@ var CamlBuilder;
                 case ModifyType.Replace:
                     return new FieldExpression(builder);
                 case ModifyType.AppendAnd:
-                    var pos = builder.tree.length;
-                    builder.WriteStart("And");
-                    builder.unclosedTags++;
-                    builder.tree = builder.tree.concat(whereBuilder.tree);
+                    if (whereBuilder.tree.length > 0) {
+                        var pos = builder.tree.length;
+                        builder.WriteStart("And");
+                        builder.unclosedTags++;
+                        builder.tree = builder.tree.concat(whereBuilder.tree);
+                    }
                     return new FieldExpression(builder);
                 case ModifyType.AppendOr:
-                    var pos = builder.tree.length;
-                    builder.WriteStart("Or");
-                    builder.unclosedTags++;
-                    builder.tree = builder.tree.concat(whereBuilder.tree);
+                    if (whereBuilder.tree.length > 0) {
+                        var pos = builder.tree.length;
+                        builder.WriteStart("Or");
+                        builder.unclosedTags++;
+                        builder.tree = builder.tree.concat(whereBuilder.tree);
+                    }
                     return new FieldExpression(builder);
                 default:
                     console.log("CamlJs error: unknown ModifyType " + modifyType);
