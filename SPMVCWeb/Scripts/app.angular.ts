@@ -350,7 +350,7 @@ namespace Angular {
                                     if (newValue !== oldValue) {
                                         options.queryBuilder.clear();
                                         if (newValue) {
-                                            var filters = new Array<app.ICamlFilter>();
+                                            var filters = new Array<app.Caml.ICamlFilter>();
                                             //filters.push({ field: "Title", fieldType: SP.FieldType.text, value: newValue, operation: 7 });
                                             app.$(self).trigger("search-item", [filters, newValue, $scope, factory]);
                                             options.queryBuilder.appendAndWithAny.apply(options.queryBuilder, filters);

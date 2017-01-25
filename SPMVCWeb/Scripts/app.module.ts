@@ -5,24 +5,19 @@
 
 import * as $pnp from "pnp";
 
-export interface IFilter {
-    field: string;
-    value: Array<string> | Array<number> | Array<Date> | string | number | boolean;
-    operation?: Caml.FilterOperation;
-    lookupId?: boolean;
-}
-
-export interface IQueryStringFilter extends IFilter {
-    data?: string;
-}
-
-export interface ICamlFilter extends IFilter {
-    fieldType?: SP.FieldType;
-}
-
-
 export module Caml {
     "use strict";
+
+    export interface IFilter {
+        field: string;
+        value: Array<string> | Array<number> | Array<Date> | string | number | boolean;
+        operation?: Caml.FilterOperation;
+        lookupId?: boolean;
+    }
+
+    export interface ICamlFilter extends IFilter {
+        fieldType?: SP.FieldType;
+    }
 
     export enum FilterOperation {
         Eq,
@@ -38,11 +33,9 @@ export module Caml {
 
     export class Builder {
 
-        private _expression: CamlBuilder.IExpression;
-        private _condition: CamlBuilder.IExpression;
-        private _originalViewXml;
-        private _viewXml;
-        private _replace?: boolean;
+        protected _expression: CamlBuilder.IExpression;
+        protected _condition: CamlBuilder.IExpression;
+        protected _viewXml;
         private _paged?: boolean;
         private _limit: number;
         private _scope: CamlBuilder.ViewScope;
@@ -58,13 +51,6 @@ export module Caml {
             this._sortAsc = sortAsc;
             this._scope = scope;
             this._viewFields = viewFields;
-        }
-
-        public static FromXml(viewXml?: string, replace?: boolean) {
-            var builder = new Builder();
-            builder._originalViewXml = viewXml;
-            builder._replace = replace;
-            return builder;
         }
 
         private getFilterLookupCondition(field: string,
@@ -568,33 +554,18 @@ export module Caml {
             return query;
         }
 
-        private getAndFieldExpression(): CamlBuilder.IFieldExpression {
+        protected getAndFieldExpression(): CamlBuilder.IFieldExpression {
             if (this._expression) {
                 return this._expression.And();
             }
-            if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
-                return this.getQuery().Where();
-            }
-            if (this._replace) {
-                return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
-            }
-            return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendAnd();
+            return this.getQuery().Where();
         }
 
-        private getOrFieldExpression(): CamlBuilder.IFieldExpression {
+        protected getOrFieldExpression(): CamlBuilder.IFieldExpression {
             if (this._expression) {
                 return this._expression.Or();
             }
-
-            if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
-                return new CamlBuilder().View().Query().Where();
-            }
-
-            if (this._replace) {
-                return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
-            }
-
-            return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendOr();
+            return this.getQuery().Where();
         }
 
         private getConditions(filters: Array<ICamlFilter>) {
@@ -724,11 +695,63 @@ export module Caml {
                 this._viewXml = viewXml;
             }
             if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                this._viewXml = this.getQuery().ToString();
+            }
+            return this._viewXml;
+        }
+    }
+
+    export class ReBuilder extends Builder {
+
+        private _originalViewXml;
+        private _replace?: boolean;
+
+        constructor(viewXml?: string, replace?: boolean) {
+            super();
+            this._originalViewXml = viewXml;
+            this._replace = replace;
+        }
+
+        protected getAndFieldExpression(): CamlBuilder.IFieldExpression {
+            if (this._expression) {
+                return this._expression.And();
+            }
+            if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                return super.getAndFieldExpression();
+            }
+            if (this._replace) {
+                return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
+            }
+            return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendAnd();
+        }
+
+        protected getOrFieldExpression(): CamlBuilder.IFieldExpression {
+            if (this._expression) {
+                return this._expression.Or();
+            }
+
+            if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                return super.getOrFieldExpression();
+            }
+
+            if (this._replace) {
+                return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
+            }
+            return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendOr();
+        }
+
+        public toString() {
+            if (this._expression) {
+                var viewXml = this._expression.ToString();
+                this.clear();
+                this._viewXml = viewXml;
+            }
+            if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
                 if (!$pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
                     this._viewXml = this._originalViewXml;
                 }
                 else {
-                    this._viewXml = this.getQuery().ToString();
+                    super.toString();
                 }
             }
             return this._viewXml;
@@ -888,6 +911,10 @@ export namespace App {
         }
     }
 
+    export interface IQueryStringFilter extends Caml.IFilter {
+        data?: string;
+    }
+
     export interface ISPService {
         getFormDigest();
     }
@@ -961,7 +988,7 @@ export namespace App {
                     renderOptions: null,
                     queryStringFilters: null,
                     queryBuilder: !$pnp.util.stringIsNullOrEmpty(options.viewXml)
-                        ? Caml.Builder.FromXml(options.viewXml, false)
+                        ? new Caml.ReBuilder(options.viewXml, false)
                         : new Caml.Builder(options.limit, options.paged, options.orderBy, options.sortAsc, options.scope, options.viewFields)
                 }, options);
             }

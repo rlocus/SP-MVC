@@ -10,47 +10,83 @@ namespace SPMVCWeb.Models
         public FieldInformation(Field field)
         {
             if (field == null) throw new ArgumentNullException(nameof(field));
-            Id = field.Id;
-            Name = field.InternalName;
-            Title = HttpUtility.HtmlEncode(field.Title);
-            Description = HttpUtility.HtmlEncode(field.Description);
-            IsReadOnly = field.ReadOnlyField;
-            TypeKind = (uint)field.FieldTypeKind;
-            TypeName = field.TypeAsString;
-            Required = field.Required;
-            Filterable = field.Filterable;
-            Sortable = field.Sortable;
-            DefaultValue = HttpUtility.HtmlEncode(field.DefaultValue);
-            var schemaXml = XElement.Parse(field.SchemaXml);
-            var listItemMenuAllowed = schemaXml.Attribute("ListItemMenuAllowed");
-            if (listItemMenuAllowed != null)
+            if (field.IsPropertyAvailable("Id"))
             {
-                if (listItemMenuAllowed.Value == "Required")
+                Id = field.Id;
+            }
+            if (field.IsPropertyAvailable("InternalName"))
+            {
+                Name = HttpUtility.HtmlEncode(field.InternalName);
+            }
+            if (field.IsPropertyAvailable("Title"))
+            {
+                Title = HttpUtility.HtmlEncode(field.Title);
+            }
+            if (field.IsPropertyAvailable("Description"))
+            {
+                Description = HttpUtility.HtmlEncode(field.Description);
+            }
+            if (field.IsPropertyAvailable("ReadOnlyField"))
+            {
+                IsReadOnly = field.ReadOnlyField;
+            }
+            if (field.IsPropertyAvailable("FieldTypeKind"))
+            {
+                TypeKind = (uint) field.FieldTypeKind;
+            }
+            if (field.IsPropertyAvailable("TypeAsString"))
+            {
+                TypeName = field.TypeAsString;
+            }
+            if (field.IsPropertyAvailable("Required"))
+            {
+                Required = field.Required;
+            }
+            if (field.IsPropertyAvailable("Filterable"))
+            {
+                Filterable = field.Filterable;
+            }
+            if (field.IsPropertyAvailable("Sortable"))
+            {
+                Sortable = field.Sortable;
+            }
+            if (field.IsPropertyAvailable("DefaultValue"))
+            {
+                DefaultValue = HttpUtility.HtmlEncode(field.DefaultValue);
+            }
+            if (field.IsPropertyAvailable("SchemaXml"))
+            {
+                var schemaXml = XElement.Parse(field.SchemaXml);
+                var listItemMenuAllowed = schemaXml.Attribute("ListItemMenuAllowed");
+                if (listItemMenuAllowed != null)
                 {
-                    ListItemMenuAllowed = true;
-                }
-                else if (listItemMenuAllowed.Value == "Allowed")
-                {
-                    var listItemMenu = schemaXml.Attribute("ListItemMenu");
-                    if (listItemMenu != null)
+                    if (listItemMenuAllowed.Value == "Required")
                     {
-                        ListItemMenuAllowed = listItemMenu.Value.ToUpper() == "TRUE";
+                        ListItemMenuAllowed = true;
+                    }
+                    else if (listItemMenuAllowed.Value == "Allowed")
+                    {
+                        var listItemMenu = schemaXml.Attribute("ListItemMenu");
+                        if (listItemMenu != null)
+                        {
+                            ListItemMenuAllowed = listItemMenu.Value.ToUpper() == "TRUE";
+                        }
                     }
                 }
-            }
-            var linkToItemAllowed = schemaXml.Attribute("LinkToItemAllowed");
-            if (linkToItemAllowed != null)
-            {
-                if (linkToItemAllowed.Value == "Required")
+                var linkToItemAllowed = schemaXml.Attribute("LinkToItemAllowed");
+                if (linkToItemAllowed != null)
                 {
-                    LinkToItemAllowed = true;
-                }
-                else if (linkToItemAllowed.Value == "Allowed")
-                {
-                    var linkToItem = schemaXml.Attribute("LinkToItem");
-                    if (linkToItem != null)
+                    if (linkToItemAllowed.Value == "Required")
                     {
-                        LinkToItemAllowed = linkToItem.Value.ToUpper() == "TRUE";
+                        LinkToItemAllowed = true;
+                    }
+                    else if (linkToItemAllowed.Value == "Allowed")
+                    {
+                        var linkToItem = schemaXml.Attribute("LinkToItem");
+                        if (linkToItem != null)
+                        {
+                            LinkToItemAllowed = linkToItem.Value.ToUpper() == "TRUE";
+                        }
                     }
                 }
             }

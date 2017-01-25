@@ -2,6 +2,11 @@
 /// <reference path="typings/sharepoint/SharePoint.d.ts" />
 /// <reference path="typings/sharepoint/pnp.d.ts" />
 /// <reference path="typings/camljs/index.d.ts" />
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 define(["require", "exports", "pnp"], function (require, exports, $pnp) {
     "use strict";
     var Caml;
@@ -29,12 +34,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 this._scope = scope;
                 this._viewFields = viewFields;
             }
-            Builder.FromXml = function (viewXml, replace) {
-                var builder = new Builder();
-                builder._originalViewXml = viewXml;
-                builder._replace = replace;
-                return builder;
-            };
             Builder.prototype.getFilterLookupCondition = function (field, value, operation, fieldType) {
                 if ($pnp.util.stringIsNullOrEmpty(field)) {
                     throw "Field Internal Name cannot be empty.";
@@ -540,25 +539,13 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                 if (this._expression) {
                     return this._expression.And();
                 }
-                if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
-                    return this.getQuery().Where();
-                }
-                if (this._replace) {
-                    return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
-                }
-                return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendAnd();
+                return this.getQuery().Where();
             };
             Builder.prototype.getOrFieldExpression = function () {
                 if (this._expression) {
                     return this._expression.Or();
                 }
-                if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
-                    return new CamlBuilder().View().Query().Where();
-                }
-                if (this._replace) {
-                    return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
-                }
-                return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendOr();
+                return this.getQuery().Where();
             };
             Builder.prototype.getConditions = function (filters) {
                 var conditions = new Array();
@@ -699,18 +686,63 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     this._viewXml = viewXml;
                 }
                 if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
-                    if (!$pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
-                        this._viewXml = this._originalViewXml;
-                    }
-                    else {
-                        this._viewXml = this.getQuery().ToString();
-                    }
+                    this._viewXml = this.getQuery().ToString();
                 }
                 return this._viewXml;
             };
             return Builder;
         }());
         Caml.Builder = Builder;
+        var ReBuilder = (function (_super) {
+            __extends(ReBuilder, _super);
+            function ReBuilder(viewXml, replace) {
+                _super.call(this);
+                this._originalViewXml = viewXml;
+                this._replace = replace;
+            }
+            ReBuilder.prototype.getAndFieldExpression = function () {
+                if (this._expression) {
+                    return this._expression.And();
+                }
+                if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                    return _super.prototype.getAndFieldExpression.call(this);
+                }
+                if (this._replace) {
+                    return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
+                }
+                return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendAnd();
+            };
+            ReBuilder.prototype.getOrFieldExpression = function () {
+                if (this._expression) {
+                    return this._expression.Or();
+                }
+                if ($pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                    return _super.prototype.getOrFieldExpression.call(this);
+                }
+                if (this._replace) {
+                    return CamlBuilder.FromXml(this._originalViewXml).ReplaceWhere();
+                }
+                return CamlBuilder.FromXml(this._originalViewXml).ModifyWhere().AppendOr();
+            };
+            ReBuilder.prototype.toString = function () {
+                if (this._expression) {
+                    var viewXml = this._expression.ToString();
+                    this.clear();
+                    this._viewXml = viewXml;
+                }
+                if ($pnp.util.stringIsNullOrEmpty(this._viewXml)) {
+                    if (!$pnp.util.stringIsNullOrEmpty(this._originalViewXml)) {
+                        this._viewXml = this._originalViewXml;
+                    }
+                    else {
+                        _super.prototype.toString.call(this);
+                    }
+                }
+                return this._viewXml;
+            };
+            return ReBuilder;
+        }(Builder));
+        Caml.ReBuilder = ReBuilder;
     })(Caml = exports.Caml || (exports.Caml = {}));
     window["Caml"] = Caml;
     var App;
@@ -882,7 +914,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         renderOptions: null,
                         queryStringFilters: null,
                         queryBuilder: !$pnp.util.stringIsNullOrEmpty(options.viewXml)
-                            ? Caml.Builder.FromXml(options.viewXml, false)
+                            ? new Caml.ReBuilder(options.viewXml, false)
                             : new Caml.Builder(options.limit, options.paged, options.orderBy, options.sortAsc, options.scope, options.viewFields)
                     }, options);
                 }
