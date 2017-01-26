@@ -6,7 +6,7 @@
 @section scripts
 {
     <script type="text/javascript">
-        require(["jquery", "angular", "app"], function($, angular, app) {
+        require(["jquery", "angular", "app"], function ($, angular, app) {
             if (app.is_initialized()) {
                 init();
             } else {
@@ -34,7 +34,7 @@
                     viewXml += "<RowLimit" + (Boolean(list.Paged) ? " Paged=\"TRUE\"" : "") + ">" + list.RowLimit + "</RowLimit>";
                 }
                 if ($.isArray(list.Fields)) {
-                    viewXml += new CamlBuilder().ViewFields($.map(list.Fields, function(field) {
+                    viewXml += new CamlBuilder().ViewFields($.map(list.Fields, function (field) {
                         return field.Name;
                     })).ToString();
                 }
@@ -55,7 +55,7 @@
                     limit: list.RowLimit,
                     paged: list.Paged,
                     scope: Number(list.Scope) > 0 ? Number(list.Scope) - 1 : null,
-                    viewFields: $.isArray(list.Fields) ? $.map(list.Fields, function(field) {
+                    viewFields: $.isArray(list.Fields) ? $.map(list.Fields, function (field) {
                         return field.Name;
                     }) : null,
                     renderMethod: null,
@@ -63,75 +63,81 @@
                     delay: 600
                 });
 
-                $(listView).on("model-render", function(ev, $scope, factory) {
+                $(listView).on("model-render", function (ev, $scope, factory) {
                     $scope.fields = list.Fields;
-                    $scope.getFieldValue = function(listItem, field) {
+                    $scope.getFieldValue = function (listItem, field, asHtml) {
                         var value = listItem.$data[field.Name];
                         switch (field.TypeKind) {
-                        case SP.FieldType.computed:
-                            switch (field.Name) {
-                            case "DocIcon":
-                                if (listItem.$data.FSObjType === "1") {
-                                    value = "<uif-icon uif-type=\"folder\"></uif-icon>";
-                                } else {
-                                    value = "<uif-icon uif-type=\"document\"></uif-icon>";
+                            case SP.FieldType.computed:
+                                switch (field.Name) {
+                                    case "DocIcon":
+                                        if (asHtml) {
+                                            if (listItem.$data.FSObjType === "1") {
+                                                value = "<uif-icon uif-type=\"folder\"></uif-icon>";
+                                            } else {
+                                                value = "<uif-icon uif-type=\"document\"></uif-icon>";
+                                            }
+                                        }
+                                        break;
+                                    case "LinkTitle":
+                                    case "LinkTitleNoMenu":
+                                        value = value ? value : listItem.$data["Title"];
+                                        if (asHtml) {
+                                            value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + value + "</a>";
+                                        }
+                                        break;
+                                    case "LinkFilename":
+                                    case "LinkFilenameNoMenu":
+                                        value = value ? value : listItem.$data["FileLeafRef"];
+                                        if (asHtml) {
+                                            value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + value + "</a>";
+                                        }
+                                        break;
+                                    case "FileSizeDisplay":
+                                        value = listItem.$data["File_x0020_Size"];
+                                        if (value) {
+                                            var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                                            var bytes = Number(value);
+                                            if (bytes === 0 || isNaN(bytes)) {
+                                                value = '0 B';
+                                            } else {
+                                                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                                                value = Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                                            }
+                                        }
+                                        break;
+                                    case "ImageSize":
+                                        if (listItem.$data["ImageWidth"] && listItem.$data["ImageHeight"])
+                                            value = [listItem.$data["ImageWidth"], listItem.$data["ImageHeight"]].join(" x ");
+                                        break;
                                 }
                                 break;
-                            case "LinkTitle":
-                            case "LinkTitleNoMenu":
-                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["Title"]) + "</a>";
-                                break;
-                            case "LinkFilename":
-                            case "LinkFilenameNoMenu":
-                                value = "<a ng-click=\"selection.commandBar.view(listItem)\">" + (value ? value : listItem.$data["FileLeafRef"]) + "</a>";
-                                break;
-                            case "FileSizeDisplay":
-                                value = listItem.$data["File_x0020_Size"];
+                            case SP.FieldType.user:
                                 if (value) {
-                                    var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                                    var bytes = Number(value);
-                                    if (bytes === 0 || isNaN(bytes)) {
-                                        value = '0 B';
+                                    if (value instanceof SP.FieldUserValue) {
+                                        value = value.get_lookupValue();
+                                    } else if ($.isArray(value)) {
+                                        value = $.map(value, function (item) {
+                                            if (item instanceof SP.FieldUserValue) {
+                                                return asHtml ? "<a>" + item.get_lookupValue() + "</a>" : item.get_lookupValue();
+                                            }
+                                            return asHtml ? "<a>" + item.title + "</a>" : item.title;
+                                        }).join("; ");
                                     } else {
-                                        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-                                        value = Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+                                        value = value.title;
                                     }
                                 }
                                 break;
-                            case "ImageSize":
-                                if (listItem.$data["ImageWidth"] && listItem.$data["ImageHeight"])
-                                    value = [listItem.$data["ImageWidth"], listItem.$data["ImageHeight"]].join(" x ");
-                                break;
-                            }
-                            break;
-                        case SP.FieldType.user:
-                            if (value) {
-                                if (value instanceof SP.FieldUserValue) {
-                                    value = value.get_lookupValue();
-                                }
-                                else if ($.isArray(value)) {
-                                    value = $.map(value, function (item) {
-                                        if (item instanceof SP.FieldUserValue) {
-                                            return "<a>" + item.get_lookupValue() + "</a>";
-                                        }
-                                        return "<a>" + item.title + "</a>";
-                                    }).join("; ");
-                                } else {
-                                    value = value.title;
-                                }
-                            }
-                            break;
                             case SP.FieldType.lookup:
                                 if (value) {
                                     if (value instanceof SP.FieldLookupValue) {
                                         value = value.get_lookupValue();
-                                    }
-                                    else if ($.isArray(value)) {
+                                    } else if ($.isArray(value)) {
                                         value = $.map(value, function (item) {
                                             if (item instanceof SP.FieldLookupValue) {
-                                                return "<a>" + item.get_lookupValue() + "</a>";
+                                                return asHtml ? "<a>" + item.get_lookupValue() + "</a>" : item.get_lookupValue();
                                             }
-                                            return "<a>" + item.title + "</a>";
+                                            return asHtml ? "<a>" + item.title + "</a>" : item.title;
                                         }).join("; ");
                                     } else {
                                         value = value.title;
@@ -139,7 +145,7 @@
                                 }
                                 break;
                         }
-                        if (field.ListItemMenuAllowed) {
+                        if (field.ListItemMenuAllowed && asHtml) {
                             value = String.format("<table class=\"spitem-menu\"><tr><td>{0}</td><td class=\"contextual-menu\">{1}</td></tr></table>", value, "<uif-pivot-ellipsis ng-click=\"selection.openMenu(listItem)\">" +
                                 "<uif-contextual-menu ng-click=\"selection.openMenu(listItem)\" uif-is-open=\"listItem.$events.menuOpened\" uif-close-on-click=\"true\">" +
                                 "<uif-contextual-menu-item uif-text=\"'VIEW'\" ng-click=\"selection.commandBar.view(listItem)\"></uif-contextual-menu-item>" +
@@ -152,7 +158,7 @@
                     $scope.nextText = "+" + list.RowLimit;
                 });
 
-                $(listView).on("search-item", function(ev, filters, term) {
+                $(listView).on("search-item", function (ev, filters, term) {
                     if (list.ListType === 0) {
                         filters.push({ field: "Title", fieldType: SP.FieldType.text, value: term, operation: 7 });
                     }
@@ -161,14 +167,14 @@
                     }
                 });
 
-                $(app).on("app-error", function(ev, message, stackTrace) {
+                $(app).on("app-error", function (ev, message, stackTrace) {
                     alert(message);
                 });
 
                 if (!window.renderSPChrome) {
                     app.render([listView]);
                 } else {
-                    $('body').on("chrome-loaded", function() {
+                    $('body').on("chrome-loaded", function () {
                         app.$('#listView_container .sp-navbar').css("top", $('#navbar_container').height());
                         app.render([listView]);
                     });
@@ -218,13 +224,73 @@
             <uif-table-head>
                 <uif-table-row>
                     <uif-table-row-select></uif-table-row-select>
-                    <uif-table-header ng-repeat="field in fields" uif-order-by="{{field.Name}}"><span class="ms-u-noWrap">{{field.Title}}</span></uif-table-header>
+                    <uif-table-header ng-repeat="field in fields">
+                        @*<span class="ms-u-noWrap">{{field.Title}}</span>*@
+                        <uif-nav-bar uif-overlay="light">
+                            <uif-nav-bar-item uif-type="menu">
+                                <uif-content>
+                                    {{field.Title}}
+                                </uif-content>
+                                <uif-contextual-menu>
+                                    <uif-contextual-menu-item>
+                                        <uif-content>
+                                            <i><uif-icon uif-type="ascending"></uif-icon>A to Z</i>
+                                        </uif-content>
+                                    </uif-contextual-menu-item>
+                                    <uif-contextual-menu-item>
+                                        <uif-content>
+                                            <i><uif-icon uif-type="descending"></uif-icon>Z to A</i>
+                                        </uif-content>
+                                    </uif-contextual-menu-item>
+                                    <uif-contextual-menu-item>
+                                        <uif-content>
+                                            <i><uif-icon uif-type="filter"></uif-icon>Filter by</i>
+                                        </uif-content>
+                                    </uif-contextual-menu-item>
+                                </uif-contextual-menu>
+                            </uif-nav-bar-item>
+                        </uif-nav-bar>
+                        <uif-callout uif-arrow="top" uif-close ng-show="false">
+                            <uif-callout-header>Filter by {{field.Title}}</uif-callout-header>
+                            <uif-callout-content>
+                                <uif-choicefield-group>
+                                    <uif-choicefield-option uif-type="checkbox" ng-repeat="listItem in listItems" value="getFieldValue(listItem, field, false)">{{getFieldValue(listItem, field, false)}}</uif-choicefield-option>
+                                </uif-choicefield-group>
+                            </uif-callout-content>
+                            <uif-callout-actions>
+                                <uif-button uif-type="primary">
+                                    Filter
+                                </uif-button>
+                            </uif-callout-actions>
+                        </uif-callout>
+                        @*<uif-dialog uif-close="true" ng-show="true" uif-overlay="dark" uif-type="multiline">
+                            <uif-dialog-header>
+                                <p class="ms-Dialog-title">
+                                    Filter by {{field.Title}}
+                                </p>
+                            </uif-dialog-header>
+                            <uif-dialog-inner>
+                                <uif-dialog-content>
+                                    <uif-dialog-subtext>
+                                    </uif-dialog-subtext>
+                                    <uif-choicefield-group>
+                                        <uif-choicefield-option uif-type="checkbox" ng-repeat="listItem in listItems" value="getFieldValue(listItem, field, false)">{{getFieldValue(listItem, field, false)}}</uif-choicefield-option>
+                                    </uif-choicefield-group>
+                                </uif-dialog-content>
+                                <uif-dialog-actions uif-position="right">
+                                    <button class="ms-Dialog-action ms-Button ms-Button--primary">
+                                        <span class="ms-Button-label">Filter</span>
+                                    </button>
+                                </uif-dialog-actions>
+                            </uif-dialog-inner>
+                        </uif-dialog>*@
+                    </uif-table-header>
                 </uif-table-row>
             </uif-table-head>
             <uif-table-body>
-                <uif-table-row ng-repeat="listItem in listItems | orderBy:table.orderBy:!table.orderAsc" uif-item="listItem" uif-selected="{{listItem.$events.isSelected}}">
+                <uif-table-row ng-repeat="listItem in listItems" uif-item="listItem" uif-selected="{{listItem.$events.isSelected}}">
                     <uif-table-row-select></uif-table-row-select>
-                    <uif-table-cell ng-repeat="field in fields" compile="getFieldValue(listItem,field)" uif-item="field"></uif-table-cell>
+                    <uif-table-cell ng-repeat="field in fields" compile="getFieldValue(listItem, field, true)" uif-item="field"></uif-table-cell>
                 </uif-table-row>
             </uif-table-body>
         </uif-table>

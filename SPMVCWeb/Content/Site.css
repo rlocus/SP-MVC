@@ -111,3 +111,37 @@ table.spitem-menu {
 .ms-CommandBarItem.is-disabled:hover {
   background-color: #EFF6FC;
 }
+
+.ms-NavBar-item {
+    width: 100%;
+}
+.ms-NavBar-item:hover {
+    border-bottom: 0px none transparent;
+}
+
+.ms-NavBar {
+    padding: 0;
+    margin: 0 10px;
+    background-color: transparent;
+}
+
+.ms-Dialog {
+    z-index: 3000;
+}
+
+.ms-Dialog-content {
+    overflow: auto;
+    padding: 1px;
+    max-height: 400px;
+}
+
+.ms-Callout {
+    position: absolute;
+    line-height: normal;
+}
+
+.ms-Callout-content {
+    overflow: auto;
+    padding: 1px;
+    max-height: 400px;
+}
