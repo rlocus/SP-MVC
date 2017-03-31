@@ -230,10 +230,10 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             {
                 using (var clientContext = TokenHelper.GetClientContextWithAccessToken(spHostUrl.GetLeftPart(UriPartial.Path), accessToken.Value))
                 {
-                    var user = clientContext.Web.CurrentUser;
-                    clientContext.Load(user);
                     try
                     {
+                        var user = clientContext.Web.CurrentUser;
+                        clientContext.Load(user);
                         clientContext.ExecuteQuery();
                         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.LoginName, null, Options.AuthenticationType));
                         identity.AddClaim(new Claim(ClaimTypes.Name, user.Title));
