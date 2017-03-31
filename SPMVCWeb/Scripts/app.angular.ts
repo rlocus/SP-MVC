@@ -211,7 +211,7 @@ namespace Angular {
                                 createEnabled: false,
                                 viewEnabled: false,
                                 deleteEnabled: false,
-                                view: function (listItem) {
+                                view: (listItem) => {
                                     if (!listItem) {
                                         var selectedItems = (<any>$scope).table.selectedItems;
                                         listItem = app.$(selectedItems).get(0);
@@ -219,13 +219,13 @@ namespace Angular {
                                     if (listItem) {
                                     }
                                 },
-                                delete: function (listItem) {
+                                delete: (listItem) => {
                                     if (!listItem) {
                                         var selectedItems = (<any>$scope).table.selectedItems;
 
                                     }
                                 },
-                                clearSelection: function () {
+                                clearSelection: () => {
                                     var selectedItems = (<any>$scope).table.selectedItems;
                                     if (selectedItems.length > 0) {
                                         app.$.each((<any>$scope).table.rows, (i, item) => {
@@ -234,6 +234,7 @@ namespace Angular {
                                             }
                                         });
                                     }
+                                    selectedItems.splice(0, selectedItems.length);
                                 }
                             },
                             openMenu: (listItem) => {
@@ -258,7 +259,8 @@ namespace Angular {
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
-                                        //(<any>$scope).selection.commandBar.clearSelection();                                       
+                                        //(<any>$scope).selection.commandBar.clearSelection();
+                                        (<any>$scope).table.selectedItems.splice(0, (<any>$scope).table.selectedItems.length);
                                         if (!token) {
                                             allTokens = [];
                                         } else {
@@ -286,6 +288,7 @@ namespace Angular {
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
                                         //(<any>$scope).selection.commandBar.clearSelection();
+                                        (<any>$scope).table.selectedItems.splice(0, (<any>$scope).table.selectedItems.length);
                                         if ($pnp.util.stringIsNullOrEmpty(token)) {
                                             allTokens = [];
                                         }
@@ -311,7 +314,8 @@ namespace Angular {
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
-                                        //(<any>$scope).selection.commandBar.clearSelection();                                       
+                                        //(<any>$scope).selection.commandBar.clearSelection();
+                                        (<any>$scope).table.selectedItems.splice(0, (<any>$scope).table.selectedItems.length);
                                         if ($pnp.util.stringIsNullOrEmpty(token)) {
                                             allTokens = [];
                                         }
@@ -535,7 +539,7 @@ namespace Angular {
                                     (<any>$scope).selection.settings.opened = !(<any>$scope).selection.settings.opened;
                                 }
                             },
-                            view: function (list) {
+                            view: (list) => {
                                 if (!list) {
                                     var selectedItems = (<any>$scope).table.selectedItems;
                                     list = app.$(selectedItems).get(0);
@@ -544,13 +548,13 @@ namespace Angular {
                                     window.location.href = "/Home/List?ListId=" + list.$data.Id + "&SPHostUrl=" + decodeURIComponent(app.hostWebUrl) + "&SPAppWebUrl=" + decodeURIComponent(app.appWebUrl);
                                 }
                             },
-                            delete: function (list) {
+                            delete: (list) => {
                                 if (!list) {
                                     var selectedItems = (<any>$scope).table.selectedItems;
 
                                 }
                             },
-                            clearSelection: function () {
+                            clearSelection: () => {
                                 var selectedItems = (<any>$scope).table.selectedItems;
                                 if (selectedItems.length > 0) {
                                     app.$.each((<any>$scope).table.rows, (i, item) => {
@@ -559,6 +563,7 @@ namespace Angular {
                                         }
                                     });
                                 }
+                                selectedItems.splice(0, selectedItems.length);
                             }
                         },
                         openMenu: (list) => {
@@ -580,6 +585,8 @@ namespace Angular {
                     }, true);
                     $scope.$watch("selection.commandBar.searchTerm", function (newValue: string, oldValue: string) {
                         (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
+                        (<any>$scope).table.selectedItems.splice(0, (<any>$scope).table.selectedItems.length);
+
                         app.delay(() => {
                             $scope.$apply(function () {
                                 var lists;

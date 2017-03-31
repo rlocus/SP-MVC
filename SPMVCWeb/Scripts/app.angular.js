@@ -228,6 +228,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                     }
                                                 });
                                             }
+                                            selectedItems.splice(0, selectedItems.length);
                                         }
                                     },
                                     openMenu: function (listItem) {
@@ -254,7 +255,8 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();                                       
+                                                //(<any>$scope).selection.commandBar.clearSelection();
+                                                $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                                 if (!token) {
                                                     allTokens = [];
                                                 }
@@ -288,6 +290,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
                                                 //(<any>$scope).selection.commandBar.clearSelection();
+                                                $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                                 if ($pnp.util.stringIsNullOrEmpty(token)) {
                                                     allTokens = [];
                                                 }
@@ -317,7 +320,8 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();                                       
+                                                //(<any>$scope).selection.commandBar.clearSelection();
+                                                $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                                 if ($pnp.util.stringIsNullOrEmpty(token)) {
                                                     allTokens = [];
                                                 }
@@ -544,6 +548,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                     }
                                                 });
                                             }
+                                            selectedItems.splice(0, selectedItems.length);
                                         }
                                     },
                                     openMenu: function (list) {
@@ -565,6 +570,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                 }, true);
                                 $scope.$watch("selection.commandBar.searchTerm", function (newValue, oldValue) {
                                     $scope.table.rows.splice(0, $scope.table.rows.length);
+                                    $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                     app.delay(function () {
                                         $scope.$apply(function () {
                                             var lists;
