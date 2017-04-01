@@ -81,7 +81,28 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                             });
                         };
                     }
-                ]);
+                ]).directive('ngAppFrame', ['$timeout', '$window', function ($timeout, $window) {
+                        return {
+                            restrict: 'E',
+                            link: function (scope, element, attrs) {
+                                scope.$on('resizeframe', function () {
+                                    $timeout(function () {
+                                        //timeout ensures that it's run after the DOM renders.
+                                        var contentHeight = element[0].offsetParent.clientHeight;
+                                        var resizeMessage = '<message senderId={Sender_ID}>resize({Width}, {Height}px)</message>';
+                                        var senderId = $pnp.util.getUrlParamByName("SenderId").split("#")[0]; //for chrome - strip out #/viewname if present
+                                        var step = 30, finalHeight;
+                                        finalHeight = (step - (contentHeight % step)) + contentHeight;
+                                        resizeMessage = resizeMessage.replace("{Sender_ID}", senderId);
+                                        resizeMessage = resizeMessage.replace("{Height}", finalHeight);
+                                        resizeMessage = resizeMessage.replace("{Width}", "100%");
+                                        //console.log(resizeMessage);
+                                        window.parent.postMessage(resizeMessage, "*");
+                                    }, 0, false);
+                                });
+                            }
+                        };
+                    }]);
                 _super.prototype.init.call(this, preloadedScripts);
             };
             App.prototype.render = function (modules) {
@@ -191,6 +212,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                             "$scope", "ListViewFactory", App.SPServiceName, function ($scope, factory, service) {
                                 $scope.loading = true;
                                 $scope.listItems = [];
+                                $scope.$parent.$broadcast('resizeframe');
                                 factory.getListItems().then(function () {
                                     allTokens.push(factory.$nextToken);
                                     $scope.listItems = app.$angular.copy(factory.listItems);
@@ -198,6 +220,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                     $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                     $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                     $scope.loading = false;
+                                    $scope.$parent.$broadcast('resizeframe');
                                 });
                                 $scope.selection = {
                                     commandBar: {
@@ -275,6 +298,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                 $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                                 $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                                 $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                                $scope.$parent.$broadcast('resizeframe');
                                             });
                                         },
                                         next: function (offset) {
@@ -306,6 +330,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                 $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                                 $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                                 $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                                $scope.$parent.$broadcast('resizeframe');
                                             });
                                         },
                                         prev: function (offset) {
@@ -344,6 +369,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                 $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                                 $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
                                                 $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
+                                                $scope.$parent.$broadcast('resizeframe');
                                             });
                                         },
                                     }
@@ -375,6 +401,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                     $scope.selection.pager.first = factory.$first > 0 ? factory.$first : ((Math.max(allTokens.length, 1) - 1) * options.limit + Math.min(1, factory.listItems.length));
                                                     $scope.selection.pager.last = factory.$last > 0 ? factory.$last : ($scope.selection.pager.first + factory.listItems.length - (factory.listItems.length > 0 ? 1 : 0));
                                                     $scope.selection.pager.nextEnabled = !$pnp.util.stringIsNullOrEmpty(factory.$nextToken);
+                                                    $scope.$parent.$broadcast('resizeframe');
                                                 });
                                             }
                                         });

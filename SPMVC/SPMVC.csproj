@@ -51,6 +51,10 @@
     <Content Include="Features\Feature1\Feature1.Template.xml">
       <DependentUpon>Feature1.feature</DependentUpon>
     </Content>
+    <Content Include="ListViewWebPart\Elements.xml">
+      <OpcRelationship>feature-elementmanifest</OpcRelationship>
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Package\Package.Template.xml">
       <DependentUpon>Package.package</DependentUpon>
     </Content>
@@ -77,6 +81,9 @@
     </None>
     <None Include="Features\Feature1\Feature1.feature">
       <FeatureId>{6d203041-a645-4a61-b7e4-ab467f33e4c4}</FeatureId>
+    </None>
+    <None Include="ListViewWebPart\SharePointProjectItem.spdata">
+      <SharePointProjectItemId>{664d20c9-7458-4c74-918e-7429cf8901fd}</SharePointProjectItemId>
     </None>
     <None Include="packages.config" />
     <None Include="Package\Package.package">

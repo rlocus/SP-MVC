@@ -51,6 +51,12 @@ require(["jquery", "angular", "app"/*, "angular-sanitize"*/], function ($, angul
         "jquery": $,
         "angular": angular
     });
+
+    //checks if in iframe
+    if (window.self !== window.top) {
+        $('body').fadeIn();
+        return;
+    }
     if (window.renderSPChrome) {
         app.ensureScript("~splayouts/MicrosoftAjax.js").then(function () {
             app.ensureScript("~splayouts/SP.Runtime.js").then(function () {
@@ -71,7 +77,9 @@ require(["jquery", "angular", "app"/*, "angular-sanitize"*/], function ($, angul
             });
         });
     } else {
-        $('body').fadeIn();
+        $('footer').show();
+        $('#navbar_container').show();
+        $('body').fadeIn();       
     }
 
     //function callback to render chrome after SP.UI.Controls.js loads

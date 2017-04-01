@@ -15,7 +15,7 @@
 </head>
 @using SPMVCWeb.Helpers
 <body style="display: none">
-    <div id="navbar_container" class="navbar navbar-inverse navbar-fixed-top">
+    <div id="navbar_container" class="navbar navbar-inverse navbar-fixed-top" style="display: none">
         <div id="divSPChrome"></div>
         <div class="container">
             <div class="navbar-header">
@@ -71,9 +71,11 @@
                 }
             </script>
         }
-        @RenderBody()
+        <ng-app-frame ng-cloak>
+            @RenderBody()
+        </ng-app-frame>
         <hr />
-        <footer>
+        <footer style="display: none">
             <p>&copy; @DateTime.Now.Year</p>
         </footer>
     </div>
