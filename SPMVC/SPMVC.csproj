@@ -65,17 +65,6 @@
     </AppManifestFile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SPMVCWeb\SPMVCWeb.csproj">
-      <Project>{8B498ACD-AE6D-4292-B3BC-7F490C9BF1A9}</Project>
-      <Name>SPMVCWeb</Name>
-      <Private>True</Private>
-      <RoleType>Web</RoleType>
-      <OutputItemType>SharePointWebProjectOutput</OutputItemType>
-      <RoleName>SPMVCWeb</RoleName>
-      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
@@ -222,6 +211,17 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SPMVCWeb\SPMVCWeb.csproj">
+      <Project>{8B498ACD-AE6D-4292-B3BC-7F490C9BF1A9}</Project>
+      <Name>SPMVCWeb</Name>
+      <Private>True</Private>
+      <RoleType>Web</RoleType>
+      <OutputItemType>SharePointWebProjectOutput</OutputItemType>
+      <RoleName>SPMVCWeb</RoleName>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

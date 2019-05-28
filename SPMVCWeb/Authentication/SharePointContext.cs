@@ -326,7 +326,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
           return RedirectionStatus.Ok;
         }
       }
-      catch (SecurityTokenExpiredException ex)
+      catch (/*SecurityTokenExpired*/Exception ex)
       {
         //Error = ex.Message;
       }
