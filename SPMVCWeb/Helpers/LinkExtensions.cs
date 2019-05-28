@@ -9,41 +9,46 @@ using AspNet.Owin.SharePoint.Addin.Authentication;
 
 namespace SPMVCWeb.Helpers
 {
-    public static class LinkExtensions
+  public static class LinkExtensions
+  {
+    public static MvcHtmlString Hyperlink(this HtmlHelper helper, string url, string linkText, string className)
     {
-        public static MvcHtmlString SPActionLink(this HtmlHelper htmlHelper, string linkText, string actionName, string controllerName, RouteValueDictionary routeValues, IDictionary<string, object> htmlAttributes)
-        {
-            var spContext = SPContextHelper.GetSPContext(htmlHelper.ViewContext.HttpContext);
-            if (spContext != null)
-            {
-                if (routeValues == null)
-                {
-                    routeValues = new RouteValueDictionary();
-                }
-                if (spContext.SPHostUrl != null)
-                {
-                    if (routeValues.ContainsKey(SharePointContext.SPHostUrlKey))
-                    {
-                        routeValues[SharePointContext.SPHostUrlKey] = spContext.SPHostUrl.GetLeftPart(UriPartial.Path);
-                    }
-                    else
-                    {
-                        routeValues.Add(SharePointContext.SPHostUrlKey, spContext.SPHostUrl.GetLeftPart(UriPartial.Path));
-                    }
-                }
-                if (spContext.SPAppWebUrl != null)
-                {
-                    if (routeValues.ContainsKey(SharePointContext.SPAppWebUrlKey))
-                    {
-                        routeValues[SharePointContext.SPAppWebUrlKey] = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
-                    }
-                    else
-                    {
-                        routeValues.Add(SharePointContext.SPAppWebUrlKey, spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path));
-                    }
-                }
-            }
-            return htmlHelper.ActionLink(linkText, actionName, controllerName, routeValues, htmlAttributes);
-        }
+      return MvcHtmlString.Create($"<a href='{url}' class='{className}'>{linkText}</a>");
     }
+
+    public static MvcHtmlString SPActionLink(this HtmlHelper htmlHelper, string linkText, string actionName, string controllerName, RouteValueDictionary routeValues, IDictionary<string, object> htmlAttributes)
+    {
+      var spContext = SPContextHelper.GetSPContext(htmlHelper.ViewContext.HttpContext);
+      if (spContext != null)
+      {
+        if (routeValues == null)
+        {
+          routeValues = new RouteValueDictionary();
+        }
+        if (spContext.SPHostUrl != null)
+        {
+          if (routeValues.ContainsKey(SharePointContext.SPHostUrlKey))
+          {
+            routeValues[SharePointContext.SPHostUrlKey] = spContext.SPHostUrl.GetLeftPart(UriPartial.Path);
+          }
+          else
+          {
+            routeValues.Add(SharePointContext.SPHostUrlKey, spContext.SPHostUrl.GetLeftPart(UriPartial.Path));
+          }
+        }
+        if (spContext.SPAppWebUrl != null)
+        {
+          if (routeValues.ContainsKey(SharePointContext.SPAppWebUrlKey))
+          {
+            routeValues[SharePointContext.SPAppWebUrlKey] = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
+          }
+          else
+          {
+            routeValues.Add(SharePointContext.SPAppWebUrlKey, spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path));
+          }
+        }
+      }
+      return htmlHelper.ActionLink(linkText, actionName, controllerName, routeValues, htmlAttributes);
+    }
+  }
 }
