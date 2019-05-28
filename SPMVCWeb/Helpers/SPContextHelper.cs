@@ -36,7 +36,7 @@ namespace SPMVCWeb.Helpers
 
             try
             {
-                if (SharePointContextProvider.Current.GetSharePointContext(httpContext, spHostUrl) != null)
+                if (SharePointContextProvider.Current.GetSharePointContext() != null)
                 {
                     return RedirectionStatus.Ok;
                 }
@@ -107,7 +107,7 @@ namespace SPMVCWeb.Helpers
 
                     }
                 }
-                return SharePointContextProvider.Current.GetSharePointContext(httpContext, spHostUrl);
+                return SharePointContextProvider.Current.GetSharePointContext();
             }
         }
 

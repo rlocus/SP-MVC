@@ -45,7 +45,7 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication.Middleware
             }
             if (!Uri.TryCreate(spHostUrlString, UriKind.Absolute, out spHostUrl))
             {
-                throw new Exception($"Unable to determine {SharePointContext.SPHostUrlKey}.");
+                //throw new Exception($"Unable to determine {SharePointContext.SPHostUrlKey}.");
             }
             else
             {

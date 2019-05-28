@@ -45,7 +45,7 @@ namespace SPMVCWeb.Controllers
                     }
                     else
                     {
-                        var spContext = SharePointContextProvider.Current.GetSharePointContext(httpContext);
+                        var spContext = SharePointContextProvider.Current.GetSharePointContext();
                         if (spContext != null)
                         {
                             clientContext = spContext.CreateUserClientContextForSPHost();

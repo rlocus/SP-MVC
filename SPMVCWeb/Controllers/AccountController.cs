@@ -96,7 +96,7 @@ namespace SPMVCWeb.Controllers
                 {
                     spHostUrl = SharePointContext.GetSPHostUrl(HttpContext.Request);
                 }
-                var spContext = SharePointContextProvider.Current.GetSharePointContext(HttpContext, spHostUrl);
+                var spContext = SharePointContextProvider.Current.GetSharePointContext();
                 if (spContext != null)
                 {
                     Uri appWebUrl = spContext.SPAppWebUrl;
