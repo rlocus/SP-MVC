@@ -1,12 +1,16 @@
-/// <reference path="typings/angularjs/angular.d.ts" />
-/// <reference path="typings/sharepoint/SharePoint.d.ts" />
-/// <reference path="typings/sharepoint/pnp.d.ts" />
-/// <reference path="typings/microsoft-ajax/microsoft.ajax.d.ts" />
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 define(["require", "exports", "pnp", "jquery", "./app.module"], function (require, exports, $pnp, $, app) {
     "use strict";
     var Angular;
@@ -15,7 +19,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
         var App = (function (_super) {
             __extends(App, _super);
             function App() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             App.prototype.init = function (preloadedScripts) {
                 var self = this;
@@ -25,7 +29,6 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                     throw "angular is not loaded!";
                 }
                 self.ngModule = self.$angular.module(App.SharePointAppName, [
-                    //'ngSanitize',
                     "officeuifabric.core",
                     "officeuifabric.components"
                 ]).service(App.SPServiceName, function ($http, $q) {
@@ -67,16 +70,9 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                     "$compile", function ($compile) {
                         return function (scope, element, attrs) {
                             scope.$watch(function (scope) {
-                                // watch the 'compile' expression for changes
                                 return scope.$eval(attrs.compile);
                             }, function (value) {
-                                // when the 'compile' expression changes
-                                // assign it into the current DOM
                                 element.html(value);
-                                // compile the new DOM and link it to the current
-                                // scope.
-                                // NOTE: we only compile .childNodes so that
-                                // we don't get into infinite loop compiling ourselves
                                 $compile(element.contents())(scope);
                             });
                         };
@@ -87,16 +83,14 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                             link: function (scope, element, attrs) {
                                 scope.$on('resizeframe', function () {
                                     $timeout(function () {
-                                        //timeout ensures that it's run after the DOM renders.
                                         var contentHeight = element[0].offsetParent.clientHeight;
                                         var resizeMessage = '<message senderId={Sender_ID}>resize({Width}, {Height}px)</message>';
-                                        var senderId = $pnp.util.getUrlParamByName("SenderId").split("#")[0]; //for chrome - strip out #/viewname if present
+                                        var senderId = $pnp.util.getUrlParamByName("SenderId").split("#")[0];
                                         var step = 30, finalHeight;
                                         finalHeight = (step - (contentHeight % step)) + contentHeight;
                                         resizeMessage = resizeMessage.replace("{Sender_ID}", senderId);
                                         resizeMessage = resizeMessage.replace("{Height}", finalHeight);
                                         resizeMessage = resizeMessage.replace("{Width}", "100%");
-                                        //console.log(resizeMessage);
                                         window.parent.postMessage(resizeMessage, "*");
                                     }, 0, false);
                                 });
@@ -116,16 +110,10 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
             };
             App.prototype.get_ListView = function (options) {
                 var self = this;
-                //if (!self.is_initialized()) {
-                //    throw "App is not initialized!";
-                //}
                 return new App.Module.ListView(self, options);
             };
             App.prototype.get_ListsView = function (options) {
                 var self = this;
-                //if (!self.is_initialized()) {
-                //    throw "App is not initialized!";
-                //}
                 return new App.Module.ListsView(self, options);
             };
             App.SharePointAppName = "SharePointApp";
@@ -133,24 +121,25 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
             return App;
         }(app.App.AppBase));
         Angular.App = App;
-        var App;
         (function (App) {
             var Module;
             (function (Module) {
                 var ListView = (function (_super) {
                     __extends(ListView, _super);
                     function ListView(app, options) {
+                        var _this = this;
                         if (!options.delay) {
                             options.delay = 1000;
                         }
-                        _super.call(this, app, options);
+                        _this = _super.call(this, app, options) || this;
+                        return _this;
                     }
                     ListView.prototype.getEntity = function (listItem) {
                         var permMask = listItem["PermMask"];
                         var permissions = this.get_app().get_BasePermissions(permMask);
                         var $permissions = {
                             edit: permissions.has(SP.PermissionKind.editListItems),
-                            delete: permissions.has(SP.PermissionKind.deleteListItems)
+                            "delete": permissions.has(SP.PermissionKind.deleteListItems)
                         };
                         var $events = { menuOpened: false, isSelected: false };
                         return { $data: listItem, $events: $events, $permissions: $permissions };
@@ -190,14 +179,12 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                             factory.getListItems = function (token) {
                                 var deferred = $q.defer();
                                 self.getListItems(token).then(function (data) {
-                                    //factory.listItems.splice(0, factory.listItems.length);
                                     factory.listItems = [];
                                     if (data.ListData) {
                                         app.$.each(data.ListData.Row, (function (i, listItem) {
                                             factory.listItems.push(self.getEntity(listItem));
                                         }));
                                         factory.$nextToken = data.ListData.NextHref;
-                                        //factory.$prevToken = data.ListData.PrevHref;
                                         factory.$currentToken = token;
                                         factory.$first = data.ListData.FirstRow ? Number(data.ListData.FirstRow) : 0;
                                         factory.$last = data.ListData.LastRow ? Number(data.ListData.LastRow) : 0;
@@ -237,7 +224,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             if (listItem) {
                                             }
                                         },
-                                        delete: function (listItem) {
+                                        "delete": function (listItem) {
                                             if (!listItem) {
                                                 var selectedItems = $scope.table.selectedItems;
                                             }
@@ -278,7 +265,6 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();
                                                 $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                                 if (!token) {
                                                     allTokens = [];
@@ -313,7 +299,6 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();
                                                 $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                                 if ($pnp.util.stringIsNullOrEmpty(token)) {
                                                     allTokens = [];
@@ -345,7 +330,6 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                             $scope.selection.pager.prevEnabled = false;
                                             $scope.selection.pager.nextEnabled = false;
                                             factory.getListItems(token).then(function () {
-                                                //(<any>$scope).selection.commandBar.clearSelection();
                                                 $scope.table.selectedItems.splice(0, $scope.table.selectedItems.length);
                                                 if ($pnp.util.stringIsNullOrEmpty(token)) {
                                                     allTokens = [];
@@ -371,7 +355,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                 $scope.selection.pager.prevEnabled = options.appendRows !== true && ($pnp.util.stringIsNullOrEmpty(factory.$prevToken) ? !$pnp.util.stringIsNullOrEmpty(factory.getToken(0)) : true);
                                                 $scope.$parent.$broadcast('resizeframe');
                                             });
-                                        },
+                                        }
                                     }
                                 };
                                 $scope.$watch("table.selectedItems", function (newValue, oldValue) {
@@ -388,7 +372,6 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                 options.queryBuilder.clear();
                                                 if (newValue) {
                                                     var filters = new Array();
-                                                    //filters.push({ field: "Title", fieldType: SP.FieldType.text, value: newValue, operation: 7 });
                                                     app.$(self).trigger("search-item", [filters, newValue, $scope, factory]);
                                                     options.queryBuilder.appendAndWithAny.apply(options.queryBuilder, filters);
                                                 }
@@ -417,10 +400,12 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                 var ListsView = (function (_super) {
                     __extends(ListsView, _super);
                     function ListsView(app, options) {
+                        var _this = this;
                         if (!options.delay) {
                             options.delay = 1000;
                         }
-                        _super.call(this, app, options);
+                        _this = _super.call(this, app, options) || this;
+                        return _this;
                     }
                     ListsView.prototype.getEntity = function (list) {
                         switch (list.BaseType) {
@@ -561,7 +546,7 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                                 window.location.href = "/Home/List?ListId=" + list.$data.Id + "&SPHostUrl=" + decodeURIComponent(app.hostWebUrl) + "&SPAppWebUrl=" + decodeURIComponent(app.appWebUrl);
                                             }
                                         },
-                                        delete: function (list) {
+                                        "delete": function (list) {
                                             if (!list) {
                                                 var selectedItems = $scope.table.selectedItems;
                                             }

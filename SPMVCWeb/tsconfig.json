@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "alwaysStrict": true,
+        "skipLibCheck": true,
+        //"esModuleInterop": false,
+        "target": "es3",
+        "removeComments": true,
+        "module": "amd",
+        //"noImplicitAny": false,
+        "sourceMap": false,
+        "outDir": "Scripts"
+    },
+    "files": [
+        "Scripts/typings/app.angular.ts",
+        "Scripts/typings/app.module.ts"
+    ]
+}

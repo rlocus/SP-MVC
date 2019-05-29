@@ -1,17 +1,23 @@
-/// <reference path="typings/jquery/jquery.d.ts" />
-/// <reference path="typings/sharepoint/SharePoint.d.ts" />
-/// <reference path="typings/sharepoint/pnp.d.ts" />
-/// <reference path="typings/camljs/index.d.ts" />
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 define(["require", "exports", "pnp"], function (require, exports, $pnp) {
     "use strict";
+    exports.__esModule = true;
     var Caml;
     (function (Caml) {
         "use strict";
+        var FilterOperation;
         (function (FilterOperation) {
             FilterOperation[FilterOperation["Eq"] = 0] = "Eq";
             FilterOperation[FilterOperation["Neq"] = 1] = "Neq";
@@ -22,8 +28,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             FilterOperation[FilterOperation["BeginsWith"] = 6] = "BeginsWith";
             FilterOperation[FilterOperation["Contains"] = 7] = "Contains";
             FilterOperation[FilterOperation["In"] = 8] = "In";
-        })(Caml.FilterOperation || (Caml.FilterOperation = {}));
-        var FilterOperation = Caml.FilterOperation;
+        })(FilterOperation = Caml.FilterOperation || (Caml.FilterOperation = {}));
         var Builder = (function () {
             function Builder(limit, paged, orderBy, sortAsc, scope, viewFields) {
                 this._expression == null;
@@ -591,7 +596,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             Builder.prototype.appendOr = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    filters[_i - 0] = arguments[_i];
+                    filters[_i] = arguments[_i];
                 }
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
@@ -603,7 +608,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             Builder.prototype.appendAnd = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    filters[_i - 0] = arguments[_i];
+                    filters[_i] = arguments[_i];
                 }
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
@@ -615,7 +620,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             Builder.prototype.appendOrWithAll = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    filters[_i - 0] = arguments[_i];
+                    filters[_i] = arguments[_i];
                 }
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
@@ -627,7 +632,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             Builder.prototype.appendAndWithAny = function () {
                 var filters = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    filters[_i - 0] = arguments[_i];
+                    filters[_i] = arguments[_i];
                 }
                 var conditions = this.getConditions(filters);
                 if (conditions.length > 0) {
@@ -639,7 +644,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             Builder.prototype.combineAll = function () {
                 var builders = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    builders[_i - 0] = arguments[_i];
+                    builders[_i] = arguments[_i];
                 }
                 var conditions = new Array();
                 for (var i in builders) {
@@ -657,7 +662,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
             Builder.prototype.combineAny = function () {
                 var builders = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    builders[_i - 0] = arguments[_i];
+                    builders[_i] = arguments[_i];
                 }
                 var conditions = new Array();
                 for (var i in builders) {
@@ -696,9 +701,10 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
         var ReBuilder = (function (_super) {
             __extends(ReBuilder, _super);
             function ReBuilder(viewXml, replace) {
-                _super.call(this);
-                this._originalViewXml = viewXml;
-                this._replace = replace;
+                var _this = _super.call(this) || this;
+                _this._originalViewXml = viewXml;
+                _this._replace = replace;
+                return _this;
             }
             ReBuilder.prototype.getAndFieldExpression = function () {
                 if (this._expression) {
@@ -882,14 +888,14 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
         App.AppBase = AppBase;
         var Module;
         (function (Module) {
+            var RenderMethod;
             (function (RenderMethod) {
                 RenderMethod[RenderMethod["Default"] = 0] = "Default";
                 RenderMethod[RenderMethod["RenderListDataAsStream"] = 1] = "RenderListDataAsStream";
                 RenderMethod[RenderMethod["RenderListFilterData"] = 2] = "RenderListFilterData";
                 RenderMethod[RenderMethod["RenderListData"] = 3] = "RenderListData";
                 RenderMethod[RenderMethod["GetItems"] = 4] = "GetItems";
-            })(Module.RenderMethod || (Module.RenderMethod = {}));
-            var RenderMethod = Module.RenderMethod;
+            })(RenderMethod = Module.RenderMethod || (Module.RenderMethod = {}));
             var ListViewBase = (function () {
                 function ListViewBase(app, options) {
                     if (!app) {
@@ -977,7 +983,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     }
                     throw "List is not specified.";
                 };
-                ListViewBase.prototype.renderListDataAsStream = function (token /*, prevItemId?: number, pageLastRow?: number*/) {
+                ListViewBase.prototype.renderListDataAsStream = function (token) {
                     var self = this;
                     var deferred = self._app.$.Deferred();
                     try {
@@ -1002,20 +1008,11 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         if (self._options.queryBuilder) {
                             viewXml = self._options.queryBuilder.toString();
                         }
-                        //if (!$pnp.util.stringIsNullOrEmpty(<any>prevItemId)) {
-                        //    query.query.add("p_ID", prevItemId);
-                        //}
-                        //if (!$pnp.util.stringIsNullOrEmpty(<any>pageLastRow)) {
-                        //    query.query.add("PageLastRow", pageLastRow);
-                        //}
                         var url = query.toUrlAndQuery();
                         var parameters = { "__metadata": { "type": "SP.RenderListDataParameters" }, "RenderOptions": self._options.renderOptions };
                         if (!$pnp.util.stringIsNullOrEmpty(viewXml)) {
                             parameters.ViewXml = viewXml;
                         }
-                        //if (!$pnp.util.stringIsNullOrEmpty(<any>self._options.paged)) {
-                        //    parameters.Paging = self._options.paged == true ? "TRUE" : undefined;
-                        //}
                         if (!$pnp.util.stringIsNullOrEmpty(self._options.rootFolder)) {
                             parameters.FolderServerRelativeUrl = self._options.rootFolder;
                         }
@@ -1181,9 +1178,6 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                         if (!$pnp.util.stringIsNullOrEmpty(self._options.orderBy)) {
                             query = query.orderBy(self._options.orderBy, self._options.sortAsc);
                         }
-                        //if (!$pnp.util.stringIsNullOrEmpty(self._options.filter)) {
-                        //    query = query.filter(self._options.filter);
-                        //}
                         if (self._options.limit > 0) {
                             query = query.top(self._options.limit);
                         }
@@ -1389,7 +1383,7 @@ define(["require", "exports", "pnp"], function (require, exports, $pnp) {
                     var deferred = self._app.$.Deferred();
                     var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(listId).toUrlAndQuery();
                     var body = JSON.stringify($pnp.util.extend({
-                        "__metadata": { "type": "SP.List" },
+                        "__metadata": { "type": "SP.List" }
                     }, properties));
                     var executor = new SP.RequestExecutor(self._app.appWebUrl);
                     executor.executeAsync({

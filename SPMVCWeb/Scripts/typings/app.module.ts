@@ -1,7 +1,7 @@
-﻿/// <reference path="typings/jquery/jquery.d.ts" />
-/// <reference path="typings/sharepoint/SharePoint.d.ts" />
-/// <reference path="typings/sharepoint/pnp.d.ts" />
-/// <reference path="typings/camljs/index.d.ts" />
+﻿/// <reference path="jquery/jquery.d.ts" />
+/// <reference path="sharepoint/SharePoint.d.ts" />
+/// <reference path="sharepoint/pnp.d.ts" />
+/// <reference path="camljs/index.d.ts" />
 
 import * as $pnp from "pnp";
 
@@ -35,7 +35,7 @@ export module Caml {
 
         protected _expression: CamlBuilder.IExpression;
         protected _condition: CamlBuilder.IExpression;
-        protected _viewXml;
+        protected _viewXml: string;
         private _paged?: boolean;
         private _limit: number;
         private _scope: CamlBuilder.ViewScope;
@@ -1435,7 +1435,7 @@ export namespace App {
                 return deferred.promise();
             }
 
-            public getList(listId) {
+            public getList(listId: string) {
                 var self = this;
                 var deferred = self._app.$.Deferred();
                 var url = $pnp.sp.crossDomainWeb(self._app.appWebUrl, self._app.hostWebUrl).lists.getById(listId).select("Id", "Title", "BaseType", "ItemCount", "Description", "Hidden", "EffectiveBasePermissions").toUrlAndQuery();
