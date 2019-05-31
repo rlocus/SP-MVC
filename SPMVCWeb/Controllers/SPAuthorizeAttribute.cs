@@ -37,7 +37,7 @@ namespace SPMVCWeb.Controllers
                     ClientContext clientContext = null;
                     if (cookieAuthenticationEnabled && httpContext.User.Identity.IsAuthenticated)
                     {
-                        var spContext = SPContextProvider.Get(httpContext.User.Identity as ClaimsIdentity);
+                        var spContext = SPContextProvider.Get(httpContext.User.Identity as ClaimsIdentity, false);
                         if (spContext != null)
                         {
                             clientContext = spContext.CreateUserClientContextForSPHost();

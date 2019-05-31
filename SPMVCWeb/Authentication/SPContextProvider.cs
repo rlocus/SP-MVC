@@ -2,20 +2,20 @@
 
 namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
-	public static class SPContextProvider
-	{
-		public static SPContext Get(ClaimsPrincipal claimsPrincipal)
-		{
-		    return Get((ClaimsIdentity)claimsPrincipal.Identity);
-		}
-
-        public static SPContext Get(ClaimsIdentity claimsIdentity)
-        {
-            if (!TokenHelper.IsHighTrustApp())
-            {
-                return new AcsContext(claimsIdentity);
-            }
-            return new HighTrustContext(claimsIdentity);
-        }
+  public static class SPContextProvider
+  {
+    public static SPContext Get(ClaimsPrincipal claimsPrincipal, bool isWebPart)
+    {
+      return Get((ClaimsIdentity)claimsPrincipal.Identity, isWebPart);
     }
+
+    public static SPContext Get(ClaimsIdentity claimsIdentity, bool isWebPart)
+    {
+      if (!TokenHelper.IsHighTrustApp())
+      {
+        return new AcsContext(claimsIdentity, isWebPart);
+      }
+      return new HighTrustContext(claimsIdentity, isWebPart);
+    }
+  }
 }

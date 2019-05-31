@@ -5,11 +5,11 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
 {
     public class AcsContext : SPContext
     {
-        public AcsContext(ClaimsPrincipal claimsPrincipal) : base(claimsPrincipal)
+        public AcsContext(ClaimsPrincipal claimsPrincipal, bool isWebPart) : base(claimsPrincipal, isWebPart)
         {
         }
 
-        public AcsContext(ClaimsIdentity claimsIdentity) : base(claimsIdentity)
+        public AcsContext(ClaimsIdentity claimsIdentity, bool isWebPart) : base(claimsIdentity, isWebPart)
         {
         }
 

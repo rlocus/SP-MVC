@@ -81,7 +81,7 @@ namespace SPMVCWeb.Controllers
             {
                 if (Request.IsAuthenticated)
                 {
-                    SPContext spContext = SPContextProvider.Get(HttpContext.User as ClaimsPrincipal);
+                    SPContext spContext = SPContextProvider.Get(HttpContext.User as ClaimsPrincipal, false);
                     HttpContext.GetOwinContext().Authentication.SignOut(SPAddinAuthenticationDefaults.AuthenticationType);
                     if (spContext.SPAppWebUrl != null)
                     {

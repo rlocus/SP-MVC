@@ -117,6 +117,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
       get;
     }
 
+    public bool IsWebPart { get; }
+
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -125,13 +127,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     /// <param name="spLanguage">The SharePoint language.</param>
     /// <param name="spClientTag">The SharePoint client tag.</param>
     /// <param name="spProductNumber">The SharePoint product number.</param>
-    protected SharePointContext(Uri spHostUrl, Uri spAppWebUrl, string spLanguage, string spClientTag, string spProductNumber)
+    protected SharePointContext(Uri spHostUrl, Uri spAppWebUrl, string spLanguage, string spClientTag, string spProductNumber, bool isWebPart)
     {
-      if (spHostUrl == null)
-      {
-        throw new ArgumentNullException(nameof(spHostUrl));
-      }
-
       if (string.IsNullOrEmpty(spLanguage))
       {
         throw new ArgumentNullException(nameof(spLanguage));
@@ -147,11 +144,12 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         throw new ArgumentNullException(nameof(spProductNumber));
       }
 
-      this.SPHostUrl = spHostUrl;
+      this.SPHostUrl = spHostUrl ?? throw new ArgumentNullException(nameof(spHostUrl));
       this.SPAppWebUrl = spAppWebUrl;
       this.SPLanguage = spLanguage;
       this.SPClientTag = spClientTag;
       this.SPProductNumber = spProductNumber;
+      IsWebPart = isWebPart;
     }
 
     /// <summary>
@@ -588,8 +586,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
       }
     }
 
-    public SharePointAcsContext(Uri spHostUrl, Uri spAppWebUrl, string spLanguage, string spClientTag, string spProductNumber, string contextToken, SharePointContextToken contextTokenObj)
-        : base(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber)
+    public SharePointAcsContext(Uri spHostUrl, Uri spAppWebUrl, string spLanguage, string spClientTag, string spProductNumber, string contextToken, SharePointContextToken contextTokenObj, bool isWebPart)
+        : base(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, isWebPart)
     {
       if (string.IsNullOrEmpty(contextToken))
       {
@@ -681,7 +679,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
         return null;
       }
 
-      return new SharePointAcsContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, contextTokenString, contextToken);
+      bool isWebPart = httpRequest["IsWebPart"] == "1";
+      return new SharePointAcsContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, contextTokenString, contextToken, isWebPart);
     }
 
     protected override bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext, Uri spHostUrl)
@@ -807,8 +806,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
       }
     }
 
-    public SharePointHighTrustContext(Uri spHostUrl, Uri spAppWebUrl, string spLanguage, string spClientTag, string spProductNumber, WindowsIdentity logonUserIdentity)
-        : base(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber)
+    public SharePointHighTrustContext(Uri spHostUrl, Uri spAppWebUrl, string spLanguage, string spClientTag, string spProductNumber, WindowsIdentity logonUserIdentity, bool isWebPart)
+        : base(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, isWebPart)
     {
       if (logonUserIdentity == null)
       {
@@ -870,7 +869,8 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
       {
         return null;
       }
-      return new SharePointHighTrustContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, logonUserIdentity);
+      bool isWebPart = httpRequest["IsWebPart"] == "1";
+      return new SharePointHighTrustContext(spHostUrl, spAppWebUrl, spLanguage, spClientTag, spProductNumber, logonUserIdentity, isWebPart);
     }
 
     protected override bool ValidateSharePointContext(SharePointContext spContext, HttpContextBase httpContext, Uri spHostUrl)

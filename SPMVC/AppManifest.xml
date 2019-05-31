@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <!--Created:cb85b80c-f585-40ff-8bfc-12ff4d0e34a9-->
+<!--ProductID="{2f706315-839a-4260-a9ad-2113fafb2cb9}"-->
 <App xmlns="http://schemas.microsoft.com/sharepoint/2012/app/manifest"
      Name="SPMVC"
-     ProductID="{2f706315-839a-4260-a9ad-2113fafb2cb9}"
+     ProductID="{2DD88F0E-A3E4-4590-8452-FD243F7727D2}"
      Version="1.0.0.0"
      SharePointMinVersion="16.0.0.0"
 >
@@ -16,6 +17,5 @@
   </AppPrincipal>
   <AppPermissionRequests>
     <AppPermissionRequest Scope="http://sharepoint/content/sitecollection" Right="FullControl" />
-    <!--<AppPermissionRequest Scope="http://sharepoint/social/tenant" Right="Read" />-->
   </AppPermissionRequests>
 </App>

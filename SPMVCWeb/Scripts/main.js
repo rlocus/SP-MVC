@@ -79,7 +79,7 @@ require(["jquery", "angular", "app"/*, "angular-sanitize"*/], function ($, angul
     } else {
         $('footer').show();
         $('#navbar_container').show();
-        $('body').fadeIn();       
+        $('body').fadeIn();
     }
 
     //function callback to render chrome after SP.UI.Controls.js loads

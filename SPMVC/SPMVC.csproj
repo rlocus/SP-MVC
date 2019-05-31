@@ -74,7 +74,6 @@
     <None Include="ListViewWebPart\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{664d20c9-7458-4c74-918e-7429cf8901fd}</SharePointProjectItemId>
     </None>
-    <None Include="packages.config" />
     <None Include="Package\Package.package">
       <PackageId>{96d08a75-4057-49d3-bf01-755f2967be73}</PackageId>
     </None>

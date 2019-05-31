@@ -7,13 +7,13 @@ namespace AspNet.Owin.SharePoint.Addin.Authentication
     {
         private readonly string _userId;
 
-        public HighTrustContext(ClaimsPrincipal claimsPrincipal) : base(claimsPrincipal)
+        public HighTrustContext(ClaimsPrincipal claimsPrincipal, bool isWebPart) : base(claimsPrincipal, isWebPart)
         {
             var userIdClaim = claimsPrincipal.FindFirst(c => c.Type.Equals(SPAddinClaimTypes.ADUserId));
             if (userIdClaim != null) _userId = userIdClaim.Value;
         }
 
-        public HighTrustContext(ClaimsIdentity claimsIdentity) : base(claimsIdentity)
+        public HighTrustContext(ClaimsIdentity claimsIdentity, bool isWebPart) : base(claimsIdentity, isWebPart)
         {
             var userIdClaim = claimsIdentity.FindFirst(c => c.Type.Equals(SPAddinClaimTypes.ADUserId));
             if (userIdClaim != null) _userId = userIdClaim.Value;

@@ -65,10 +65,7 @@
         @if (ViewBag.PageContextInfo != null)
         {
             <script type="text/javascript">
-                var pageContextInfoJson = '@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo))';
-                if (pageContextInfoJson) {
-                    window._spPageContextInfo = JSON.parse(pageContextInfoJson);
-                }
+                window._spPageContextInfo = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PageContextInfo));
             </script>
         }
         <ng-app-frame ng-cloak>

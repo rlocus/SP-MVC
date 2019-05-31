@@ -1,6 +1,13 @@
 ﻿body {
-    padding-top: 50px;
-    padding-bottom: 20px;
+    /*padding-top: 50px;*/
+    /*padding-bottom: 20px;*/
+}
+
+.container {
+    /*padding-right: 15px;
+    padding-left: 15px;*/
+     margin-right: 0; 
+     margin-left: 0; 
 }
 
 /* Set padding to keep content from hitting the edges */
@@ -36,16 +43,16 @@ textarea {
 }
 
 .sp-panel {
-    margin-top: 50px;
+    /*margin-top: 50px;*/
 }
 
 .sp-navbar {
-    position: fixed;
+    /*position: fixed;
     top: 50px;
     z-index: 200;
     right: 0;
     left: 0;
-    opacity: 0.7;
+    opacity: 0.7;*/
 }
 
     .sp-navbar input.ms-CommandBarSearch-input {

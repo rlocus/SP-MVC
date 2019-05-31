@@ -35,7 +35,7 @@ namespace SPMVCWeb.Controllers
                     {
                         ViewBag.User = new UserInformation(spUser);
                         ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
-                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web, spContext.IsWebPart);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
@@ -64,7 +64,7 @@ namespace SPMVCWeb.Controllers
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
-                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web, spContext.IsWebPart);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
@@ -94,7 +94,7 @@ namespace SPMVCWeb.Controllers
                     return () =>
                     {
                         ViewBag.User = new UserInformation(spUser);
-                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web, spContext.IsWebPart);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);
@@ -143,7 +143,7 @@ namespace SPMVCWeb.Controllers
                     {
                         ViewBag.User = new UserInformation(spUser);
                         ViewBag.FormDigest = clientContext.GetFormDigestDirect().DigestValue;
-                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web);
+                        SPPageContextInfo pageContextInfo = new SPPageContextInfo(site, web, spContext.IsWebPart);
                         if (spContext.SPAppWebUrl != null)
                         {
                             pageContextInfo.AppWebUrl = spContext.SPAppWebUrl.GetLeftPart(UriPartial.Path);

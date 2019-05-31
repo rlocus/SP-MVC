@@ -14,8 +14,7 @@
             }
 
             function init() {
-                var listJson = '@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List))';
-                var list = JSON.parse(listJson);
+                var list = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.List));
                 var viewXml = "<View" + (Number(list.Scope) > 0 ? " Scope=\"" + CamlBuilder.ViewScope[Number(list.Scope) - 1] + "\"" : "") + ">";
                 var viewJoins = app.$("<div />").html(list.ViewJoins).text();
                 var viewProjectedFields = app.$("<div />").html(list.ViewProjectedFields).text();
