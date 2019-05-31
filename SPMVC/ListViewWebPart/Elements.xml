@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Elements xmlns="http://schemas.microsoft.com/sharepoint/">
   <ClientWebPart Name="ListViewWebPart" Title="List View" Description="" DefaultWidth="300" DefaultHeight="200">  
-    <Content Type="html" Src="~remoteAppUrl/Home/List?{StandardTokens}&amp;ListId=_ListId_&amp;IsWebPart=1" />
+    <Content Type="html" Src="~remoteAppUrl/Home/List?{StandardTokens}&amp;ListId=_ListId_&amp;IsWebPart=1&amp;editMode=_editMode_" />
     <Properties>
       <Property Name="ListId" Type="string" RequiresDesignerPermission="true" DefaultValue="9166a9a3-514c-44e5-9334-4c8e648a47a8" WebDisplayName="List Id" />
     </Properties>

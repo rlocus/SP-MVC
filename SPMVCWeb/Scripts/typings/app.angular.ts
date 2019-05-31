@@ -19,7 +19,7 @@ namespace Angular {
         static SPServiceName = "SPService";
 
         public init(preloadedScripts: any[]) {
-            var self = this;
+            let self = this;
             let $angular = preloadedScripts["angular"];
             self.$angular = $angular;
             if (!self.$angular) {
@@ -31,9 +31,9 @@ namespace Angular {
                 "officeuifabric.components"
             ]).service(App.SPServiceName, function ($http, $q) {
                 this.getFormDigest = () => {
-                    var deferred = self.$.Deferred();
-                    var url = $pnp.util.combinePaths(self.appWebUrl, "_api/contextinfo");
-                    var executor = new SP.RequestExecutor(self.appWebUrl);
+                    let deferred = self.$.Deferred();
+                    let url = $pnp.util.combinePaths(self.appWebUrl, "_api/contextinfo");
+                    let executor = new SP.RequestExecutor(self.appWebUrl);
                     executor.executeAsync(<SP.RequestInfo>{
                         url: url,
                         method: "POST",
@@ -42,13 +42,13 @@ namespace Angular {
                             "content-Type": "application/json;odata=verbose"
                         },
                         success: (data) => {
-                            var formDigestValue = JSON.parse(<string>data.body).d.GetContextWebInformation.FormDigestValue;
+                            let formDigestValue = JSON.parse(<string>data.body).d.GetContextWebInformation.FormDigestValue;
                             deferred.resolve(formDigestValue);
                         },
                         error: (data, errorCode, errorMessage) => {
                             if (data.body) {
                                 try {
-                                    var error = JSON.parse(<string>data.body);
+                                    let error = JSON.parse(<string>data.body);
                                     if (error && error.error) {
                                         errorMessage = error.error.message.value;
                                     }
@@ -91,16 +91,18 @@ namespace Angular {
                         scope.$on('resizeframe', function () {
                             $timeout(function () {
                                 //timeout ensures that it's run after the DOM renders.
-                                var contentHeight = element[0].offsetParent.clientHeight;
-                                var resizeMessage = '<message senderId={Sender_ID}>resize({Width}, {Height}px)</message>';
-                                var senderId = $pnp.util.getUrlParamByName("SenderId").split("#")[0]; //for chrome - strip out #/viewname if present
-                                var step = 30, finalHeight;
-                                finalHeight = (step - (contentHeight % step)) + contentHeight;
-                                resizeMessage = resizeMessage.replace("{Sender_ID}", senderId);
-                                resizeMessage = resizeMessage.replace("{Height}", finalHeight);
-                                resizeMessage = resizeMessage.replace("{Width}", "100%");
-                                //console.log(resizeMessage);
-                                window.parent.postMessage(resizeMessage, "*");
+                                let contentHeight = element[0].offsetParent.clientHeight;
+                                let resizeMessage = '<message senderId={Sender_ID}>resize({Width}, {Height}px)</message>';
+                                let senderId = $pnp.util.getUrlParamByName("SenderId").split("#")[0]; //for chrome - strip out #/viewname if present
+                                if (senderId) {
+                                    let step = 30, finalHeight;
+                                    finalHeight = (step - (contentHeight % step)) + contentHeight;
+                                    resizeMessage = resizeMessage.replace("{Sender_ID}", senderId);
+                                    resizeMessage = resizeMessage.replace("{Height}", finalHeight);
+                                    resizeMessage = resizeMessage.replace("{Width}", "100%");
+                                    //console.log(resizeMessage);
+                                    window.parent.postMessage(resizeMessage, "*");
+                                }
                             }, 0, false);
                         });
                     }
@@ -110,17 +112,24 @@ namespace Angular {
         }
 
         public render(modules: app.App.IModule[]) {
-            var self = this;
-            self.$(self).on("app-render", () => {
-                self.$angular.element(() => {
-                    self.$angular.bootstrap(document, [App.SharePointAppName]);
+
+            let editMode = $pnp.util.getUrlParamByName("editMode");
+            if (editMode == "1") {
+                //todo: settings
+            }
+            else {
+                let self = this;
+                self.$(self).on("app-render", () => {
+                    self.$angular.element(() => {
+                        self.$angular.bootstrap(document, [App.SharePointAppName]);
+                    });
                 });
-            });
+            }
             super.render(modules);
         }
 
         public get_ListView(options: app.App.Module.IListViewOptions): App.Module.ListView {
-            var self = this;
+            let self = this;
             //if (!self.is_initialized()) {
             //    throw "App is not initialized!";
             //}
@@ -128,7 +137,7 @@ namespace Angular {
         }
 
         public get_ListsView(options: App.Module.IListsViewOptions): App.Module.ListsView {
-            var self = this;
+            let self = this;
             //if (!self.is_initialized()) {
             //    throw "App is not initialized!";
             //}
@@ -152,36 +161,36 @@ namespace Angular {
             }
 
             private getEntity(listItem) {
-                var permMask = listItem["PermMask"];
-                var permissions = this.get_app().get_BasePermissions(permMask);
-                var $permissions = {
+                let permMask = listItem["PermMask"];
+                let permissions = this.get_app().get_BasePermissions(permMask);
+                let $permissions = {
                     edit: permissions.has(SP.PermissionKind.editListItems),
                     delete: permissions.has(SP.PermissionKind.deleteListItems)
                 };
-                var $events = { menuOpened: false, isSelected: false };
+                let $events = { menuOpened: false, isSelected: false };
                 return { $data: listItem, $events: $events, $permissions: $permissions };
             }
 
             public render() {
-                var self = this;
-                var allTokens = [];
-                var app = <App>this.get_app();
-                var options = <IListViewOptions>self.get_options();
+                let self = this;
+                let allTokens = [];
+                let app = <App>this.get_app();
+                let options = <IListViewOptions>self.get_options();
                 app.ngModule.factory("ListViewFactory", ($q, $http) => {
-                    var factory = {} as IListViewFactory;
+                    let factory = {} as IListViewFactory;
                     factory.listItems = [];
                     factory.getToken = (offset = 0) => {
-                        var token = null;
+                        let token = null;
                         if (offset < 0) {
                             token = factory.$prevToken;
-                            var skipNext = 1 - offset;
+                            let skipNext = 1 - offset;
                             if (allTokens.length > skipNext) {
                                 token = allTokens[(allTokens.length - 1) - skipNext];
                             }
                         } else if (offset > 0) {
                             token = factory.$nextToken;
                             if (offset > 0) {
-                                var index = allTokens.indexOf(factory.$nextToken);
+                                let index = allTokens.indexOf(factory.$nextToken);
                                 if ((index + offset - 1) < allTokens.length) {
                                     token = allTokens[index + offset - 1];
                                 }
@@ -192,7 +201,7 @@ namespace Angular {
                         return token;
                     };
                     factory.getListItems = (token?: string) => {
-                        var deferred = $q.defer();
+                        let deferred = $q.defer();
                         self.getListItems(token).then((data: any) => {
                             //factory.listItems.splice(0, factory.listItems.length);
                             factory.listItems = [];
@@ -235,7 +244,7 @@ namespace Angular {
                                 deleteEnabled: false,
                                 view: (listItem) => {
                                     if (!listItem) {
-                                        var selectedItems = (<any>$scope).table.selectedItems;
+                                        let selectedItems = (<any>$scope).table.selectedItems;
                                         listItem = app.$(selectedItems).get(0);
                                     }
                                     if (listItem) {
@@ -243,12 +252,12 @@ namespace Angular {
                                 },
                                 delete: (listItem) => {
                                     if (!listItem) {
-                                        var selectedItems = (<any>$scope).table.selectedItems;
+                                        let selectedItems = (<any>$scope).table.selectedItems;
 
                                     }
                                 },
                                 clearSelection: () => {
-                                    var selectedItems = (<any>$scope).table.selectedItems;
+                                    let selectedItems = (<any>$scope).table.selectedItems;
                                     if (selectedItems.length > 0) {
                                         app.$.each((<any>$scope).table.rows, (i, item) => {
                                             if (item.selected) {
@@ -276,7 +285,7 @@ namespace Angular {
                                 nextEnabled: false,
                                 refresh: () => {
                                     if ((<any>$scope).loading) { return; }
-                                    var token = options.appendRows === true ? null : factory.getToken(0);
+                                    let token = options.appendRows === true ? null : factory.getToken(0);
                                     (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
@@ -289,7 +298,7 @@ namespace Angular {
                                             allTokens.pop();
                                         }
                                         allTokens.push(factory.$nextToken);
-                                        var prevToken = factory.getToken(-1);
+                                        let prevToken = factory.getToken(-1);
                                         if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
                                             (<any>$scope).listItems = app.$angular.copy(factory.listItems);
                                         } else {
@@ -306,7 +315,7 @@ namespace Angular {
                                     if ((<any>$scope).loading) { return; }
                                     if (!(<any>$scope).selection.pager.nextEnabled) return;
                                     (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
-                                    var token = factory.getToken(offset);
+                                    let token = factory.getToken(offset);
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
@@ -316,7 +325,7 @@ namespace Angular {
                                             allTokens = [];
                                         }
                                         allTokens.push(factory.$nextToken);
-                                        var prevToken = factory.getToken(-1);
+                                        let prevToken = factory.getToken(-1);
                                         if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
                                             (<any>$scope).listItems = app.$angular.copy(factory.listItems);
                                         } else {
@@ -334,7 +343,7 @@ namespace Angular {
                                     if (!(<any>$scope).selection.pager.prevEnabled) return;
                                     (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
                                     offset = Math.min(-1, -offset);
-                                    var token = options.appendRows === true ? null : factory.getToken(offset);
+                                    let token = options.appendRows === true ? null : factory.getToken(offset);
                                     (<any>$scope).selection.pager.prevEnabled = false;
                                     (<any>$scope).selection.pager.nextEnabled = false;
                                     factory.getListItems(token).then(() => {
@@ -344,14 +353,14 @@ namespace Angular {
                                             allTokens = [];
                                         }
                                         else {
-                                            var skipNext = 1 - offset;
+                                            let skipNext = 1 - offset;
                                             while (skipNext > 0) {
                                                 allTokens.pop();
                                                 skipNext--;
                                             }
                                         }
                                         allTokens.push(factory.$nextToken);
-                                        var prevToken = factory.getToken(-1);
+                                        let prevToken = factory.getToken(-1);
                                         if ($pnp.util.stringIsNullOrEmpty(token) || !options.appendRows) {
                                             (<any>$scope).listItems = app.$angular.copy(factory.listItems);
                                         } else {
@@ -375,11 +384,11 @@ namespace Angular {
                             (<any>$scope).table.rows.splice(0, (<any>$scope).table.rows.length);
                             app.delay(() => {
                                 $scope.$apply(() => {
-                                    var listItems;
+                                    let listItems;
                                     if (newValue !== oldValue) {
                                         options.queryBuilder.clear();
                                         if (newValue) {
-                                            var filters = new Array<app.Caml.ICamlFilter>();
+                                            let filters = new Array<app.Caml.ICamlFilter>();
                                             //filters.push({ field: "Title", fieldType: SP.FieldType.text, value: newValue, operation: 7 });
                                             app.$(self).trigger("search-item", [filters, newValue, $scope, factory]);
                                             options.queryBuilder.appendAndWithAny.apply(options.queryBuilder, filters);
@@ -459,29 +468,29 @@ namespace Angular {
                         list.Type = "None";
                         break;
                 }
-                var permissions = new SP.BasePermissions();
+                let permissions = new SP.BasePermissions();
                 permissions.initPropertiesFromJson(list["EffectiveBasePermissions"]);
-                var $permissions = {
+                let $permissions = {
                     manage: permissions.has(SP.PermissionKind.manageLists)
                 };
-                var $events = { menuOpened: false, isSelected: false };
+                let $events = { menuOpened: false, isSelected: false };
                 return { $data: list, $events: $events, $permissions: $permissions };
             }
 
             public render() {
-                var self = this;
-                var app = <App>this.get_app();
-                var options = <IListsViewOptions>self.get_options();
+                let self = this;
+                let app = <App>this.get_app();
+                let options = <IListsViewOptions>self.get_options();
                 app.ngModule.factory("ListsViewFactory", ($q, $http) => {
-                    var factory = {} as IListsViewFactory;
+                    let factory = {} as IListsViewFactory;
                     factory.lists = [];
                     factory.getLists = () => {
-                        var deferred = $q.defer();
+                        let deferred = $q.defer();
                         self.getLists().then((data: Array<any>) => {
                             factory.lists.splice(0, factory.lists.length);
                             app.$.each(data, (function (i, list) {
                                 if (!list.Hidden) {
-                                    var entity = self.getEntity(list);
+                                    let entity = self.getEntity(list);
                                     factory.lists.push(entity);
                                 }
                             }));
@@ -490,9 +499,9 @@ namespace Angular {
                         return deferred.promise;
                     };
                     factory.updateList = (list, service: app.App.ISPService) => {
-                        var deferred = $q.defer();
+                        let deferred = $q.defer();
                         service.getFormDigest().done((digestValue: string) => {
-                            var properties = {
+                            let properties = {
                                 "Title": list.Title,
                                 "Description": list.Description
                             };
@@ -506,7 +515,7 @@ namespace Angular {
                     };
                     return factory;
                 });
-                var deferred = app.$.Deferred();
+                let deferred = app.$.Deferred();
                 app.ngModule.controller(options.controllerName, ["$scope", "ListsViewFactory", App.SPServiceName, function ($scope: ng.IScope, factory: IListsViewFactory, service: app.App.ISPService) {
                     (<any>$scope).loading = true;
                     (<any>$scope).lists = [];
@@ -530,7 +539,7 @@ namespace Angular {
                                 return factory.updateList((<any>$scope).selection.settings.data, service).then((data) => {
                                     (<any>$scope).selection.settings.data = app.$.extend(true, {}, data);
                                     (<any>$scope).selection.settings.editMode = false;
-                                    var entity = self.getEntity(data);
+                                    let entity = self.getEntity(data);
                                     $.each((<any>$scope).lists, (i, list) => {
                                         if (list.$data.Id === entity.$data.Id) {
                                             list.$data = entity.$data;
@@ -549,7 +558,7 @@ namespace Angular {
                             settingsEnabled: false,
                             openSettings: function (list) {
                                 if (!list) {
-                                    var selectedItems = (<any>$scope).table.selectedItems;
+                                    let selectedItems = (<any>$scope).table.selectedItems;
                                     list = app.$(selectedItems).get(0);
                                 }
                                 if (list) {
@@ -567,7 +576,7 @@ namespace Angular {
                             },
                             view: (list) => {
                                 if (!list) {
-                                    var selectedItems = (<any>$scope).table.selectedItems;
+                                    let selectedItems = (<any>$scope).table.selectedItems;
                                     list = app.$(selectedItems).get(0);
                                 }
                                 if (list) {
@@ -576,12 +585,12 @@ namespace Angular {
                             },
                             delete: (list) => {
                                 if (!list) {
-                                    var selectedItems = (<any>$scope).table.selectedItems;
+                                    let selectedItems = (<any>$scope).table.selectedItems;
 
                                 }
                             },
                             clearSelection: () => {
-                                var selectedItems = (<any>$scope).table.selectedItems;
+                                let selectedItems = (<any>$scope).table.selectedItems;
                                 if (selectedItems.length > 0) {
                                     app.$.each((<any>$scope).table.rows, (i, item) => {
                                         if (item.selected) {
@@ -615,7 +624,7 @@ namespace Angular {
 
                         app.delay(() => {
                             $scope.$apply(function () {
-                                var lists;
+                                let lists;
                                 if (newValue && newValue !== oldValue) {
                                     lists = [];
                                     app.$.each(factory.lists, (i, list) => {

@@ -86,12 +86,14 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                                         var contentHeight = element[0].offsetParent.clientHeight;
                                         var resizeMessage = '<message senderId={Sender_ID}>resize({Width}, {Height}px)</message>';
                                         var senderId = $pnp.util.getUrlParamByName("SenderId").split("#")[0];
-                                        var step = 30, finalHeight;
-                                        finalHeight = (step - (contentHeight % step)) + contentHeight;
-                                        resizeMessage = resizeMessage.replace("{Sender_ID}", senderId);
-                                        resizeMessage = resizeMessage.replace("{Height}", finalHeight);
-                                        resizeMessage = resizeMessage.replace("{Width}", "100%");
-                                        window.parent.postMessage(resizeMessage, "*");
+                                        if (senderId) {
+                                            var step = 30, finalHeight = void 0;
+                                            finalHeight = (step - (contentHeight % step)) + contentHeight;
+                                            resizeMessage = resizeMessage.replace("{Sender_ID}", senderId);
+                                            resizeMessage = resizeMessage.replace("{Height}", finalHeight);
+                                            resizeMessage = resizeMessage.replace("{Width}", "100%");
+                                            window.parent.postMessage(resizeMessage, "*");
+                                        }
                                     }, 0, false);
                                 });
                             }
@@ -100,12 +102,17 @@ define(["require", "exports", "pnp", "jquery", "./app.module"], function (requir
                 _super.prototype.init.call(this, preloadedScripts);
             };
             App.prototype.render = function (modules) {
-                var self = this;
-                self.$(self).on("app-render", function () {
-                    self.$angular.element(function () {
-                        self.$angular.bootstrap(document, [App.SharePointAppName]);
+                var editMode = $pnp.util.getUrlParamByName("editMode");
+                if (editMode == "1") {
+                }
+                else {
+                    var self_1 = this;
+                    self_1.$(self_1).on("app-render", function () {
+                        self_1.$angular.element(function () {
+                            self_1.$angular.bootstrap(document, [App.SharePointAppName]);
+                        });
                     });
-                });
+                }
                 _super.prototype.render.call(this, modules);
             };
             App.prototype.get_ListView = function (options) {
